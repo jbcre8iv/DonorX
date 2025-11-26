@@ -1,101 +1,100 @@
-import { Building2, CreditCard, Users, TrendingUp, DollarSign, Calendar } from "lucide-react";
+import Link from "next/link";
+import { Building2, CreditCard, Users, TrendingUp, DollarSign, Calendar, CheckCircle, Clock } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
-
-const stats = [
-  {
-    title: "Total Donations",
-    value: "$2.4M",
-    change: "+18%",
-    icon: DollarSign,
-    color: "blue",
-  },
-  {
-    title: "Active Donors",
-    value: "156",
-    change: "+12",
-    icon: Users,
-    color: "emerald",
-  },
-  {
-    title: "Nonprofits",
-    value: "89",
-    change: "+5",
-    icon: Building2,
-    color: "purple",
-  },
-  {
-    title: "This Month",
-    value: "$245K",
-    change: "+24%",
-    icon: TrendingUp,
-    color: "amber",
-  },
-];
-
-const recentActivity = [
-  {
-    id: "1",
-    type: "donation",
-    description: "Acme Corp donated $25,000",
-    date: "2024-01-15T10:30:00",
-  },
-  {
-    id: "2",
-    type: "nonprofit",
-    description: "New nonprofit approved: Tech for Good",
-    date: "2024-01-15T09:15:00",
-  },
-  {
-    id: "3",
-    type: "user",
-    description: "New organization registered: Smith Family Office",
-    date: "2024-01-14T16:45:00",
-  },
-  {
-    id: "4",
-    type: "donation",
-    description: "Johnson Foundation donated $50,000",
-    date: "2024-01-14T14:20:00",
-  },
-  {
-    id: "5",
-    type: "disbursement",
-    description: "Disbursed $125,000 to 12 nonprofits",
-    date: "2024-01-14T11:00:00",
-  },
-];
-
-const pendingApprovals = [
-  {
-    id: "1",
-    name: "Youth Education Initiative",
-    ein: "12-3456789",
-    submitted: "2024-01-14",
-    category: "Education",
-  },
-  {
-    id: "2",
-    name: "Clean Water Project",
-    ein: "23-4567890",
-    submitted: "2024-01-13",
-    category: "Environment",
-  },
-  {
-    id: "3",
-    name: "Mental Health Alliance",
-    ein: "34-5678901",
-    submitted: "2024-01-12",
-    category: "Healthcare",
-  },
-];
 
 export const metadata = {
   title: "Admin Dashboard",
 };
 
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
+  const supabase = await createClient();
+
+  // Fetch platform stats
+  const { data: donations } = await supabase
+    .from("donations")
+    .select("amount_cents, status, created_at, user_id");
+
+  const { data: nonprofits } = await supabase
+    .from("nonprofits")
+    .select("id, name, ein, status, category_id, created_at");
+
+  const { data: users } = await supabase
+    .from("users")
+    .select("id, created_at");
+
+  const { data: categories } = await supabase
+    .from("categories")
+    .select("id, name");
+
+  const allDonations = donations || [];
+  const completedDonations = allDonations.filter((d) => d.status === "completed");
+  const allNonprofits = nonprofits || [];
+  const approvedNonprofits = allNonprofits.filter((n) => n.status === "approved");
+  const pendingNonprofits = allNonprofits.filter((n) => n.status === "pending");
+  const allUsers = users || [];
+  const allCategories = categories || [];
+
+  // Calculate stats
+  const totalDonations = completedDonations.reduce((sum, d) => sum + d.amount_cents, 0);
+
+  // This month's donations
+  const now = new Date();
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const thisMonthDonations = completedDonations.filter(
+    (d) => new Date(d.created_at) >= thisMonthStart
+  );
+  const thisMonthTotal = thisMonthDonations.reduce((sum, d) => sum + d.amount_cents, 0);
+
+  // Unique donors
+  const uniqueDonors = new Set(completedDonations.map((d) => d.user_id)).size;
+
+  const stats = [
+    {
+      title: "Total Donations",
+      value: formatCurrency(totalDonations),
+      subtitle: `${completedDonations.length} donations`,
+      icon: DollarSign,
+      color: "blue",
+    },
+    {
+      title: "Active Donors",
+      value: uniqueDonors.toString(),
+      subtitle: `${allUsers.length} total users`,
+      icon: Users,
+      color: "emerald",
+    },
+    {
+      title: "Nonprofits",
+      value: approvedNonprofits.length.toString(),
+      subtitle: `${pendingNonprofits.length} pending approval`,
+      icon: Building2,
+      color: "purple",
+    },
+    {
+      title: "This Month",
+      value: formatCurrency(thisMonthTotal),
+      subtitle: `${thisMonthDonations.length} donations`,
+      icon: TrendingUp,
+      color: "amber",
+    },
+  ];
+
+  // Get category name helper
+  const getCategoryName = (categoryId: string | null) => {
+    if (!categoryId) return "Uncategorized";
+    const category = allCategories.find((c) => c.id === categoryId);
+    return category?.name || "Unknown";
+  };
+
+  // Recent donations (last 5)
+  const recentDonations = completedDonations
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 5);
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -140,52 +139,44 @@ export default function AdminDashboardPage() {
                   />
                 </div>
               </div>
-              <p className="mt-2 text-sm text-emerald-600">{stat.change} from last month</p>
+              <p className="mt-2 text-sm text-slate-500">{stat.subtitle}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        {/* Recent Activity */}
+        {/* Recent Donations */}
         <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Recent Donations</CardTitle>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/admin/donations">View All</Link>
+            </Button>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3">
-                  <div
-                    className={`mt-1 flex h-8 w-8 items-center justify-center rounded-full ${
-                      activity.type === "donation"
-                        ? "bg-emerald-100"
-                        : activity.type === "nonprofit"
-                        ? "bg-blue-100"
-                        : activity.type === "user"
-                        ? "bg-purple-100"
-                        : "bg-amber-100"
-                    }`}
-                  >
-                    {activity.type === "donation" ? (
+            {recentDonations.length === 0 ? (
+              <p className="text-center text-slate-500 py-4">No donations yet</p>
+            ) : (
+              <div className="space-y-4">
+                {recentDonations.map((donation, idx) => (
+                  <div key={idx} className="flex items-start gap-3">
+                    <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100">
                       <CreditCard className="h-4 w-4 text-emerald-600" />
-                    ) : activity.type === "nonprofit" ? (
-                      <Building2 className="h-4 w-4 text-blue-600" />
-                    ) : activity.type === "user" ? (
-                      <Users className="h-4 w-4 text-purple-600" />
-                    ) : (
-                      <TrendingUp className="h-4 w-4 text-amber-600" />
-                    )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-slate-900">
+                        {formatCurrency(donation.amount_cents)}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {formatDate(donation.created_at)}
+                      </p>
+                    </div>
+                    <Badge variant="success">Completed</Badge>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-slate-900">{activity.description}</p>
-                    <p className="text-xs text-slate-500">
-                      {formatDate(activity.date)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -193,33 +184,80 @@ export default function AdminDashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Pending Approvals</CardTitle>
-            <Badge variant="warning">{pendingApprovals.length} pending</Badge>
+            {pendingNonprofits.length > 0 && (
+              <Badge variant="warning">{pendingNonprofits.length} pending</Badge>
+            )}
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {pendingApprovals.map((nonprofit) => (
-                <div
-                  key={nonprofit.id}
-                  className="flex items-center justify-between rounded-lg border border-slate-200 p-3"
-                >
-                  <div>
-                    <p className="font-medium text-slate-900">{nonprofit.name}</p>
-                    <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                      <span>EIN: {nonprofit.ein}</span>
-                      <span>|</span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatDate(nonprofit.submitted)}
-                      </span>
+            {pendingNonprofits.length === 0 ? (
+              <div className="text-center py-4">
+                <CheckCircle className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
+                <p className="text-slate-500">All caught up!</p>
+                <p className="text-sm text-slate-400">No pending approvals</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pendingNonprofits.slice(0, 5).map((nonprofit) => (
+                  <div
+                    key={nonprofit.id}
+                    className="flex items-center justify-between rounded-lg border border-slate-200 p-3"
+                  >
+                    <div>
+                      <p className="font-medium text-slate-900">{nonprofit.name}</p>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                        {nonprofit.ein && <span>EIN: {nonprofit.ein}</span>}
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formatDate(nonprofit.created_at)}
+                        </span>
+                      </div>
                     </div>
+                    <Badge variant="secondary">
+                      {getCategoryName(nonprofit.category_id)}
+                    </Badge>
                   </div>
-                  <Badge variant="secondary">{nonprofit.category}</Badge>
-                </div>
-              ))}
-            </div>
+                ))}
+                {pendingNonprofits.length > 5 && (
+                  <Button variant="outline" fullWidth asChild>
+                    <Link href="/admin/nonprofits?status=pending">
+                      View all {pendingNonprofits.length} pending
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Button variant="outline" asChild>
+              <Link href="/admin/nonprofits">
+                <Building2 className="mr-2 h-4 w-4" />
+                Manage Nonprofits
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/admin/donations">
+                <CreditCard className="mr-2 h-4 w-4" />
+                View Donations
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/admin/nonprofits?status=pending">
+                <Clock className="mr-2 h-4 w-4" />
+                Review Pending ({pendingNonprofits.length})
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

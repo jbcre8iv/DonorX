@@ -13,6 +13,7 @@ import {
   CreditCard,
   Users,
   BarChart3,
+  Tag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,7 @@ const adminLinks: SidebarLink[] = [
   { href: "/admin", label: "Dashboard", icon: BarChart3 },
   { href: "/admin/nonprofits", label: "Nonprofits", icon: Building2 },
   { href: "/admin/donations", label: "Donations", icon: CreditCard },
+  { href: "/admin/categories", label: "Categories", icon: Tag },
   { href: "/admin/users", label: "Users", icon: Users },
 ];
 

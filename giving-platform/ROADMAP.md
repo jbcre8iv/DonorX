@@ -70,13 +70,13 @@ DonorX allows corporate donors to make a single donation that gets split across 
 - [ ] Team/org member management
 
 ## PHASE 6: ADMIN PORTAL
-- [ ] Admin layout with sidebar
-- [ ] Admin dashboard (platform stats)
-- [ ] Nonprofit management (CRUD)
-- [ ] Nonprofit approval workflow
-- [ ] View all donations
+- [x] Admin layout with sidebar
+- [x] Admin dashboard (platform stats)
+- [x] Nonprofit management (CRUD)
+- [x] Nonprofit approval workflow
+- [x] View all donations
 - [ ] Donation disbursement tracking
-- [ ] Category management
+- [x] Category management
 - [ ] Basic reporting/exports
 
 ## PHASE 7: POLISH & PWA
