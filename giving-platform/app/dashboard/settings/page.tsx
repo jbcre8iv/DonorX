@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { User, Building2, Bell, Shield, LogOut } from "lucide-react";
+import Link from "next/link";
+import { User, Building2, Bell, Shield, LogOut, Globe, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,13 @@ export default async function SettingsPage() {
       *,
       organization:organizations(*)
     `)
+    .eq("id", user.id)
+    .single();
+
+  // Get public profile settings
+  const { data: publicProfile } = await supabase
+    .from("profiles")
+    .select("*")
     .eq("id", user.id)
     .single();
 
@@ -117,6 +125,125 @@ export default async function SettingsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Public Profile Settings */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Globe className="h-5 w-5 text-slate-600" />
+            <CardTitle>Public Profile</CardTitle>
+          </div>
+          <CardDescription>Control what others can see about your giving</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
+            <div>
+              <p className="font-medium text-slate-900">Profile Visibility</p>
+              <p className="text-sm text-slate-600">
+                Make your giving profile visible to others
+              </p>
+            </div>
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                defaultChecked={publicProfile?.is_public ?? false}
+                className="peer sr-only"
+                disabled
+              />
+              <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-700 peer-checked:after:translate-x-full"></div>
+            </label>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Username
+              </label>
+              <Input
+                defaultValue={publicProfile?.username || ""}
+                placeholder="your-username"
+                disabled
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Your profile URL: /donors/{publicProfile?.username || "username"}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Display Name
+              </label>
+              <Input
+                defaultValue={publicProfile?.display_name || ""}
+                placeholder="Your Name"
+                disabled
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Bio
+            </label>
+            <textarea
+              defaultValue={publicProfile?.bio || ""}
+              placeholder="Tell others about your giving journey..."
+              rows={3}
+              disabled
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-500"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-slate-700">Privacy Options</p>
+            {[
+              {
+                key: "show_donation_stats",
+                title: "Show Donation Stats",
+                description: "Display total given, donation count, and nonprofits supported",
+              },
+              {
+                key: "show_supported_nonprofits",
+                title: "Show Supported Nonprofits",
+                description: "Display the organizations you've supported",
+              },
+            ].map((item) => (
+              <div
+                key={item.key}
+                className="flex items-center justify-between rounded-lg border border-slate-200 p-3"
+              >
+                <div>
+                  <p className="text-sm font-medium text-slate-900">{item.title}</p>
+                  <p className="text-xs text-slate-600">{item.description}</p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input
+                    type="checkbox"
+                    defaultChecked={
+                      publicProfile?.[item.key as keyof typeof publicProfile] ?? true
+                    }
+                    className="peer sr-only"
+                    disabled
+                  />
+                  <div className="peer h-5 w-9 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-700 peer-checked:after:translate-x-full"></div>
+                </label>
+              </div>
+            ))}
+          </div>
+
+          {publicProfile?.is_public && publicProfile?.username && (
+            <div className="pt-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/donors/${publicProfile.username}`} target="_blank">
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  View Public Profile
+                </Link>
+              </Button>
+            </div>
+          )}
+
+          <p className="text-xs text-slate-500">Profile editing coming soon</p>
+        </CardContent>
+      </Card>
 
       {/* Notification Settings */}
       <Card>

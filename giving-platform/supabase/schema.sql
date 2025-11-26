@@ -110,6 +110,36 @@ CREATE TABLE impact_reports (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Public profiles for donors (optional)
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  username TEXT UNIQUE,
+  display_name TEXT,
+  bio TEXT,
+  location TEXT,
+  company TEXT,
+  website TEXT,
+  is_public BOOLEAN DEFAULT FALSE,
+  show_donation_stats BOOLEAN DEFAULT TRUE,
+  show_supported_nonprofits BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Subscriptions for recurring donations
+CREATE TABLE subscriptions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  organization_id UUID REFERENCES organizations(id) ON DELETE SET NULL,
+  stripe_subscription_id TEXT UNIQUE,
+  amount_cents INTEGER NOT NULL,
+  interval TEXT NOT NULL CHECK (interval IN ('monthly', 'quarterly', 'annually')),
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused', 'canceled', 'past_due')),
+  next_billing_date TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  canceled_at TIMESTAMPTZ
+);
+
 -- Enable Row Level Security on all tables
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
@@ -120,6 +150,8 @@ ALTER TABLE allocations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE allocation_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE allocation_template_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE impact_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
 
@@ -163,6 +195,19 @@ CREATE POLICY "Users can view org template items" ON allocation_template_items F
 
 -- Impact reports: Anyone can read
 CREATE POLICY "Impact reports are viewable by everyone" ON impact_reports FOR SELECT USING (true);
+CREATE POLICY "Nonprofits can insert impact reports" ON impact_reports FOR INSERT WITH CHECK (true);
+CREATE POLICY "Nonprofits can delete own impact reports" ON impact_reports FOR DELETE USING (true);
+
+-- Profiles: Public profiles are viewable, users can manage their own
+CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR SELECT USING (is_public = true);
+CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+
+-- Subscriptions: Users can manage their own subscriptions
+CREATE POLICY "Users can view own subscriptions" ON subscriptions FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own subscriptions" ON subscriptions FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own subscriptions" ON subscriptions FOR UPDATE USING (user_id = auth.uid());
 
 -- Insert some default categories
 INSERT INTO categories (name, slug, description, icon) VALUES
