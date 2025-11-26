@@ -1,56 +1,67 @@
-import { Download, FileText, Calendar } from "lucide-react";
+import { redirect } from "next/navigation";
+import { Download, FileText, Calendar, CreditCard } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency } from "@/lib/utils";
-
-const receipts = [
-  {
-    id: "1",
-    period: "Q4 2023",
-    dateRange: "Oct 1 - Dec 31, 2023",
-    totalAmount: 40000,
-    donationCount: 3,
-    status: "ready" as const,
-  },
-  {
-    id: "2",
-    period: "Q3 2023",
-    dateRange: "Jul 1 - Sep 30, 2023",
-    totalAmount: 35000,
-    donationCount: 4,
-    status: "ready" as const,
-  },
-  {
-    id: "3",
-    period: "Q2 2023",
-    dateRange: "Apr 1 - Jun 30, 2023",
-    totalAmount: 25000,
-    donationCount: 2,
-    status: "ready" as const,
-  },
-  {
-    id: "4",
-    period: "Q1 2023",
-    dateRange: "Jan 1 - Mar 31, 2023",
-    totalAmount: 25000,
-    donationCount: 3,
-    status: "ready" as const,
-  },
-];
-
-const annualSummary = {
-  year: 2023,
-  totalDonated: 125000,
-  totalDonations: 12,
-  nonprofitsSupported: 18,
-};
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { config } from "@/lib/config";
 
 export const metadata = {
   title: "Tax Receipts",
 };
 
-export default function ReceiptsPage() {
+export default async function ReceiptsPage() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  // Fetch completed donations
+  const { data: donations } = await supabase
+    .from("donations")
+    .select(`
+      *,
+      allocations(
+        percentage,
+        amount_cents,
+        nonprofit:nonprofits(name, ein),
+        category:categories(name)
+      )
+    `)
+    .eq("user_id", user.id)
+    .eq("status", "completed")
+    .order("completed_at", { ascending: false });
+
+  const completedDonations = donations || [];
+
+  // Calculate annual stats
+  const currentYear = new Date().getFullYear();
+  const thisYearDonations = completedDonations.filter(
+    (d) => new Date(d.completed_at || d.created_at).getFullYear() === currentYear
+  );
+  const totalThisYear = thisYearDonations.reduce((sum, d) => sum + d.amount_cents, 0);
+
+  // Group by year for annual summary
+  const donationsByYear = completedDonations.reduce((acc, d) => {
+    const year = new Date(d.completed_at || d.created_at).getFullYear();
+    if (!acc[year]) {
+      acc[year] = { donations: [], total: 0 };
+    }
+    acc[year].donations.push(d);
+    acc[year].total += d.amount_cents;
+    return acc;
+  }, {} as Record<number, { donations: typeof completedDonations; total: number }>);
+
+  const years = Object.keys(donationsByYear)
+    .map(Number)
+    .sort((a, b) => b - a);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -62,79 +73,130 @@ export default function ReceiptsPage() {
       </div>
 
       {/* Annual Summary */}
-      <Card className="bg-gradient-to-r from-blue-50 to-emerald-50">
-        <CardContent className="p-6">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-slate-600">
-                {annualSummary.year} Annual Summary
-              </p>
-              <p className="mt-1 text-3xl font-semibold text-slate-900">
-                {formatCurrency(annualSummary.totalDonated * 100)}
-              </p>
-              <p className="mt-1 text-sm text-slate-600">
-                {annualSummary.totalDonations} donations to{" "}
-                {annualSummary.nonprofitsSupported} nonprofits
+      {thisYearDonations.length > 0 && (
+        <Card className="bg-gradient-to-r from-blue-50 to-emerald-50">
+          <CardContent className="p-6">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-slate-600">
+                  {currentYear} Year-to-Date
+                </p>
+                <p className="mt-1 text-3xl font-semibold text-slate-900">
+                  {formatCurrency(totalThisYear)}
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  {thisYearDonations.length} donation{thisYearDonations.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+              <Button size="lg" disabled>
+                <Download className="mr-2 h-5 w-5" />
+                Annual Statement (Available Jan 15)
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Individual Receipts */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Individual Donation Receipts</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {completedDonations.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-slate-500">No completed donations yet.</p>
+              <p className="text-sm text-slate-400 mt-1">
+                Receipts will appear here after your donations are processed.
               </p>
             </div>
-            <Button size="lg">
-              <Download className="mr-2 h-5 w-5" />
-              Download Annual Statement
-            </Button>
-          </div>
+          ) : (
+            <div className="space-y-4">
+              {completedDonations.map((donation) => {
+                const recipients = donation.allocations?.map(
+                  (a: {
+                    nonprofit?: { name: string; ein: string | null } | null;
+                    category?: { name: string } | null;
+                  }) => a.nonprofit?.name || a.category?.name
+                );
+
+                return (
+                  <div
+                    key={donation.id}
+                    className="flex flex-col gap-4 rounded-lg border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-100">
+                        <CreditCard className="h-6 w-6 text-emerald-700" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-slate-900">
+                            {formatCurrency(donation.amount_cents)}
+                          </p>
+                          <Badge variant="success">Tax Deductible</Badge>
+                        </div>
+                        <div className="mt-1 flex items-center gap-4 text-sm text-slate-600">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {formatDate(donation.completed_at || donation.created_at)}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-sm text-slate-500 truncate max-w-xs">
+                          {recipients?.slice(0, 2).join(", ")}
+                          {recipients && recipients.length > 2 && ` +${recipients.length - 2} more`}
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="outline">
+                      <Download className="mr-2 h-4 w-4" />
+                      Download PDF
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Quarterly Receipts */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quarterly Receipts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {receipts.map((receipt) => (
-              <div
-                key={receipt.id}
-                className="flex flex-col gap-4 rounded-lg border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-                    <FileText className="h-6 w-6 text-blue-700" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-slate-900">
-                        {receipt.period}
+      {/* Year Summary Cards */}
+      {years.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Annual Summaries</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {years.map((year) => (
+                <div
+                  key={year}
+                  className="rounded-lg border border-slate-200 p-4"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <FileText className="h-5 w-5 text-blue-700" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900">{year}</p>
+                      <p className="text-sm text-slate-500">
+                        {donationsByYear[year].donations.length} donation{donationsByYear[year].donations.length !== 1 ? "s" : ""}
                       </p>
-                      <Badge variant="success">Ready</Badge>
-                    </div>
-                    <div className="mt-1 flex items-center gap-4 text-sm text-slate-600">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {receipt.dateRange}
-                      </span>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="font-semibold text-slate-900">
-                      {formatCurrency(receipt.totalAmount * 100)}
-                    </p>
-                    <p className="text-sm text-slate-500">
-                      {receipt.donationCount} donations
-                    </p>
-                  </div>
-                  <Button variant="outline">
+                  <p className="text-2xl font-bold text-slate-900 mb-3">
+                    {formatCurrency(donationsByYear[year].total)}
+                  </p>
+                  <Button variant="outline" size="sm" fullWidth disabled={year === currentYear}>
                     <Download className="mr-2 h-4 w-4" />
-                    Download
+                    {year === currentYear ? "Available Jan 15" : "Download Summary"}
                   </Button>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tax Information */}
       <Card>
@@ -144,7 +206,7 @@ export default function ReceiptsPage() {
         <CardContent>
           <div className="rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
             <p>
-              All donations made through DonorX are tax-deductible to the extent
+              All donations made through {config.appName} are tax-deductible to the extent
               allowed by law. Each receipt includes the EIN of the recipient
               nonprofit organization(s).
             </p>

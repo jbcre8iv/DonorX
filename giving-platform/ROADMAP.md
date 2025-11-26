@@ -58,15 +58,15 @@ DonorX allows corporate donors to make a single donation that gets split across 
 - [ ] Receipt email delivery
 
 ## PHASE 5: DONOR DASHBOARD
-- [ ] Dashboard layout with sidebar
-- [ ] Overview page (stats, recent activity)
-- [ ] Donation history with filters
-- [ ] Individual donation detail view
-- [ ] Tax receipts page (download PDFs)
-- [ ] Saved allocation templates
+- [x] Dashboard layout with sidebar
+- [x] Overview page (stats, recent activity)
+- [x] Donation history with filters
+- [x] Individual donation detail view
+- [x] Tax receipts page (download PDFs)
+- [x] Saved allocation templates
 - [ ] Create/edit/delete templates
-- [ ] One-click donate from template
-- [ ] Account settings
+- [x] One-click donate from template
+- [x] Account settings
 - [ ] Team/org member management
 
 ## PHASE 6: ADMIN PORTAL
