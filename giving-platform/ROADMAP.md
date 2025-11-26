@@ -99,12 +99,12 @@ DonorX allows corporate donors to make a single donation that gets split across 
 - [x] Donor public profile (optional)
 - [x] Nonprofit dashboard (submit impact reports)
 
-## PHASE 9: AI FEATURES (Future)
-- [ ] Claude SDK integration
-- [ ] Giving Concierge chat widget
-- [ ] Smart nonprofit recommendations
-- [ ] AI-generated impact summaries
-- [ ] Allocation advisor
+## PHASE 9: AI FEATURES
+- [x] Claude SDK integration
+- [x] Giving Concierge chat widget
+- [x] Smart nonprofit recommendations
+- [x] AI-generated impact summaries
+- [x] Allocation advisor
 
 ## PHASE 10: MOBILE APP (Future)
 - [ ] React Native + Expo setup

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { config } from "@/lib/config";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { GivingConcierge } from "@/components/ai/giving-concierge";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -68,6 +69,7 @@ export default function RootLayout({
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
+          <GivingConcierge />
         </Providers>
       </body>
     </html>

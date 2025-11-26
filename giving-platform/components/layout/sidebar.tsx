@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Newspaper,
   FileBarChart,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ const donorLinks: SidebarLink[] = [
   { href: "/dashboard/subscriptions", label: "Recurring", icon: RefreshCw },
   { href: "/dashboard/impact", label: "Impact Feed", icon: Newspaper },
   { href: "/dashboard/reports", label: "Quarterly Reports", icon: FileBarChart },
+  { href: "/dashboard/ai", label: "AI Tools", icon: Sparkles },
   { href: "/dashboard/receipts", label: "Tax Receipts", icon: Receipt },
   { href: "/dashboard/templates", label: "Templates", icon: Layers },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
