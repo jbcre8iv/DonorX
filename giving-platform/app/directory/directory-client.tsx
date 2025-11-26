@@ -3,9 +3,13 @@
 import * as React from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/pagination";
 import { NonprofitCard } from "@/components/directory/nonprofit-card";
+import { NonprofitModal } from "@/components/directory/nonprofit-modal";
 import { cn } from "@/lib/utils";
 import type { Nonprofit, Category } from "@/types/database";
+
+const ITEMS_PER_PAGE = 9;
 
 interface DirectoryClientProps {
   initialNonprofits: Nonprofit[];
@@ -20,6 +24,24 @@ export function DirectoryClient({
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(
     null
   );
+  const [selectedNonprofit, setSelectedNonprofit] = React.useState<Nonprofit | null>(null);
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [currentPage, setCurrentPage] = React.useState(1);
+
+  const handleQuickView = (nonprofit: Nonprofit) => {
+    setSelectedNonprofit(nonprofit);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedNonprofit(null);
+  };
+
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedCategory]);
 
   const filteredNonprofits = initialNonprofits.filter((nonprofit) => {
     const matchesSearch =
@@ -33,6 +55,13 @@ export function DirectoryClient({
 
   const featuredNonprofits = filteredNonprofits.filter((n) => n.featured);
   const otherNonprofits = filteredNonprofits.filter((n) => !n.featured);
+
+  // Pagination for non-featured nonprofits
+  const totalPages = Math.ceil(otherNonprofits.length / ITEMS_PER_PAGE);
+  const paginatedNonprofits = otherNonprofits.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div className="py-12">
@@ -89,6 +118,11 @@ export function DirectoryClient({
               </button>
             ))}
           </div>
+
+          {/* Results count */}
+          <p className="text-center text-sm text-slate-500">
+            Showing {filteredNonprofits.length} nonprofit{filteredNonprofits.length !== 1 ? "s" : ""}
+          </p>
         </div>
 
         {/* Featured Nonprofits */}
@@ -99,7 +133,11 @@ export function DirectoryClient({
             </h2>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {featuredNonprofits.map((nonprofit) => (
-                <NonprofitCard key={nonprofit.id} nonprofit={nonprofit} />
+                <NonprofitCard
+                  key={nonprofit.id}
+                  nonprofit={nonprofit}
+                  onQuickView={handleQuickView}
+                />
               ))}
             </div>
           </div>
@@ -112,12 +150,27 @@ export function DirectoryClient({
               ? categories.find((c) => c.id === selectedCategory)?.name
               : "All Organizations"}
           </h2>
-          {otherNonprofits.length > 0 ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {otherNonprofits.map((nonprofit) => (
-                <NonprofitCard key={nonprofit.id} nonprofit={nonprofit} />
-              ))}
-            </div>
+          {paginatedNonprofits.length > 0 ? (
+            <>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {paginatedNonprofits.map((nonprofit) => (
+                  <NonprofitCard
+                    key={nonprofit.id}
+                    nonprofit={nonprofit}
+                    onQuickView={handleQuickView}
+                  />
+                ))}
+              </div>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  className="mt-10"
+                />
+              )}
+            </>
           ) : featuredNonprofits.length === 0 ? (
             <div className="text-center py-12 text-slate-500">
               <p>No nonprofits found matching your criteria.</p>
@@ -125,6 +178,13 @@ export function DirectoryClient({
           ) : null}
         </div>
       </div>
+
+      {/* Quick View Modal */}
+      <NonprofitModal
+        nonprofit={selectedNonprofit}
+        open={modalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 }

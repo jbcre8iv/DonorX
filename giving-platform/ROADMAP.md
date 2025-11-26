@@ -26,22 +26,23 @@ DonorX allows corporate donors to make a single donation that gets split across 
 - [x] Basic responsive navigation
 
 ## PHASE 2: AUTHENTICATION
-- [ ] Supabase Auth integration
-- [ ] Registration flow (org + user creation)
-- [ ] Login flow
-- [ ] Password reset flow
-- [ ] Protected route middleware
-- [ ] Auth context/provider
-- [ ] User session management
+- [x] Supabase Auth integration
+- [x] Registration flow (org + user creation)
+- [x] Login flow
+- [x] Password reset flow
+- [x] Protected route middleware
+- [x] Auth context/provider
+- [x] User session management
 
 ## PHASE 3: NONPROFIT DIRECTORY
-- [ ] Public directory page
-- [ ] Category filter pills
-- [ ] Search functionality
-- [ ] Nonprofit cards with key info
-- [ ] Nonprofit detail modal/page
-- [ ] "Featured" nonprofits section
-- [ ] Load from Supabase
+- [x] Public directory page
+- [x] Category filter pills
+- [x] Search functionality
+- [x] Nonprofit cards with key info
+- [x] Nonprofit detail modal/page
+- [x] "Featured" nonprofits section
+- [x] Load from Supabase
+- [x] Pagination
 
 ## PHASE 4: DONATION FLOW (Core Feature)
 - [ ] Donation page layout
