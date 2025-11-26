@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getStripeServer } from "@/lib/stripe/client";
 import { config } from "@/lib/config";
+import type { RecurringInterval } from "@/types/database";
 
 export interface AllocationInput {
   type: "nonprofit" | "category";
@@ -18,9 +19,12 @@ export interface CreateCheckoutResult {
   error?: string;
 }
 
+export type DonationFrequency = "one-time" | RecurringInterval;
+
 export async function createCheckoutSession(
   amountCents: number,
-  allocations: AllocationInput[]
+  allocations: AllocationInput[],
+  frequency: DonationFrequency = "one-time"
 ): Promise<CreateCheckoutResult> {
   const supabase = await createClient();
 
@@ -68,6 +72,9 @@ export async function createCheckoutSession(
       .eq("id", user.id)
       .single();
 
+    const isRecurring = frequency !== "one-time";
+    const recurringInterval = isRecurring ? frequency as RecurringInterval : null;
+
     // Create pending donation record
     const { data: donation, error: donationError } = await supabase
       .from("donations")
@@ -76,6 +83,8 @@ export async function createCheckoutSession(
         organization_id: userData?.organization_id || null,
         amount_cents: amountCents,
         status: "pending",
+        is_recurring: isRecurring,
+        recurring_interval: recurringInterval,
       })
       .select()
       .single();
@@ -111,38 +120,98 @@ export async function createCheckoutSession(
       .map((a) => `${a.targetName} (${a.percentage}%)`)
       .join(", ");
 
+    // Map frequency to Stripe interval
+    const stripeIntervalMap: Record<RecurringInterval, { interval: "month" | "year"; interval_count: number }> = {
+      monthly: { interval: "month", interval_count: 1 },
+      quarterly: { interval: "month", interval_count: 3 },
+      annually: { interval: "year", interval_count: 1 },
+    };
+
     // Create Stripe Checkout Session
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      customer_email: user.email,
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "Charitable Donation",
-              description: `Allocation: ${allocationSummary}`,
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+    if (isRecurring && recurringInterval) {
+      // Create subscription checkout
+      const { interval, interval_count } = stripeIntervalMap[recurringInterval];
+
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        customer_email: user.email,
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: "Recurring Charitable Donation",
+                description: `${frequency} donation - Allocation: ${allocationSummary}`,
+              },
+              unit_amount: amountCents,
+              recurring: {
+                interval,
+                interval_count,
+              },
             },
-            unit_amount: amountCents,
+            quantity: 1,
           },
-          quantity: 1,
+        ],
+        metadata: {
+          donation_id: donation.id,
+          user_id: user.id,
+          frequency,
+          allocations: JSON.stringify(allocations),
         },
-      ],
-      metadata: {
-        donation_id: donation.id,
-        user_id: user.id,
-      },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/donate/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/donate?canceled=true`,
-    });
+        subscription_data: {
+          metadata: {
+            donation_id: donation.id,
+            user_id: user.id,
+            frequency,
+          },
+        },
+        success_url: `${baseUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/donate?canceled=true`,
+      });
 
-    // Update donation with Stripe session ID
-    await supabase
-      .from("donations")
-      .update({ stripe_payment_intent_id: session.id })
-      .eq("id", donation.id);
+      // Update donation with Stripe session ID
+      await supabase
+        .from("donations")
+        .update({ stripe_payment_intent_id: session.id })
+        .eq("id", donation.id);
 
-    return { success: true, url: session.url || undefined };
+      return { success: true, url: session.url || undefined };
+    } else {
+      // Create one-time payment checkout
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        customer_email: user.email,
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: "Charitable Donation",
+                description: `Allocation: ${allocationSummary}`,
+              },
+              unit_amount: amountCents,
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          donation_id: donation.id,
+          user_id: user.id,
+        },
+        success_url: `${baseUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/donate?canceled=true`,
+      });
+
+      // Update donation with Stripe session ID
+      await supabase
+        .from("donations")
+        .update({ stripe_payment_intent_id: session.id })
+        .eq("id", donation.id);
+
+      return { success: true, url: session.url || undefined };
+    }
   } catch (error) {
     console.error("Stripe checkout error:", error);
     return { success: false, error: "Failed to create checkout session" };

@@ -92,8 +92,8 @@ DonorX allows corporate donors to make a single donation that gets split across 
 - [x] Open Graph images
 
 ## PHASE 8: ADVANCED FEATURES
-- [ ] Recurring donations (monthly/quarterly/annual)
-- [ ] Impact feed (updates from nonprofits)
+- [x] Recurring donations (monthly/quarterly/annual)
+- [x] Impact feed (updates from nonprofits)
 - [ ] Quarterly impact report generator
 - [ ] Email notifications system
 - [ ] Donor public profile (optional)

@@ -14,6 +14,8 @@ import {
   Users,
   BarChart3,
   Tag,
+  RefreshCw,
+  Newspaper,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +28,8 @@ interface SidebarLink {
 const donorLinks: SidebarLink[] = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/history", label: "Donation History", icon: History },
+  { href: "/dashboard/subscriptions", label: "Recurring", icon: RefreshCw },
+  { href: "/dashboard/impact", label: "Impact Feed", icon: Newspaper },
   { href: "/dashboard/receipts", label: "Tax Receipts", icon: Receipt },
   { href: "/dashboard/templates", label: "Templates", icon: Layers },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },

@@ -3,12 +3,14 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Lock, AlertCircle } from "lucide-react";
+import { ArrowLeft, Lock, AlertCircle, RefreshCw } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { AmountInput } from "@/components/donation/amount-input";
 import { AllocationBuilder, type AllocationItem } from "@/components/donation/allocation-builder";
+import { FrequencySelector, type DonationFrequency } from "@/components/donation/frequency-selector";
 import { formatCurrency } from "@/lib/utils";
 import { createCheckoutSession, type AllocationInput } from "./actions";
 import type { Nonprofit, Category } from "@/types/database";
@@ -29,6 +31,7 @@ export function DonateClient({
   const canceled = searchParams.get("canceled") === "true";
 
   const [amount, setAmount] = React.useState(1000);
+  const [frequency, setFrequency] = React.useState<DonationFrequency>("one-time");
   const [allocations, setAllocations] = React.useState<AllocationItem[]>(() => {
     // If we have a preselected nonprofit, start with it
     if (preselectedNonprofitId) {
@@ -50,6 +53,8 @@ export function DonateClient({
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  const isRecurring = frequency !== "one-time";
+
   const totalPercentage = allocations.reduce((sum, item) => sum + item.percentage, 0);
   const isValidAllocation = totalPercentage === 100;
   const amountCents = amount * 100;
@@ -68,7 +73,7 @@ export function DonateClient({
       percentage: a.percentage,
     }));
 
-    const result = await createCheckoutSession(amountCents, allocationInputs);
+    const result = await createCheckoutSession(amountCents, allocationInputs, frequency);
 
     if (result.success && result.url) {
       // Redirect to Stripe Checkout
@@ -136,6 +141,29 @@ export function DonateClient({
               </CardContent>
             </Card>
 
+            {/* Frequency Selection */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Donation Frequency</CardTitle>
+                  {isRecurring && (
+                    <Badge variant="default" className="flex items-center gap-1">
+                      <RefreshCw className="h-3 w-3" />
+                      Recurring
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <FrequencySelector value={frequency} onChange={setFrequency} />
+                {isRecurring && (
+                  <p className="mt-3 text-sm text-slate-500">
+                    You can cancel or modify your recurring donation anytime from your dashboard.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Allocation Builder */}
             <AllocationBuilder
               allocations={allocations}
@@ -159,13 +187,22 @@ export function DonateClient({
                     <span className="font-medium">{formatCurrency(amountCents)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">Frequency</span>
+                    <span className="font-medium capitalize">
+                      {frequency === "one-time" ? "One-time" : frequency}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
                     <span className="text-slate-600">Platform Fee</span>
                     <span className="font-medium text-emerald-600">$0.00</span>
                   </div>
                   <div className="border-t border-slate-200 pt-4">
                     <div className="flex justify-between">
                       <span className="font-semibold">Total</span>
-                      <span className="font-semibold">{formatCurrency(amountCents)}</span>
+                      <span className="font-semibold">
+                        {formatCurrency(amountCents)}
+                        {isRecurring && <span className="text-sm font-normal text-slate-500">/{frequency === "monthly" ? "mo" : frequency === "quarterly" ? "qtr" : "yr"}</span>}
+                      </span>
                     </div>
                   </div>
 
@@ -201,8 +238,16 @@ export function DonateClient({
                     onClick={handleProceedToPayment}
                     loading={isLoading}
                   >
-                    <Lock className="mr-2 h-4 w-4" />
-                    {isLoading ? "Processing..." : "Proceed to Payment"}
+                    {isRecurring ? (
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Lock className="mr-2 h-4 w-4" />
+                    )}
+                    {isLoading
+                      ? "Processing..."
+                      : isRecurring
+                        ? "Set Up Recurring Donation"
+                        : "Proceed to Payment"}
                   </Button>
 
                   {!isValidAllocation && allocations.length > 0 && (

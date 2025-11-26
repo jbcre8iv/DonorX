@@ -41,6 +41,8 @@ export type Nonprofit = {
   category?: Category;
 };
 
+export type RecurringInterval = "monthly" | "quarterly" | "annually";
+
 export type Donation = {
   id: string;
   organization_id: string | null;
@@ -48,11 +50,29 @@ export type Donation = {
   amount_cents: number;
   stripe_payment_intent_id: string | null;
   stripe_charge_id: string | null;
+  stripe_subscription_id: string | null;
+  is_recurring: boolean;
+  recurring_interval: RecurringInterval | null;
   status: "pending" | "processing" | "completed" | "failed" | "refunded";
   receipt_url: string | null;
   notes: string | null;
   created_at: string;
   completed_at: string | null;
+};
+
+export type Subscription = {
+  id: string;
+  user_id: string;
+  organization_id: string | null;
+  stripe_subscription_id: string;
+  stripe_customer_id: string;
+  amount_cents: number;
+  interval: RecurringInterval;
+  status: "active" | "paused" | "canceled" | "past_due";
+  current_period_start: string;
+  current_period_end: string;
+  canceled_at: string | null;
+  created_at: string;
 };
 
 export type Allocation = {
