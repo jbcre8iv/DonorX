@@ -80,16 +80,16 @@ DonorX allows corporate donors to make a single donation that gets split across 
 - [ ] Basic reporting/exports
 
 ## PHASE 7: POLISH & PWA
-- [ ] Progressive Web App setup
-- [ ] Add to homescreen support
-- [ ] Offline fallback page
-- [ ] Loading states and skeletons
-- [ ] Error boundaries
-- [ ] Toast notifications
+- [x] Progressive Web App setup
+- [x] Add to homescreen support
+- [x] Offline fallback page
+- [x] Loading states and skeletons
+- [x] Error boundaries
+- [x] Toast notifications
 - [ ] Animations and transitions
 - [ ] Performance optimization
-- [ ] SEO meta tags
-- [ ] Open Graph images
+- [x] SEO meta tags
+- [x] Open Graph images
 
 ## PHASE 8: ADVANCED FEATURES
 - [ ] Recurring donations (monthly/quarterly/annual)
