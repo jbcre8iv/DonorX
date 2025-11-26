@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { logout } from "@/app/(auth)/actions";
+import { ProfileForm, PasswordForm } from "./settings-forms";
 
 export const metadata = {
   title: "Settings",
@@ -57,32 +58,12 @@ export default async function SettingsPage() {
           </div>
           <CardDescription>Your personal information</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Full Name
-              </label>
-              <Input defaultValue={profile?.full_name || ""} placeholder="Your name" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Email
-              </label>
-              <Input type="email" defaultValue={user.email || ""} disabled />
-            </div>
-          </div>
-          <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
-            <div>
-              <p className="font-medium text-slate-900">Role</p>
-              <p className="text-sm text-slate-600 capitalize">{profile?.role || "Member"}</p>
-            </div>
-            <Badge variant="secondary">{profile?.role || "Member"}</Badge>
-          </div>
-          <div className="pt-4">
-            <Button disabled>Save Changes</Button>
-            <p className="text-xs text-slate-500 mt-2">Profile editing coming soon</p>
-          </div>
+        <CardContent>
+          <ProfileForm
+            initialFullName={profile?.full_name || ""}
+            email={user.email || ""}
+            role={profile?.role || "Member"}
+          />
         </CardContent>
       </Card>
 
@@ -310,13 +291,7 @@ export default async function SettingsPage() {
           <CardDescription>Manage your account security</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
-            <div>
-              <p className="font-medium text-slate-900">Password</p>
-              <p className="text-sm text-slate-600">Change your account password</p>
-            </div>
-            <Button variant="outline" disabled>Change Password</Button>
-          </div>
+          <PasswordForm />
           <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
             <div>
               <p className="font-medium text-slate-900">Two-Factor Authentication</p>

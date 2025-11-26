@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, User, LogOut, LayoutDashboard } from "lucide-react";
+import { Menu, X, LogOut, LayoutDashboard, Settings } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,12 +16,21 @@ const navLinks = [
   { href: "/about", label: "About" },
 ];
 
-export function Header() {
+interface HeaderProps {
+  initialUser?: { email: string; fullName: string | null } | null;
+}
+
+export function Header({ initialUser = null }: HeaderProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
-  const [user, setUser] = React.useState<{ email: string } | null>(null);
+  const [user, setUser] = React.useState<{ email: string; fullName: string | null } | null>(initialUser);
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
+
+  // Sync user state when initialUser prop changes (for server-side updates)
+  React.useEffect(() => {
+    setUser(initialUser);
+  }, [initialUser]);
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -33,24 +42,39 @@ export function Header() {
 
   React.useEffect(() => {
     const supabase = createClient();
+    let isMounted = true;
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ? { email: session.user.email! } : null);
+    // Listen for auth changes (login/logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+
+      if (event === "SIGNED_OUT") {
+        setUser(null);
+      } else if (event === "SIGNED_IN" && session?.user) {
+        const { data: profile } = await supabase
+          .from("users")
+          .select("full_name")
+          .eq("id", session.user.id)
+          .single();
+
+        if (isMounted) {
+          setUser({
+            email: session.user.email!,
+            fullName: profile?.full_name || null,
+          });
+        }
+      }
     });
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ? { email: session.user.email! } : null);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogout = async () => {
     setUserMenuOpen(false);
+    setUser(null); // Clear user immediately for instant UI feedback
     await logout();
   };
 
@@ -104,11 +128,17 @@ export function Header() {
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
               >
-                <User className="h-4 w-4" />
-                <span className="max-w-[150px] truncate">{user.email}</span>
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
+                  {(user.fullName || user.email).charAt(0).toUpperCase()}
+                </div>
+                <span className="max-w-[150px] truncate">{user.fullName || user.email}</span>
               </button>
               {userMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 rounded-lg border border-slate-200 bg-white shadow-lg py-1">
+                <div className="absolute right-0 top-full mt-2 w-56 rounded-lg border border-slate-200 bg-white shadow-lg py-1">
+                  <div className="px-4 py-2 border-b border-slate-100">
+                    <p className="text-sm font-medium text-slate-900 truncate">{user.fullName || "User"}</p>
+                    <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                  </div>
                   <Link
                     href="/dashboard"
                     className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
@@ -117,13 +147,23 @@ export function Header() {
                     <LayoutDashboard className="h-4 w-4" />
                     Dashboard
                   </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                  <Link
+                    href="/dashboard/settings"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    onClick={() => setUserMenuOpen(false)}
                   >
-                    <LogOut className="h-4 w-4" />
-                    Log out
-                  </button>
+                    <Settings className="h-4 w-4" />
+                    Account Settings
+                  </Link>
+                  <div className="border-t border-slate-100 mt-1 pt-1">
+                    <button
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Log out
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -181,9 +221,23 @@ export function Header() {
             <div className="flex flex-col gap-3 pt-4 border-t border-slate-200">
               {user ? (
                 <>
+                  <div className="flex items-center gap-3 pb-2">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold">
+                      {(user.fullName || user.email).charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-slate-900 truncate">{user.fullName || "User"}</p>
+                      <p className="text-sm text-slate-500 truncate">{user.email}</p>
+                    </div>
+                  </div>
                   <Button variant="outline" asChild fullWidth>
                     <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
                       Dashboard
+                    </Link>
+                  </Button>
+                  <Button variant="outline" asChild fullWidth>
+                    <Link href="/dashboard/settings" onClick={() => setMobileMenuOpen(false)}>
+                      Account Settings
                     </Link>
                   </Button>
                   <Button

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -47,8 +47,11 @@ export async function register(formData: FormData) {
   }
 
   if (authData.user) {
+    // Use admin client to bypass RLS for initial setup
+    const adminClient = createAdminClient();
+
     // Create the organization
-    const { data: orgData, error: orgError } = await supabase
+    const { data: orgData, error: orgError } = await adminClient
       .from("organizations")
       .insert({
         name: organizationName,
@@ -58,12 +61,12 @@ export async function register(formData: FormData) {
       .single();
 
     if (orgError) {
-      console.error("Error creating organization:", orgError);
-      return { error: "Failed to create organization. Please try again." };
+      console.error("Error creating organization:", JSON.stringify(orgError, null, 2));
+      return { error: `Failed to create organization: ${orgError.message}` };
     }
 
     // Create the user profile
-    const { error: userError } = await supabase.from("users").insert({
+    const { error: userError } = await adminClient.from("users").insert({
       id: authData.user.id,
       email: email,
       full_name: fullName,
@@ -72,8 +75,8 @@ export async function register(formData: FormData) {
     });
 
     if (userError) {
-      console.error("Error creating user profile:", userError);
-      return { error: "Failed to create user profile. Please try again." };
+      console.error("Error creating user profile:", JSON.stringify(userError, null, 2));
+      return { error: `Failed to create user profile: ${userError.message}` };
     }
   }
 

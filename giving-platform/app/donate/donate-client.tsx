@@ -30,7 +30,7 @@ export function DonateClient({
   const searchParams = useSearchParams();
   const canceled = searchParams.get("canceled") === "true";
 
-  const [amount, setAmount] = React.useState(1000);
+  const [amount, setAmount] = React.useState(100000); // Start with first preset of middle range
   const [frequency, setFrequency] = React.useState<DonationFrequency>("one-time");
   const [allocations, setAllocations] = React.useState<AllocationItem[]>(() => {
     // If we have a preselected nonprofit, start with it
@@ -73,13 +73,19 @@ export function DonateClient({
       percentage: a.percentage,
     }));
 
-    const result = await createCheckoutSession(amountCents, allocationInputs, frequency);
+    try {
+      const result = await createCheckoutSession(amountCents, allocationInputs, frequency);
 
-    if (result.success && result.url) {
-      // Redirect to Stripe Checkout
-      window.location.href = result.url;
-    } else {
-      setError(result.error || "Something went wrong");
+      if (result.success && result.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = result.url;
+      } else {
+        setError(result.error || "Something went wrong. Please try again.");
+        setIsLoading(false);
+      }
+    } catch (err) {
+      console.error("Payment error:", err);
+      setError("Failed to process payment. Please check your connection and try again.");
       setIsLoading(false);
     }
   };

@@ -69,28 +69,32 @@ export default async function DashboardPage() {
       value: formatCurrency(totalDonatedCents),
       subtitle: "All time",
       icon: TrendingUp,
-      color: "blue",
+      bgColor: "bg-blue-100",
+      iconColor: "text-blue-700",
     },
     {
       title: "Donations This Year",
       value: thisYearDonations.length.toString(),
       subtitle: currentYear.toString(),
       icon: CreditCard,
-      color: "emerald",
+      bgColor: "bg-emerald-100",
+      iconColor: "text-emerald-700",
     },
     {
       title: "Nonprofits Supported",
       value: nonprofitIds.size.toString(),
       subtitle: "Organizations",
       icon: Building2,
-      color: "purple",
+      bgColor: "bg-purple-100",
+      iconColor: "text-purple-700",
     },
     {
       title: "Tax Receipts",
       value: completedDonations.length.toString(),
       subtitle: "Available",
       icon: FileText,
-      color: "amber",
+      bgColor: "bg-amber-100",
+      iconColor: "text-amber-700",
     },
   ];
 
@@ -125,9 +129,9 @@ export default async function DashboardPage() {
                   </p>
                 </div>
                 <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-lg bg-${stat.color}-100`}
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.bgColor}`}
                 >
-                  <stat.icon className={`h-5 w-5 text-${stat.color}-700`} />
+                  <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
                 </div>
               </div>
               <p className="mt-2 text-sm text-slate-500">{stat.subtitle}</p>

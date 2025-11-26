@@ -29,8 +29,16 @@ export default function RegisterPage() {
 
     // Basic validation
     const password = formData.get("password") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
+
     if (password.length < 8) {
       setError("Password must be at least 8 characters");
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
       setLoading(false);
       return;
     }
@@ -96,6 +104,14 @@ export default function RegisterPage() {
               placeholder="Create a password"
               autoComplete="new-password"
               helperText="Must be at least 8 characters"
+              required
+            />
+            <Input
+              name="confirmPassword"
+              label="Confirm Password"
+              type="password"
+              placeholder="Confirm your password"
+              autoComplete="new-password"
               required
             />
             <div className="text-sm text-slate-600">

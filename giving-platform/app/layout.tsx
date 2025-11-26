@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { config } from "@/lib/config";
-import { Header } from "@/components/layout/header";
+import { HeaderWrapper } from "@/components/layout/header-wrapper";
 import { Footer } from "@/components/layout/footer";
 import { GivingConcierge } from "@/components/ai/giving-concierge";
 import { Providers } from "./providers";
@@ -65,7 +65,7 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased`}>
         <Providers>
           <div className="flex min-h-screen flex-col">
-            <Header />
+            <HeaderWrapper />
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
