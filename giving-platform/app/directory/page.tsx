@@ -1,10 +1,30 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { DirectoryClient } from "./directory-client";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Nonprofit, Category } from "@/types/database";
 
 export const metadata = {
   title: "Nonprofit Directory",
 };
+
+function DirectoryLoading() {
+  return (
+    <div className="py-12">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <Skeleton className="h-10 w-64 mx-auto" />
+          <Skeleton className="h-6 w-96 mx-auto mt-4" />
+        </div>
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-64 rounded-lg" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default async function DirectoryPage() {
   const supabase = await createClient();
@@ -27,9 +47,11 @@ export default async function DirectoryPage() {
     .order("name");
 
   return (
-    <DirectoryClient
-      initialNonprofits={(nonprofits as Nonprofit[]) || []}
-      categories={(categories as Category[]) || []}
-    />
+    <Suspense fallback={<DirectoryLoading />}>
+      <DirectoryClient
+        initialNonprofits={(nonprofits as Nonprofit[]) || []}
+        categories={(categories as Category[]) || []}
+      />
+    </Suspense>
   );
 }

@@ -12,6 +12,7 @@ import {
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { createClient } from "@/lib/supabase/server";
 
 const steps = [
   {
@@ -34,15 +35,6 @@ const steps = [
   },
 ];
 
-const categories = [
-  { name: "Education", count: 45, icon: "📚" },
-  { name: "Environment", count: 38, icon: "🌍" },
-  { name: "Healthcare", count: 52, icon: "🏥" },
-  { name: "Hunger Relief", count: 29, icon: "🍽️" },
-  { name: "Housing", count: 24, icon: "🏠" },
-  { name: "Arts & Culture", count: 31, icon: "🎨" },
-];
-
 const trustItems = [
   {
     icon: Building2,
@@ -61,7 +53,31 @@ const trustItems = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createClient();
+
+  // Fetch categories with nonprofit counts
+  const { data: categories } = await supabase
+    .from("categories")
+    .select(`
+      id,
+      name,
+      slug,
+      icon,
+      nonprofits:nonprofits(count)
+    `)
+    .order("name")
+    .limit(6);
+
+  // Transform categories to include count
+  const categoriesWithCounts = categories?.map((cat) => ({
+    id: cat.id,
+    name: cat.name,
+    slug: cat.slug,
+    icon: cat.icon,
+    count: (cat.nonprofits as unknown as { count: number }[])?.[0]?.count || 0,
+  })) || [];
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -143,23 +159,22 @@ export default function HomePage() {
             </p>
           </div>
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {categories.map((category) => (
-              <Card
-                key={category.name}
-                className="group cursor-pointer transition-all hover:border-blue-200 hover:shadow-md"
-              >
-                <CardContent className="flex items-center gap-4 p-6">
-                  <span className="text-3xl">{category.icon}</span>
-                  <div>
-                    <h3 className="font-semibold text-slate-900 group-hover:text-blue-700">
-                      {category.name}
-                    </h3>
-                    <p className="text-sm text-slate-500">
-                      {category.count} nonprofits
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+            {categoriesWithCounts.map((category) => (
+              <Link key={category.id} href={`/directory?category=${category.slug}`}>
+                <Card className="group cursor-pointer transition-all hover:border-blue-200 hover:shadow-md">
+                  <CardContent className="flex items-center gap-4 p-6">
+                    <span className="text-3xl">{category.icon}</span>
+                    <div>
+                      <h3 className="font-semibold text-slate-900 group-hover:text-blue-700">
+                        {category.name}
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        {category.count} nonprofit{category.count !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
           <div className="mt-10 text-center">

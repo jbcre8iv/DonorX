@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Menu, X, User, LogOut, LayoutDashboard } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ const navLinks = [
 ];
 
 export function Header() {
-  const router = useRouter();
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [user, setUser] = React.useState<{ email: string } | null>(null);
@@ -74,15 +74,26 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive =
+              link.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "text-sm font-medium transition-colors",
+                  isActive
+                    ? "text-blue-700"
+                    : "text-slate-600 hover:text-slate-900"
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Desktop Auth Buttons / User Menu */}
@@ -146,16 +157,27 @@ export function Header() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-slate-200 bg-white">
           <nav className="flex flex-col px-4 py-4 space-y-3">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-base font-medium text-slate-600 hover:text-slate-900 transition-colors py-2"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const isActive =
+                link.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "text-base font-medium transition-colors py-2",
+                    isActive
+                      ? "text-blue-700"
+                      : "text-slate-600 hover:text-slate-900"
+                  )}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
             <div className="flex flex-col gap-3 pt-4 border-t border-slate-200">
               {user ? (
                 <>

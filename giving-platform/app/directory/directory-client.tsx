@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
@@ -20,9 +21,24 @@ export function DirectoryClient({
   initialNonprofits,
   categories,
 }: DirectoryClientProps) {
+  const searchParams = useSearchParams();
+  const categorySlug = searchParams.get("category");
+
+  // Find category ID from slug in URL
+  const matchedCategory = categorySlug
+    ? categories.find((c) => c.slug === categorySlug)
+    : null;
+  const initialCategoryId = matchedCategory?.id || null;
+
+  // Debug: log category matching
+  console.log("URL category slug:", categorySlug);
+  console.log("Available categories:", categories.map(c => ({ id: c.id, slug: c.slug })));
+  console.log("Matched category:", matchedCategory);
+  console.log("Initial category ID:", initialCategoryId);
+
   const [search, setSearch] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(
-    null
+    initialCategoryId
   );
   const [selectedNonprofit, setSelectedNonprofit] = React.useState<Nonprofit | null>(null);
   const [modalOpen, setModalOpen] = React.useState(false);
@@ -37,6 +53,11 @@ export function DirectoryClient({
     setModalOpen(false);
     setSelectedNonprofit(null);
   };
+
+  // Update selected category when URL changes
+  React.useEffect(() => {
+    setSelectedCategory(initialCategoryId);
+  }, [initialCategoryId]);
 
   // Reset to page 1 when filters change
   React.useEffect(() => {
