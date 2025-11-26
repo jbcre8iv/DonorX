@@ -275,7 +275,7 @@ export default async function HomePage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-white text-white hover:bg-blue-600"
+                  className="border-white bg-transparent text-white hover:bg-white/10"
                   asChild
                 >
                   <Link href="/contact">Contact Sales</Link>
