@@ -95,9 +95,9 @@ DonorX allows corporate donors to make a single donation that gets split across 
 - [x] Recurring donations (monthly/quarterly/annual)
 - [x] Impact feed (updates from nonprofits)
 - [ ] Quarterly impact report generator
-- [ ] Email notifications system
+- [x] Email notifications system
 - [ ] Donor public profile (optional)
-- [ ] Nonprofit dashboard (submit impact reports)
+- [x] Nonprofit dashboard (submit impact reports)
 
 ## PHASE 9: AI FEATURES (Future)
 - [ ] Claude SDK integration
