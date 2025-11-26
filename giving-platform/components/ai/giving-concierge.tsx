@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Sparkles, Loader2, Minimize2 } from "lucide-react";
+import Link from "next/link";
+import { MessageCircle, X, Send, Sparkles, Loader2, Minimize2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 interface Message {
   id: string;
@@ -17,8 +19,24 @@ export function GivingConcierge() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Check authentication status
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session?.user);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session?.user);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -27,14 +45,14 @@ export function GivingConcierge() {
 
   // Focus input when chat opens
   useEffect(() => {
-    if (isOpen && !isMinimized) {
+    if (isOpen && !isMinimized && isAuthenticated) {
       inputRef.current?.focus();
     }
-  }, [isOpen, isMinimized]);
+  }, [isOpen, isMinimized, isAuthenticated]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || !isAuthenticated) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -170,94 +188,124 @@ export function GivingConcierge() {
 
       {!isMinimized && (
         <>
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 mx-auto mb-4">
-                  <Sparkles className="h-8 w-8 text-emerald-600" />
-                </div>
-                <h3 className="font-semibold text-slate-900 mb-2">
-                  Hi! I'm your Giving Concierge
-                </h3>
-                <p className="text-sm text-slate-600 mb-4">
-                  I can help you discover nonprofits, build your giving
-                  portfolio, and maximize your impact.
-                </p>
-                <div className="space-y-2">
-                  {suggestedQuestions.map((question) => (
-                    <button
-                      key={question}
-                      onClick={() => {
-                        setInput(question);
-                        inputRef.current?.focus();
-                      }}
-                      className="block w-full text-left px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100 rounded-lg text-slate-700 transition-colors"
-                    >
-                      {question}
-                    </button>
-                  ))}
-                </div>
+          {/* Login Required Message */}
+          {!isAuthenticated ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 mb-4">
+                <LogIn className="h-8 w-8 text-emerald-600" />
               </div>
-            ) : (
-              messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={cn(
-                    "flex",
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "max-w-[85%] rounded-2xl px-4 py-2 text-sm",
-                      message.role === "user"
-                        ? "bg-emerald-600 text-white rounded-br-md"
-                        : "bg-slate-100 text-slate-900 rounded-bl-md"
-                    )}
-                  >
-                    {message.content || (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input */}
-          <form
-            onSubmit={handleSubmit}
-            className="p-4 border-t border-slate-200"
-          >
-            <div className="flex items-center gap-2">
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about giving..."
-                disabled={isLoading}
-                className="flex-1 px-4 py-2 text-sm border border-slate-200 rounded-full focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-slate-50"
-              />
-              <Button
-                type="submit"
-                size="sm"
-                disabled={!input.trim() || isLoading}
-                className="h-9 w-9 rounded-full p-0 bg-emerald-600 hover:bg-emerald-700"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
+              <h3 className="font-semibold text-slate-900 mb-2">
+                Sign in to Chat
+              </h3>
+              <p className="text-sm text-slate-600 mb-6">
+                Log in to access your personal Giving Concierge. I can help you discover nonprofits, build your giving portfolio, and maximize your impact.
+              </p>
+              <div className="flex flex-col gap-3 w-full">
+                <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700">
+                  <Link href="/login">
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Log In
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full">
+                  <Link href="/register">
+                    Create Account
+                  </Link>
+                </Button>
+              </div>
             </div>
-            <p className="text-xs text-slate-400 text-center mt-2">
-              Powered by Claude AI
-            </p>
-          </form>
+          ) : (
+            <>
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {messages.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 mx-auto mb-4">
+                      <Sparkles className="h-8 w-8 text-emerald-600" />
+                    </div>
+                    <h3 className="font-semibold text-slate-900 mb-2">
+                      Hi! I'm your Giving Concierge
+                    </h3>
+                    <p className="text-sm text-slate-600 mb-4">
+                      I can help you discover nonprofits, build your giving
+                      portfolio, and maximize your impact.
+                    </p>
+                    <div className="space-y-2">
+                      {suggestedQuestions.map((question) => (
+                        <button
+                          key={question}
+                          onClick={() => {
+                            setInput(question);
+                            inputRef.current?.focus();
+                          }}
+                          className="block w-full text-left px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100 rounded-lg text-slate-700 transition-colors"
+                        >
+                          {question}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={cn(
+                        "flex",
+                        message.role === "user" ? "justify-end" : "justify-start"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "max-w-[85%] rounded-2xl px-4 py-2 text-sm",
+                          message.role === "user"
+                            ? "bg-emerald-600 text-white rounded-br-md"
+                            : "bg-slate-100 text-slate-900 rounded-bl-md"
+                        )}
+                      >
+                        {message.content || (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input */}
+              <form
+                onSubmit={handleSubmit}
+                className="p-4 border-t border-slate-200"
+              >
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Ask about giving..."
+                    disabled={isLoading}
+                    className="flex-1 px-4 py-2 text-sm border border-slate-200 rounded-full focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 disabled:bg-slate-50"
+                  />
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={!input.trim() || isLoading}
+                    className="h-9 w-9 rounded-full p-0 bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-slate-400 text-center mt-2">
+                  Powered by Claude AI
+                </p>
+              </form>
+            </>
+          )}
         </>
       )}
     </div>
