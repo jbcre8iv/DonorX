@@ -45,15 +45,15 @@ DonorX allows corporate donors to make a single donation that gets split across 
 - [x] Pagination
 
 ## PHASE 4: DONATION FLOW (Core Feature)
-- [ ] Donation page layout
-- [ ] Amount input with preset options
-- [ ] Allocation builder UI (visual, intuitive)
-- [ ] Split by specific nonprofits
-- [ ] Split by category (equal distribution)
-- [ ] Real-time allocation percentage display
-- [ ] Stripe Checkout integration
-- [ ] Payment processing
-- [ ] Success/confirmation page
+- [x] Donation page layout
+- [x] Amount input with preset options
+- [x] Allocation builder UI (visual, intuitive)
+- [x] Split by specific nonprofits
+- [x] Split by category (equal distribution)
+- [x] Real-time allocation percentage display
+- [x] Stripe Checkout integration
+- [x] Payment processing
+- [x] Success/confirmation page
 - [ ] Tax receipt generation (PDF)
 - [ ] Receipt email delivery
 
