@@ -2,9 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, LogOut, LayoutDashboard, Settings } from "lucide-react";
+import { Menu, X, LogOut, LayoutDashboard, Settings, Shield } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -19,14 +18,14 @@ const navLinks = [
 ];
 
 interface HeaderProps {
-  initialUser?: { email: string; firstName: string | null; lastName: string | null; avatarUrl: string | null } | null;
+  initialUser?: { email: string; firstName: string | null; lastName: string | null; role: string | null } | null;
 }
 
 export function Header({ initialUser = null }: HeaderProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
-  const [user, setUser] = React.useState<{ email: string; firstName: string | null; lastName: string | null; avatarUrl: string | null } | null>(initialUser);
+  const [user, setUser] = React.useState<{ email: string; firstName: string | null; lastName: string | null; role: string | null } | null>(initialUser);
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
 
   // Helper to get full name from first and last name
@@ -66,20 +65,24 @@ export function Header({ initialUser = null }: HeaderProps) {
 
       if (event === "SIGNED_OUT") {
         setUser(null);
-      } else if (event === "SIGNED_IN" && session?.user) {
-        const { data: profile } = await supabase
-          .from("users")
-          .select("first_name, last_name, avatar_url")
-          .eq("id", session.user.id)
-          .single();
+      } else if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session?.user) {
+        // Only fetch if we don't already have user data with role from server
+        // This prevents overwriting server-fetched data
+        if (!initialUser?.role) {
+          const { data: profile } = await supabase
+            .from("users")
+            .select("first_name, last_name, role")
+            .eq("id", session.user.id)
+            .single();
 
-        if (isMounted) {
-          setUser({
-            email: session.user.email!,
-            firstName: profile?.first_name || null,
-            lastName: profile?.last_name || null,
-            avatarUrl: profile?.avatar_url || null,
-          });
+          if (isMounted) {
+            setUser({
+              email: session.user.email!,
+              firstName: profile?.first_name || null,
+              lastName: profile?.last_name || null,
+              role: profile?.role || null,
+            });
+          }
         }
       }
     });
@@ -88,7 +91,7 @@ export function Header({ initialUser = null }: HeaderProps) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [initialUser?.role]);
 
   const handleLogout = async () => {
     setUserMenuOpen(false);
@@ -153,19 +156,8 @@ export function Header({ initialUser = null }: HeaderProps) {
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
               >
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-semibold overflow-hidden">
-                  {user.avatarUrl ? (
-                    <Image
-                      src={user.avatarUrl}
-                      alt="Profile"
-                      width={24}
-                      height={24}
-                      className="h-full w-full object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    getInitials(user.firstName, user.lastName, user.email)
-                  )}
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
+                  {getInitials(user.firstName, user.lastName, user.email)}
                 </div>
                 <span className="max-w-[150px] truncate">{getFullName(user.firstName, user.lastName) || user.email}</span>
               </button>
@@ -191,6 +183,16 @@ export function Header({ initialUser = null }: HeaderProps) {
                     <Settings className="h-4 w-4" />
                     Account Settings
                   </Link>
+                  {(user.role === "owner" || user.role === "admin") && (
+                    <Link
+                      href="/admin"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      <Shield className="h-4 w-4" />
+                      Admin Panel
+                    </Link>
+                  )}
                   <div className="border-t border-slate-100 mt-1 pt-1">
                     <button
                       onClick={handleLogout}
@@ -259,19 +261,8 @@ export function Header({ initialUser = null }: HeaderProps) {
               {user ? (
                 <>
                   <div className="flex items-center gap-3 pb-2">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold overflow-hidden">
-                      {user.avatarUrl ? (
-                        <Image
-                          src={user.avatarUrl}
-                          alt="Profile"
-                          width={40}
-                          height={40}
-                          className="h-full w-full object-cover"
-                          unoptimized
-                        />
-                      ) : (
-                        getInitials(user.firstName, user.lastName, user.email)
-                      )}
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold">
+                      {getInitials(user.firstName, user.lastName, user.email)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-slate-900 truncate">{getFullName(user.firstName, user.lastName) || "User"}</p>
