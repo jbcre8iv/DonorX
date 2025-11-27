@@ -8,6 +8,9 @@ export const metadata = {
   title: "Nonprofit Directory",
 };
 
+// Force dynamic rendering to always fetch fresh data from Supabase
+export const dynamic = 'force-dynamic';
+
 function DirectoryLoading() {
   return (
     <div className="py-12">
