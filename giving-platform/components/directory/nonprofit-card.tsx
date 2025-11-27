@@ -22,7 +22,7 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
               <img
                 src={nonprofit.logo_url}
                 alt={`${nonprofit.name} logo`}
-                className="h-12 w-12 rounded-lg object-cover flex-shrink-0"
+                className="h-12 w-12 rounded-lg object-contain flex-shrink-0"
               />
             ) : (
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100 text-slate-600 font-semibold text-lg flex-shrink-0">

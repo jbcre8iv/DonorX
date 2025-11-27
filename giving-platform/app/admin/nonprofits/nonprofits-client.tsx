@@ -36,15 +36,27 @@ interface NonprofitsClientProps {
 
 export function NonprofitsClient({ nonprofits, categories }: NonprofitsClientProps) {
   const [showForm, setShowForm] = useState(false);
+  const [editingNonprofit, setEditingNonprofit] = useState<Nonprofit | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+
+  const handleEdit = (nonprofit: Nonprofit) => {
+    setEditingNonprofit(nonprofit);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingNonprofit(null);
+  };
 
   const statusOptions = [
     { value: "all", label: "All Status" },
     { value: "approved", label: "Approved" },
     { value: "pending", label: "Pending" },
     { value: "rejected", label: "Rejected" },
+    { value: "missing_ein", label: "Missing EIN" },
   ];
 
   const categoryOptions = [
@@ -63,7 +75,9 @@ export function NonprofitsClient({ nonprofits, categories }: NonprofitsClientPro
       }
 
       // Status filter
-      if (statusFilter !== "all" && np.status !== statusFilter) {
+      if (statusFilter === "missing_ein") {
+        if (np.ein) return false;
+      } else if (statusFilter !== "all" && np.status !== statusFilter) {
         return false;
       }
 
@@ -78,6 +92,7 @@ export function NonprofitsClient({ nonprofits, categories }: NonprofitsClientPro
 
   const pendingCount = nonprofits.filter((np) => np.status === "pending").length;
   const approvedCount = nonprofits.filter((np) => np.status === "approved").length;
+  const missingEinCount = nonprofits.filter((np) => !np.ein).length;
 
   return (
     <div className="space-y-6">
@@ -87,6 +102,9 @@ export function NonprofitsClient({ nonprofits, categories }: NonprofitsClientPro
           <h1 className="text-2xl font-semibold text-slate-900">Nonprofits</h1>
           <p className="text-slate-600">
             {approvedCount} approved, {pendingCount} pending
+            {missingEinCount > 0 && (
+              <span className="text-amber-600"> ({missingEinCount} missing EIN)</span>
+            )}
           </p>
         </div>
         <Button onClick={() => setShowForm(true)}>
@@ -144,7 +162,7 @@ export function NonprofitsClient({ nonprofits, categories }: NonprofitsClientPro
               </p>
             </div>
           ) : (
-            <NonprofitTable nonprofits={filteredNonprofits} />
+            <NonprofitTable nonprofits={filteredNonprofits} onEdit={handleEdit} />
           )}
         </CardContent>
       </Card>
@@ -152,8 +170,9 @@ export function NonprofitsClient({ nonprofits, categories }: NonprofitsClientPro
       {/* Add/Edit Form Modal */}
       {showForm && (
         <NonprofitForm
+          nonprofit={editingNonprofit}
           categories={categories}
-          onClose={() => setShowForm(false)}
+          onClose={handleCloseForm}
         />
       )}
     </div>

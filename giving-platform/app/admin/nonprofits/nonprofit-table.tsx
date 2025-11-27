@@ -11,18 +11,23 @@ interface Nonprofit {
   id: string;
   name: string;
   ein: string | null;
+  description: string | null;
+  mission: string | null;
+  website: string | null;
+  logo_url: string | null;
   status: string;
   is_featured: boolean;
-  website: string | null;
+  category_id: string | null;
   category: { id: string; name: string } | null;
   total_received: number;
 }
 
 interface NonprofitTableProps {
   nonprofits: Nonprofit[];
+  onEdit: (nonprofit: Nonprofit) => void;
 }
 
-export function NonprofitTable({ nonprofits }: NonprofitTableProps) {
+export function NonprofitTable({ nonprofits, onEdit }: NonprofitTableProps) {
   const [isPending, startTransition] = useTransition();
   const [actionId, setActionId] = useState<string | null>(null);
 
@@ -80,9 +85,17 @@ export function NonprofitTable({ nonprofits }: NonprofitTableProps) {
             <tr key={nonprofit.id} className="text-sm">
               <td className="py-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600 font-semibold">
-                    {nonprofit.name.charAt(0)}
-                  </div>
+                  {nonprofit.logo_url ? (
+                    <img
+                      src={nonprofit.logo_url}
+                      alt={nonprofit.name}
+                      className="h-10 w-10 rounded-lg object-contain"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600 font-semibold">
+                      {nonprofit.name.charAt(0)}
+                    </div>
+                  )}
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-slate-900">
@@ -108,7 +121,15 @@ export function NonprofitTable({ nonprofits }: NonprofitTableProps) {
                   </div>
                 </div>
               </td>
-              <td className="py-4 text-slate-600">{nonprofit.ein || "N/A"}</td>
+              <td className="py-4">
+                {nonprofit.ein ? (
+                  <span className="text-slate-600">{nonprofit.ein}</span>
+                ) : (
+                  <Badge variant="warning" className="text-xs">
+                    Missing EIN
+                  </Badge>
+                )}
+              </td>
               <td className="py-4">
                 <Badge variant="secondary">
                   {nonprofit.category?.name || "Uncategorized"}
@@ -176,6 +197,16 @@ export function NonprofitTable({ nonprofits }: NonprofitTableProps) {
                       />
                     </Button>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-blue-600 hover:bg-blue-50"
+                    onClick={() => onEdit(nonprofit)}
+                    disabled={isPending && actionId === nonprofit.id}
+                    title="Edit nonprofit"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
