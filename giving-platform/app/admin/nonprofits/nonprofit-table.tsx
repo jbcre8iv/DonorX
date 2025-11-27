@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ExternalLink, CheckCircle, XCircle, Star, Trash2, Edit } from "lucide-react";
+import { ExternalLink, CheckCircle, XCircle, Trash2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
-import { approveNonprofit, rejectNonprofit, toggleFeatured, deleteNonprofit } from "./actions";
+import { approveNonprofit, rejectNonprofit, deleteNonprofit } from "./actions";
 
 interface Nonprofit {
   id: string;
@@ -43,14 +43,6 @@ export function NonprofitTable({ nonprofits, onEdit }: NonprofitTableProps) {
     setActionId(id);
     startTransition(async () => {
       await rejectNonprofit(id);
-      setActionId(null);
-    });
-  };
-
-  const handleToggleFeatured = (id: string, currentFeatured: boolean) => {
-    setActionId(id);
-    startTransition(async () => {
-      await toggleFeatured(id, !currentFeatured);
       setActionId(null);
     });
   };
@@ -174,28 +166,6 @@ export function NonprofitTable({ nonprofits, onEdit }: NonprofitTableProps) {
                         <XCircle className="h-4 w-4" />
                       </Button>
                     </>
-                  )}
-                  {nonprofit.status === "approved" && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={
-                        nonprofit.is_featured
-                          ? "text-amber-600 hover:bg-amber-50"
-                          : "text-slate-400 hover:bg-slate-50"
-                      }
-                      onClick={() =>
-                        handleToggleFeatured(nonprofit.id, nonprofit.is_featured)
-                      }
-                      disabled={isPending && actionId === nonprofit.id}
-                      title={nonprofit.is_featured ? "Remove from featured" : "Add to featured"}
-                    >
-                      <Star
-                        className={`h-4 w-4 ${
-                          nonprofit.is_featured ? "fill-current" : ""
-                        }`}
-                      />
-                    </Button>
                   )}
                   <Button
                     variant="ghost"
