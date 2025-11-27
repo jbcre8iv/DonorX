@@ -1,19 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { requireOwner } from "@/lib/auth/permissions";
 import Anthropic from "@anthropic-ai/sdk";
 
 export async function approveNonprofit(nonprofitId: string) {
-  const supabase = await createClient();
+  // Use admin client to bypass RLS for admin operations
+  const adminSupabase = createAdminClient();
 
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("nonprofits")
-    .update({ status: "approved" })
+    .update({ status: "approved", approved_at: new Date().toISOString() })
     .eq("id", nonprofitId);
 
   if (error) {
+    console.error("Approve nonprofit error:", error);
     return { error: error.message };
   }
 
@@ -24,14 +26,16 @@ export async function approveNonprofit(nonprofitId: string) {
 }
 
 export async function rejectNonprofit(nonprofitId: string) {
-  const supabase = await createClient();
+  // Use admin client to bypass RLS for admin operations
+  const adminSupabase = createAdminClient();
 
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("nonprofits")
     .update({ status: "rejected" })
     .eq("id", nonprofitId);
 
   if (error) {
+    console.error("Reject nonprofit error:", error);
     return { error: error.message };
   }
 
@@ -57,10 +61,11 @@ export async function deleteNonprofit(nonprofitId: string) {
     return { error: ownerCheck.error };
   }
 
-  const supabase = await createClient();
+  // Use admin client to bypass RLS for admin operations
+  const adminSupabase = createAdminClient();
 
   // First check if there are any allocations to this nonprofit
-  const { data: allocations } = await supabase
+  const { data: allocations } = await adminSupabase
     .from("allocations")
     .select("id")
     .eq("nonprofit_id", nonprofitId)
@@ -70,12 +75,13 @@ export async function deleteNonprofit(nonprofitId: string) {
     return { error: "Cannot delete nonprofit with existing donations" };
   }
 
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("nonprofits")
     .delete()
     .eq("id", nonprofitId);
 
   if (error) {
+    console.error("Delete nonprofit error:", error);
     return { error: error.message };
   }
 
@@ -86,7 +92,8 @@ export async function deleteNonprofit(nonprofitId: string) {
 }
 
 export async function createNonprofit(formData: FormData) {
-  const supabase = await createClient();
+  // Use admin client to bypass RLS for admin operations
+  const adminSupabase = createAdminClient();
 
   const name = formData.get("name") as string;
   const ein = formData.get("ein") as string;
@@ -100,7 +107,7 @@ export async function createNonprofit(formData: FormData) {
     return { error: "Name is required" };
   }
 
-  const { error } = await supabase.from("nonprofits").insert({
+  const { error } = await adminSupabase.from("nonprofits").insert({
     name,
     ein,
     description: description || null,
@@ -109,9 +116,11 @@ export async function createNonprofit(formData: FormData) {
     category_id: categoryId || null,
     logo_url: logoUrl || null,
     status: "approved", // Admin-added nonprofits are auto-approved
+    approved_at: new Date().toISOString(),
   });
 
   if (error) {
+    console.error("Create nonprofit error:", error);
     return { error: error.message };
   }
 
@@ -122,7 +131,8 @@ export async function createNonprofit(formData: FormData) {
 }
 
 export async function updateNonprofit(nonprofitId: string, formData: FormData) {
-  const supabase = await createClient();
+  // Use admin client to bypass RLS for admin operations
+  const adminSupabase = createAdminClient();
 
   const name = formData.get("name") as string;
   const ein = formData.get("ein") as string;
@@ -136,7 +146,7 @@ export async function updateNonprofit(nonprofitId: string, formData: FormData) {
     return { error: "Name is required" };
   }
 
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("nonprofits")
     .update({
       name,
@@ -150,6 +160,7 @@ export async function updateNonprofit(nonprofitId: string, formData: FormData) {
     .eq("id", nonprofitId);
 
   if (error) {
+    console.error("Update nonprofit error:", error);
     return { error: error.message };
   }
 
