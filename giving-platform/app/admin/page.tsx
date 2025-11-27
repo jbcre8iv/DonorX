@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { PendingApprovalButtons } from "./pending-approval-buttons";
 
 export const metadata = {
   title: "Admin Dashboard",
@@ -202,7 +203,7 @@ export default async function AdminDashboardPage() {
                     key={nonprofit.id}
                     className="flex items-center justify-between rounded-lg border border-slate-200 p-3"
                   >
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="font-medium text-slate-900">{nonprofit.name}</p>
                       <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
                         {nonprofit.ein && <span>EIN: {nonprofit.ein}</span>}
@@ -212,9 +213,12 @@ export default async function AdminDashboardPage() {
                         </span>
                       </div>
                     </div>
-                    <Badge variant="secondary">
-                      {getCategoryName(nonprofit.category_id)}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">
+                        {getCategoryName(nonprofit.category_id)}
+                      </Badge>
+                      <PendingApprovalButtons nonprofitId={nonprofit.id} />
+                    </div>
                   </div>
                 ))}
                 {pendingNonprofits.length > 5 && (
