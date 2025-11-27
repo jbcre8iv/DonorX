@@ -1,16 +1,52 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, ReactNode } from "react";
 import Link from "next/link";
 import { MessageCircle, X, Send, Sparkles, Loader2, Minimize2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { NonprofitMiniCard } from "./nonprofit-mini-card";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+}
+
+// Regex to match [[NONPROFIT:id:name]] format
+const NONPROFIT_CARD_REGEX = /\[\[NONPROFIT:([^:]+):([^\]]+)\]\]/g;
+
+// Parse message content and render nonprofit cards
+function renderMessageContent(content: string): ReactNode[] {
+  const parts: ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+
+  // Reset regex lastIndex
+  NONPROFIT_CARD_REGEX.lastIndex = 0;
+
+  while ((match = NONPROFIT_CARD_REGEX.exec(content)) !== null) {
+    // Add text before the match
+    if (match.index > lastIndex) {
+      parts.push(content.slice(lastIndex, match.index));
+    }
+
+    // Add the nonprofit card
+    const [, id, name] = match;
+    parts.push(
+      <NonprofitMiniCard key={`${id}-${match.index}`} id={id} name={name} />
+    );
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text after last match
+  if (lastIndex < content.length) {
+    parts.push(content.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : [content];
 }
 
 export function GivingConcierge() {
@@ -262,7 +298,15 @@ export function GivingConcierge() {
                             : "bg-slate-100 text-slate-900 rounded-bl-md"
                         )}
                       >
-                        {message.content || (
+                        {message.content ? (
+                          message.role === "assistant" ? (
+                            <div className="whitespace-pre-wrap">
+                              {renderMessageContent(message.content)}
+                            </div>
+                          ) : (
+                            message.content
+                          )
+                        ) : (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         )}
                       </div>

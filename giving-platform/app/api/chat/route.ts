@@ -37,18 +37,18 @@ export async function POST(request: Request) {
       .eq("status", "approved")
       .limit(50);
 
-    // Build context from nonprofits
+    // Build context from nonprofits with IDs for card rendering
     const nonprofitContext = nonprofits
       ?.map((np) => {
         const cat = np.category as { name: string } | { name: string }[] | null;
         const category = Array.isArray(cat)
           ? cat[0]?.name
           : cat?.name;
-        return `- ${np.name} (${category || "General"}): ${np.mission || "No mission provided"}`;
+        return `- ID: ${np.id} | Name: ${np.name} | Category: ${category || "General"} | Mission: ${np.mission || "No mission provided"}`;
       })
       .join("\n");
 
-    const contextMessage = `Available nonprofits on DonorX:\n${nonprofitContext}`;
+    const contextMessage = `Available nonprofits on DonorX (use [[NONPROFIT:id:name]] format when recommending):\n${nonprofitContext}`;
 
     // Build messages array with context
     const apiMessages: Array<{ role: "user" | "assistant"; content: string }> = [
