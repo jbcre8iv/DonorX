@@ -49,7 +49,7 @@ export default async function DonorPublicProfilePage({
   }
 
   // Get donation stats (only if user allows showing stats)
-  let stats = {
+  const stats = {
     totalDonated: 0,
     donationCount: 0,
     nonprofitsSupported: 0,

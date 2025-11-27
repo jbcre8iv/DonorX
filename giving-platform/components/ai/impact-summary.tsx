@@ -66,7 +66,7 @@ export function ImpactSummary({ nonprofitId, className }: ImpactSummaryProps) {
             </div>
             <p className="text-slate-600 mb-4">
               Generate an AI-powered summary of your impact across all nonprofits
-              you've supported.
+              you&apos;ve supported.
             </p>
             <Button onClick={generateSummary} disabled={isLoading}>
               {isLoading ? (

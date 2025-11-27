@@ -1,17 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+// Use useSyncExternalStore to safely access window.location after hydration
+function useOrigin() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => window.location.origin,
+    () => ""
+  );
+}
+
 export function CopyLinkButton() {
   const [copied, setCopied] = useState(false);
-  const [registrationUrl, setRegistrationUrl] = useState("/register");
-
-  // Set the full URL only on client after hydration to avoid mismatch
-  useEffect(() => {
-    setRegistrationUrl(`${window.location.origin}/register`);
-  }, []);
+  const origin = useOrigin();
+  const registrationUrl = origin ? `${origin}/register` : "/register";
 
   const handleCopy = async () => {
     try {

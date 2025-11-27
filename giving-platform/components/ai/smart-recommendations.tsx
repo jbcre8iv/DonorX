@@ -158,7 +158,7 @@ export function SmartRecommendations({ onSelectNonprofit }: SmartRecommendations
                           {rec.nonprofit.mission}
                         </p>
                         <p className="text-sm text-emerald-700 mt-2 italic">
-                          "{rec.reason}"
+                          &quot;{rec.reason}&quot;
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-2">

@@ -224,7 +224,7 @@ export function GivingConcierge() {
                       <Sparkles className="h-8 w-8 text-emerald-600" />
                     </div>
                     <h3 className="font-semibold text-slate-900 mb-2">
-                      Hi! I'm your Giving Concierge
+                      Hi! I&apos;m your Giving Concierge
                     </h3>
                     <p className="text-sm text-slate-600 mb-4">
                       I can help you discover nonprofits, build your giving
