@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { AmountInput } from "@/components/donation/amount-input";
 import { AllocationBuilder, type AllocationItem } from "@/components/donation/allocation-builder";
 import { FrequencySelector, type DonationFrequency } from "@/components/donation/frequency-selector";
+import { type Allocation as AIAllocation } from "@/components/ai/allocation-advisor";
 import { formatCurrency } from "@/lib/utils";
 import { createCheckoutSession, type AllocationInput } from "./actions";
 import type { Nonprofit, Category } from "@/types/database";
@@ -60,6 +61,79 @@ export function DonateClient({
   const amountCents = amount * 100;
   const isValidAmount = amountCents >= config.features.minDonationCents;
 
+  // Handler for applying AI allocation recommendations
+  const handleApplyAiAllocation = (aiAllocations: AIAllocation[]) => {
+    // Convert AI allocations to AllocationItem format
+    // AI returns category names (e.g., "Education", "Healthcare") which we need to match
+    const newAllocations: AllocationItem[] = [];
+
+    for (const aiAlloc of aiAllocations) {
+      // Try to find a matching nonprofit by name (fuzzy match)
+      const matchingNonprofit = nonprofits.find(
+        (n) => n.name.toLowerCase().includes(aiAlloc.name.toLowerCase()) ||
+               aiAlloc.name.toLowerCase().includes(n.name.toLowerCase())
+      );
+
+      // Try to find a matching category
+      const matchingCategory = categories.find(
+        (c) => c.name.toLowerCase() === aiAlloc.name.toLowerCase() ||
+               aiAlloc.name.toLowerCase().includes(c.name.toLowerCase())
+      );
+
+      if (matchingNonprofit) {
+        newAllocations.push({
+          id: crypto.randomUUID(),
+          type: "nonprofit",
+          targetId: matchingNonprofit.id,
+          targetName: matchingNonprofit.name,
+          percentage: aiAlloc.percentage,
+        });
+      } else if (matchingCategory) {
+        newAllocations.push({
+          id: crypto.randomUUID(),
+          type: "category",
+          targetId: matchingCategory.id,
+          targetName: matchingCategory.name,
+          percentage: aiAlloc.percentage,
+        });
+      } else {
+        // If no match found, try to use as category name directly
+        // This handles cases where AI suggests categories like "Education"
+        const categoryByName = categories.find(
+          (c) => c.name.toLowerCase() === aiAlloc.name.toLowerCase()
+        );
+        if (categoryByName) {
+          newAllocations.push({
+            id: crypto.randomUUID(),
+            type: "category",
+            targetId: categoryByName.id,
+            targetName: categoryByName.name,
+            percentage: aiAlloc.percentage,
+          });
+        }
+      }
+    }
+
+    // Only update if we found matches
+    if (newAllocations.length > 0) {
+      // Normalize percentages to sum to 100
+      const totalPercentage = newAllocations.reduce((sum, a) => sum + a.percentage, 0);
+      if (totalPercentage !== 100 && totalPercentage > 0) {
+        const scale = 100 / totalPercentage;
+        let remaining = 100;
+        newAllocations.forEach((a, i) => {
+          if (i === newAllocations.length - 1) {
+            a.percentage = remaining;
+          } else {
+            a.percentage = Math.round(a.percentage * scale);
+            remaining -= a.percentage;
+          }
+        });
+      }
+      setAllocations(newAllocations);
+    }
+  };
+
   const handleProceedToPayment = async () => {
     if (!isValidAllocation || !isValidAmount) return;
 
@@ -94,13 +168,15 @@ export function DonateClient({
     <div className="py-12">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         {/* Back Link */}
-        <Link
-          href="/directory"
-          className="inline-flex items-center text-sm text-slate-600 hover:text-slate-900 mb-8"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Directory
-        </Link>
+        <div className="mb-8">
+          <Link
+            href="/directory"
+            className="inline-flex items-center text-sm text-slate-600 hover:text-slate-900"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Directory
+          </Link>
+        </div>
 
         {/* Header */}
         <div className="text-center mb-10">
@@ -177,6 +253,8 @@ export function DonateClient({
               totalAmountCents={amountCents}
               nonprofits={nonprofits}
               categories={categories}
+              donationAmount={amount}
+              onApplyAiAllocation={handleApplyAiAllocation}
             />
           </div>
 

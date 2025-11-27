@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { logout } from "@/app/(auth)/actions";
-import { ProfileForm, PasswordForm } from "./settings-forms";
+import { AvatarUpload, ProfileForm, PasswordForm } from "./settings-forms";
 
 export const metadata = {
   title: "Settings",
@@ -59,8 +59,15 @@ export default async function SettingsPage() {
           <CardDescription>Your personal information</CardDescription>
         </CardHeader>
         <CardContent>
+          <AvatarUpload
+            initialAvatarUrl={profile?.avatar_url || null}
+            firstName={profile?.first_name || null}
+            lastName={profile?.last_name || null}
+            email={user.email || ""}
+          />
           <ProfileForm
-            initialFullName={profile?.full_name || ""}
+            initialFirstName={profile?.first_name || ""}
+            initialLastName={profile?.last_name || ""}
             email={user.email || ""}
             role={profile?.role || "Member"}
           />

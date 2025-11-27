@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Loader2, Lightbulb, PieChart, ArrowRight } from "lucide-react";
+import { Sparkles, Loader2, Lightbulb, PieChart, ArrowRight, X, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 
-interface Allocation {
+export interface Allocation {
   name: string;
   percentage: number;
   amount: number;
@@ -27,31 +25,43 @@ interface AllocationAdvice {
   alternativeStrategies: AlternativeStrategy[];
 }
 
+interface NonprofitOption {
+  id: string;
+  name: string;
+}
+
 interface AllocationAdvisorProps {
   amount?: number;
+  nonprofits?: NonprofitOption[];
   onApplyAllocation?: (allocations: Allocation[]) => void;
   className?: string;
 }
 
 export function AllocationAdvisor({
-  amount: initialAmount,
+  amount: externalAmount,
   onApplyAllocation,
   className,
 }: AllocationAdvisorProps) {
-  const [amount, setAmount] = useState(initialAmount?.toString() || "");
+  // Use external amount if provided, otherwise allow manual input
+  const hasExternalAmount = externalAmount !== undefined && externalAmount > 0;
   const [goals, setGoals] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStrategy, setLoadingStrategy] = useState<string | null>(null);
   const [advice, setAdvice] = useState<AllocationAdvice | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
-  const getAdvice = async () => {
-    const numAmount = parseFloat(amount);
-    if (!numAmount || numAmount <= 0) {
-      setError("Please enter a valid donation amount");
+  // The actual amount to use for calculations
+  const currentAmount = hasExternalAmount ? externalAmount : 0;
+
+  const getAdvice = async (strategy?: string) => {
+    if (!currentAmount || currentAmount <= 0) {
+      setError("Please set a donation amount above");
       return;
     }
 
     setIsLoading(true);
+    setLoadingStrategy(strategy || null);
     setError(null);
 
     try {
@@ -59,8 +69,9 @@ export function AllocationAdvisor({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: numAmount,
+          amount: currentAmount,
           goals: goals || undefined,
+          strategy: strategy || undefined,
         }),
       });
 
@@ -79,7 +90,13 @@ export function AllocationAdvisor({
       setError("Unable to generate advice. Please try again.");
     } finally {
       setIsLoading(false);
+      setLoadingStrategy(null);
     }
+  };
+
+  const handleStrategyClick = (strategyName: string) => {
+    setLoadingStrategy(strategyName);
+    getAdvice(strategyName);
   };
 
   const getColorClass = (index: number) => {
@@ -94,9 +111,93 @@ export function AllocationAdvisor({
     return colors[index % colors.length];
   };
 
+  // Remove an allocation and redistribute percentages proportionally
+  const handleRemoveAllocation = (indexToRemove: number) => {
+    if (!advice) return;
+
+    const remainingAllocations = advice.allocations.filter((_, i) => i !== indexToRemove);
+
+    if (remainingAllocations.length === 0) {
+      // If all allocations removed, clear advice
+      setAdvice(null);
+      return;
+    }
+
+    // Redistribute percentages proportionally
+    const totalRemainingPercentage = remainingAllocations.reduce((sum, a) => sum + a.percentage, 0);
+
+    const adjustedAllocations = remainingAllocations.map((alloc) => {
+      const newPercentage = Math.round((alloc.percentage / totalRemainingPercentage) * 100);
+      return {
+        ...alloc,
+        percentage: newPercentage,
+        amount: (currentAmount * newPercentage) / 100,
+      };
+    });
+
+    // Ensure percentages sum to 100 by adjusting the last one
+    const totalPercentage = adjustedAllocations.reduce((sum, a) => sum + a.percentage, 0);
+    if (totalPercentage !== 100 && adjustedAllocations.length > 0) {
+      adjustedAllocations[adjustedAllocations.length - 1].percentage += 100 - totalPercentage;
+      adjustedAllocations[adjustedAllocations.length - 1].amount =
+        (currentAmount * adjustedAllocations[adjustedAllocations.length - 1].percentage) / 100;
+    }
+
+    setAdvice({
+      ...advice,
+      allocations: adjustedAllocations,
+    });
+  };
+
   return (
-    <Card className={className}>
-      <CardHeader>
+    <>
+      {/* Full-screen loading modal */}
+      {isLoading && advice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          {/* Modal */}
+          <div className="relative bg-white rounded-2xl shadow-2xl p-8 mx-4 max-w-md w-full animate-in fade-in zoom-in duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="p-4 bg-emerald-100 rounded-full mb-4">
+                <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                {loadingStrategy
+                  ? `Applying "${loadingStrategy}"`
+                  : "Generating Recommendations"}
+              </h3>
+              <p className="text-sm text-slate-600 mb-4">
+                Our AI is analyzing your preferences and creating personalized allocation suggestions.
+              </p>
+              <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-emerald-500 h-full rounded-full w-1/3"
+                  style={{
+                    animation: "indeterminate 1.5s ease-in-out infinite",
+                  }}
+                />
+              </div>
+              <style jsx>{`
+                @keyframes indeterminate {
+                  0% {
+                    transform: translateX(-100%);
+                  }
+                  100% {
+                    transform: translateX(400%);
+                  }
+                }
+              `}</style>
+              <p className="text-xs text-slate-500 mt-3">
+                Just a moment...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Card className={className}>
+        <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <PieChart className="h-5 w-5 text-emerald-600" />
           AI Allocation Advisor
@@ -105,23 +206,20 @@ export function AllocationAdvisor({
       <CardContent className="space-y-4">
         {/* Input Form */}
         <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Donation Amount
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
-                $
-              </span>
-              <Input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="5000"
-                className="pl-7"
-              />
+          {/* Synced donation amount display */}
+          {hasExternalAmount && (
+            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-600">Donation Amount</span>
+                <span className="text-lg font-semibold text-slate-900">
+                  {formatCurrency(currentAmount * 100)}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Synced from above
+              </p>
             </div>
-          </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Giving Goals (optional)
@@ -135,8 +233,8 @@ export function AllocationAdvisor({
             />
           </div>
           <Button
-            onClick={getAdvice}
-            disabled={!amount || isLoading}
+            onClick={() => getAdvice()}
+            disabled={!currentAmount || isLoading}
             className="w-full"
           >
             {isLoading ? (
@@ -198,31 +296,58 @@ export function AllocationAdvisor({
             </div>
 
             {/* Allocation Details */}
-            <div className="space-y-3">
-              {advice.allocations.map((alloc, i) => (
-                <div
-                  key={i}
-                  className="p-4 rounded-lg border border-slate-200 bg-white"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
+            <div className="space-y-2">
+              {advice.allocations.map((alloc, i) => {
+                const isExpanded = expandedIndex === i;
+                return (
+                  <div
+                    key={i}
+                    className="rounded-lg border border-slate-200 bg-white overflow-hidden"
+                  >
+                    {/* Collapsed header - always visible */}
+                    <div
+                      className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50 transition-colors"
+                      onClick={() => setExpandedIndex(isExpanded ? null : i)}
+                    >
+                      <div className="flex items-center gap-2 flex-1">
                         <div
-                          className={`w-3 h-3 rounded-full ${getColorClass(i)}`}
+                          className={`w-3 h-3 rounded-full flex-shrink-0 ${getColorClass(i)}`}
                         />
                         <h5 className="font-medium text-slate-900">{alloc.name}</h5>
                       </div>
-                      <p className="text-sm text-slate-600 mt-1">{alloc.reason}</p>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <div className="text-right">
+                          <p className="font-semibold text-slate-900 text-sm">
+                            {formatCurrency(alloc.amount * 100)}
+                          </p>
+                          <p className="text-xs text-slate-500">{alloc.percentage}%</p>
+                        </div>
+                        <ChevronDown
+                          className={`h-4 w-4 text-slate-400 transition-transform ${
+                            isExpanded ? "rotate-180" : ""
+                          }`}
+                        />
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-slate-900">
-                        {formatCurrency(alloc.amount * 100)}
-                      </p>
-                      <p className="text-sm text-slate-500">{alloc.percentage}%</p>
-                    </div>
+                    {/* Expanded content */}
+                    {isExpanded && (
+                      <div className="px-3 pb-3 pt-0 border-t border-slate-100">
+                        <p className="text-sm text-slate-600 mt-2">{alloc.reason}</p>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveAllocation(i);
+                          }}
+                          className="mt-3 inline-flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                          Remove allocation
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Tips */}
@@ -251,20 +376,34 @@ export function AllocationAdvisor({
               advice.alternativeStrategies.length > 0 && (
                 <div>
                   <h4 className="text-sm font-medium text-slate-700 mb-2">
-                    Alternative Strategies
+                    Try a Different Approach
                   </h4>
                   <div className="flex flex-wrap gap-2">
-                    {advice.alternativeStrategies.map((strat, i) => (
-                      <Badge
-                        key={i}
-                        variant="outline"
-                        className="cursor-pointer hover:bg-slate-100"
-                        title={strat.description}
-                      >
-                        {strat.name}
-                      </Badge>
-                    ))}
+                    {advice.alternativeStrategies.map((strat, i) => {
+                      const isStrategyLoading = loadingStrategy === strat.name;
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => handleStrategyClick(strat.name)}
+                          disabled={isLoading}
+                          className={`inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed ${
+                            isStrategyLoading
+                              ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                              : "border-slate-200 bg-white text-slate-700 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 disabled:opacity-50"
+                          }`}
+                          title={strat.description}
+                        >
+                          {isStrategyLoading && (
+                            <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                          )}
+                          {strat.name}
+                        </button>
+                      );
+                    })}
                   </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Click a strategy to regenerate recommendations
+                  </p>
                 </div>
               )}
 
@@ -275,12 +414,13 @@ export function AllocationAdvisor({
                 className="w-full"
               >
                 <ArrowRight className="mr-2 h-4 w-4" />
-                Apply This Allocation
+                Apply All Allocations
               </Button>
             )}
           </div>
         )}
       </CardContent>
     </Card>
+    </>
   );
 }

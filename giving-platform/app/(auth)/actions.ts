@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { generateInitialsAvatar } from "@/lib/avatar";
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -27,9 +28,11 @@ export async function register(formData: FormData) {
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const fullName = formData.get("fullName") as string;
+  const firstName = formData.get("firstName") as string;
+  const lastName = formData.get("lastName") as string;
   const organizationName = formData.get("organizationName") as string;
   const organizationType = formData.get("organizationType") as string;
+  const fullName = `${firstName} ${lastName}`.trim();
 
   // First, sign up the user
   const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -65,13 +68,42 @@ export async function register(formData: FormData) {
       return { error: `Failed to create organization: ${orgError.message}` };
     }
 
+    // Generate and upload initial avatar
+    let avatarUrl: string | null = null;
+    try {
+      const avatarSvg = generateInitialsAvatar(firstName, lastName, email);
+      const avatarBlob = new Blob([avatarSvg], { type: "image/svg+xml" });
+      const fileName = `${authData.user.id}/avatar.svg`;
+
+      const { error: uploadError } = await adminClient.storage
+        .from("avatars")
+        .upload(fileName, avatarBlob, {
+          upsert: true,
+          contentType: "image/svg+xml",
+        });
+
+      if (!uploadError) {
+        const { data: { publicUrl } } = adminClient.storage
+          .from("avatars")
+          .getPublicUrl(fileName);
+        avatarUrl = publicUrl;
+      } else {
+        console.error("Avatar upload error:", uploadError);
+      }
+    } catch (avatarError) {
+      console.error("Error generating avatar:", avatarError);
+      // Continue without avatar - not a critical error
+    }
+
     // Create the user profile
     const { error: userError } = await adminClient.from("users").insert({
       id: authData.user.id,
       email: email,
-      full_name: fullName,
+      first_name: firstName,
+      last_name: lastName,
       organization_id: orgData.id,
       role: "owner",
+      avatar_url: avatarUrl,
     });
 
     if (userError) {

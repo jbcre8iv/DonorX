@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       return new Response("Unauthorized", { status: 401 });
     }
 
-    const { amount, goals, selectedNonprofits, preferences } = await request.json();
+    const { amount, goals, selectedNonprofits, preferences, strategy } = await request.json();
 
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
@@ -57,13 +57,18 @@ export async function POST(request: Request) {
         ? `Currently selected nonprofits: ${selectedNonprofits.map((np: { name: string }) => np.name).join(", ")}`
         : "No nonprofits selected yet.";
 
+    // Build strategy instruction if provided
+    const strategyInstruction = strategy
+      ? `\n\nIMPORTANT: The donor has specifically requested the "${strategy}" allocation strategy. Please generate allocations following this approach.`
+      : "";
+
     // Build user prompt
     const userPrompt = `A donor wants advice on how to allocate their donation. Here are the details:
 
 Donation Amount: $${amount.toLocaleString()}
 Giving Goals: ${goals || "Not specified"}
 Preferences: ${preferences || "None specified"}
-${selectedList}
+${selectedList}${strategyInstruction}
 
 Available Categories:
 ${categoryList}

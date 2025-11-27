@@ -85,7 +85,8 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-              {config.tagline}
+              One Donation.<br />
+              <span className="whitespace-nowrap">Unlimited Impact.</span>
             </h1>
             <p className="mt-6 text-lg text-slate-600 sm:text-xl">
               The giving platform for corporations and family offices. Make one

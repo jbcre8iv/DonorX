@@ -81,14 +81,24 @@ export default function RegisterPage() {
               options={organizationTypes}
               defaultValue="corporation"
             />
-            <Input
-              name="fullName"
-              label="Your Full Name"
-              type="text"
-              placeholder="Jane Smith"
-              autoComplete="name"
-              required
-            />
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                name="firstName"
+                label="First Name"
+                type="text"
+                placeholder="Jane"
+                autoComplete="given-name"
+                required
+              />
+              <Input
+                name="lastName"
+                label="Last Name"
+                type="text"
+                placeholder="Smith"
+                autoComplete="family-name"
+                required
+              />
+            </div>
             <Input
               name="email"
               label="Work Email"

@@ -8,18 +8,20 @@ export async function HeaderWrapper() {
     data: { user: authUser },
   } = await supabase.auth.getUser();
 
-  let userData: { email: string; fullName: string | null } | null = null;
+  let userData: { email: string; firstName: string | null; lastName: string | null; avatarUrl: string | null } | null = null;
 
   if (authUser) {
     const { data: profile } = await supabase
       .from("users")
-      .select("full_name")
+      .select("first_name, last_name, avatar_url")
       .eq("id", authUser.id)
       .single();
 
     userData = {
       email: authUser.email!,
-      fullName: profile?.full_name || null,
+      firstName: profile?.first_name || null,
+      lastName: profile?.last_name || null,
+      avatarUrl: profile?.avatar_url || null,
     };
   }
 

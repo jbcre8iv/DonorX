@@ -6,42 +6,39 @@ import { Input } from "@/components/ui/input";
 
 const MAX_AMOUNT = 50_000_000; // $50 million
 
-// Generate dynamic preset amounts based on the range
-function generatePresets(rangeValue: number): number[] {
-  // Range value is 0-100, mapping to different donation tiers
-  if (rangeValue <= 10) {
-    // $0 - $1,000 range
-    return [25, 50, 100, 250, 500, 1000];
-  } else if (rangeValue <= 25) {
-    // $1,000 - $10,000 range
-    return [1000, 2500, 5000, 7500, 10000, 15000];
-  } else if (rangeValue <= 40) {
-    // $10,000 - $100,000 range
-    return [10000, 25000, 50000, 75000, 100000, 150000];
-  } else if (rangeValue <= 55) {
-    // $100,000 - $500,000 range
-    return [100000, 150000, 250000, 350000, 500000, 750000];
-  } else if (rangeValue <= 70) {
-    // $500,000 - $1,000,000 range
-    return [500000, 750000, 1000000, 1500000, 2000000, 2500000];
-  } else if (rangeValue <= 85) {
-    // $1M - $10M range
-    return [1000000, 2500000, 5000000, 7500000, 10000000, 15000000];
-  } else {
-    // $10M - $50M range
-    return [10000000, 15000000, 20000000, 25000000, 35000000, 50000000];
+// Map tier index to preset amounts
+function getPresetsForTier(tierIndex: number): number[] {
+  switch (tierIndex) {
+    case 0: // $0 - $1,000 range
+      return [25, 50, 100, 250, 500, 1000];
+    case 1: // $1,000 - $15,000 range
+      return [1000, 2500, 5000, 7500, 10000, 15000];
+    case 2: // $10,000 - $150,000 range
+      return [10000, 25000, 50000, 75000, 100000, 150000];
+    case 3: // $100,000 - $750,000 range
+      return [100000, 150000, 250000, 350000, 500000, 750000];
+    case 4: // $500,000 - $2.5M range
+      return [500000, 750000, 1000000, 1500000, 2000000, 2500000];
+    case 5: // $1M - $15M range
+      return [1000000, 2500000, 5000000, 7500000, 10000000, 15000000];
+    case 6: // $10M - $50M range
+    default:
+      return [10000000, 15000000, 20000000, 25000000, 35000000, 50000000];
   }
 }
 
-// Get the range label based on range value
-function getRangeLabel(rangeValue: number): string {
-  if (rangeValue <= 10) return "$0 - $1,000";
-  if (rangeValue <= 25) return "$1,000 - $15,000";
-  if (rangeValue <= 40) return "$10,000 - $150,000";
-  if (rangeValue <= 55) return "$100,000 - $750,000";
-  if (rangeValue <= 70) return "$500,000 - $2.5M";
-  if (rangeValue <= 85) return "$1M - $15M";
-  return "$10M - $50M";
+// Get the range label based on tier index
+function getRangeLabelForTier(tierIndex: number): string {
+  switch (tierIndex) {
+    case 0: return "$0 - $1,000";
+    case 1: return "$1,000 - $15,000";
+    case 2: return "$10,000 - $150,000";
+    case 3: return "$100,000 - $750,000";
+    case 4: return "$500,000 - $2.5M";
+    case 5: return "$1M - $15M";
+    case 6:
+    default: return "$10M - $50M";
+  }
 }
 
 // Format amount with appropriate suffix (K, M)
@@ -69,9 +66,9 @@ export function AmountInput({
 }: AmountInputProps) {
   const [customAmount, setCustomAmount] = React.useState("");
   const [isCustom, setIsCustom] = React.useState(false);
-  const [rangeValue, setRangeValue] = React.useState(50); // Start at middle tier
+  const [tierIndex, setTierIndex] = React.useState(3); // Start at middle tier ($100K-$750K)
 
-  const presetAmounts = generatePresets(rangeValue);
+  const presetAmounts = getPresetsForTier(tierIndex);
 
   const handlePresetClick = (amount: number) => {
     setIsCustom(false);
@@ -91,10 +88,10 @@ export function AmountInput({
   };
 
   const handleRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newRangeValue = parseInt(e.target.value, 10);
-    setRangeValue(newRangeValue);
-    // When range changes, select the first preset of the new range
-    const newPresets = generatePresets(newRangeValue);
+    const newTierIndex = parseInt(e.target.value, 10);
+    setTierIndex(newTierIndex);
+    // When tier changes, select the first preset of the new tier
+    const newPresets = getPresetsForTier(newTierIndex);
     if (!isCustom) {
       onChange(newPresets[0]);
     }
@@ -109,19 +106,20 @@ export function AmountInput({
             Donation Range
           </label>
           <span className="text-sm font-medium text-blue-700">
-            {getRangeLabel(rangeValue)}
+            {getRangeLabelForTier(tierIndex)}
           </span>
         </div>
         <div className="relative pt-1">
           <input
             type="range"
             min="0"
-            max="100"
-            value={rangeValue}
+            max="6"
+            step="1"
+            value={tierIndex}
             onChange={handleRangeChange}
             className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb"
             style={{
-              background: `linear-gradient(to right, #1d4ed8 0%, #1d4ed8 ${rangeValue}%, #e2e8f0 ${rangeValue}%, #e2e8f0 100%)`,
+              background: `linear-gradient(to right, #1d4ed8 0%, #1d4ed8 ${(tierIndex / 6) * 100}%, #e2e8f0 ${(tierIndex / 6) * 100}%, #e2e8f0 100%)`,
             }}
           />
           <div className="flex justify-between mt-2 text-xs text-slate-500">

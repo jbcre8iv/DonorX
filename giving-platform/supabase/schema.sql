@@ -29,7 +29,9 @@ CREATE TABLE users (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   organization_id UUID REFERENCES organizations(id) ON DELETE SET NULL,
   email TEXT NOT NULL,
-  full_name TEXT,
+  first_name TEXT,
+  last_name TEXT,
+  avatar_url TEXT,
   role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member', 'viewer')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

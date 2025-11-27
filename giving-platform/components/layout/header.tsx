@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, LogOut, LayoutDashboard, Settings } from "lucide-react";
 import { config } from "@/lib/config";
@@ -14,18 +15,33 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/directory", label: "Directory" },
   { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
 ];
 
 interface HeaderProps {
-  initialUser?: { email: string; fullName: string | null } | null;
+  initialUser?: { email: string; firstName: string | null; lastName: string | null; avatarUrl: string | null } | null;
 }
 
 export function Header({ initialUser = null }: HeaderProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
-  const [user, setUser] = React.useState<{ email: string; fullName: string | null } | null>(initialUser);
+  const [user, setUser] = React.useState<{ email: string; firstName: string | null; lastName: string | null; avatarUrl: string | null } | null>(initialUser);
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
+
+  // Helper to get full name from first and last name
+  const getFullName = (firstName: string | null, lastName: string | null) => {
+    if (firstName && lastName) return `${firstName} ${lastName}`;
+    if (firstName) return firstName;
+    return null;
+  };
+
+  // Helper to get initials
+  const getInitials = (firstName: string | null, lastName: string | null, email: string) => {
+    if (firstName && lastName) return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    if (firstName) return firstName.charAt(0).toUpperCase();
+    return email.charAt(0).toUpperCase();
+  };
 
   // Sync user state when initialUser prop changes (for server-side updates)
   React.useEffect(() => {
@@ -53,14 +69,16 @@ export function Header({ initialUser = null }: HeaderProps) {
       } else if (event === "SIGNED_IN" && session?.user) {
         const { data: profile } = await supabase
           .from("users")
-          .select("full_name")
+          .select("first_name, last_name, avatar_url")
           .eq("id", session.user.id)
           .single();
 
         if (isMounted) {
           setUser({
             email: session.user.email!,
-            fullName: profile?.full_name || null,
+            firstName: profile?.first_name || null,
+            lastName: profile?.last_name || null,
+            avatarUrl: profile?.avatar_url || null,
           });
         }
       }
@@ -123,20 +141,38 @@ export function Header({ initialUser = null }: HeaderProps) {
         {/* Desktop Auth Buttons / User Menu */}
         <div className="hidden md:flex items-center gap-3">
           {user ? (
-            <div className="relative">
+            <>
+              <Button asChild>
+                <Link href="/dashboard">
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Link>
+              </Button>
+              <div className="relative">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
               >
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
-                  {(user.fullName || user.email).charAt(0).toUpperCase()}
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-semibold overflow-hidden">
+                  {user.avatarUrl ? (
+                    <Image
+                      src={user.avatarUrl}
+                      alt="Profile"
+                      width={24}
+                      height={24}
+                      className="h-full w-full object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    getInitials(user.firstName, user.lastName, user.email)
+                  )}
                 </div>
-                <span className="max-w-[150px] truncate">{user.fullName || user.email}</span>
+                <span className="max-w-[150px] truncate">{getFullName(user.firstName, user.lastName) || user.email}</span>
               </button>
               {userMenuOpen && (
                 <div className="absolute right-0 top-full mt-2 w-56 rounded-lg border border-slate-200 bg-white shadow-lg py-1">
                   <div className="px-4 py-2 border-b border-slate-100">
-                    <p className="text-sm font-medium text-slate-900 truncate">{user.fullName || "User"}</p>
+                    <p className="text-sm font-medium text-slate-900 truncate">{getFullName(user.firstName, user.lastName) || "User"}</p>
                     <p className="text-xs text-slate-500 truncate">{user.email}</p>
                   </div>
                   <Link
@@ -167,6 +203,7 @@ export function Header({ initialUser = null }: HeaderProps) {
                 </div>
               )}
             </div>
+            </>
           ) : (
             <>
               <Button variant="ghost" asChild>
@@ -222,11 +259,22 @@ export function Header({ initialUser = null }: HeaderProps) {
               {user ? (
                 <>
                   <div className="flex items-center gap-3 pb-2">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold">
-                      {(user.fullName || user.email).charAt(0).toUpperCase()}
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold overflow-hidden">
+                      {user.avatarUrl ? (
+                        <Image
+                          src={user.avatarUrl}
+                          alt="Profile"
+                          width={40}
+                          height={40}
+                          className="h-full w-full object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        getInitials(user.firstName, user.lastName, user.email)
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-900 truncate">{user.fullName || "User"}</p>
+                      <p className="font-medium text-slate-900 truncate">{getFullName(user.firstName, user.lastName) || "User"}</p>
                       <p className="text-sm text-slate-500 truncate">{user.email}</p>
                     </div>
                   </div>
