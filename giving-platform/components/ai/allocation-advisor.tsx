@@ -68,6 +68,7 @@ export function AllocationAdvisor({
       const response = await fetch("/api/allocation-advice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // Ensure cookies are sent on mobile
         body: JSON.stringify({
           amount: currentAmount,
           goals: goals || undefined,
@@ -76,7 +77,13 @@ export function AllocationAdvisor({
       });
 
       if (!response.ok) {
-        throw new Error("Failed to get advice");
+        // Get more specific error message
+        if (response.status === 401) {
+          setError("Please log in to use AI advice.");
+          return;
+        }
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Request failed (${response.status})`);
       }
 
       const data = await response.json();
@@ -87,7 +94,8 @@ export function AllocationAdvisor({
       }
     } catch (err) {
       console.error("Allocation advice error:", err);
-      setError("Unable to generate advice. Please try again.");
+      const message = err instanceof Error ? err.message : "Unable to generate advice";
+      setError(message === "Failed to fetch" ? "Network error. Please check your connection." : message);
     } finally {
       setIsLoading(false);
       setLoadingStrategy(null);
