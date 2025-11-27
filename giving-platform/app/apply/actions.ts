@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
 
 export interface ApplicationData {
@@ -35,8 +35,11 @@ export async function submitApplication(data: ApplicationData) {
     return { error: "An organization with this name already exists in our directory" };
   }
 
+  // Use admin client to bypass RLS for inserting pending applications
+  const adminSupabase = createAdminClient();
+
   // Insert as pending
-  const { error } = await supabase.from("nonprofits").insert({
+  const { error } = await adminSupabase.from("nonprofits").insert({
     name: data.name,
     ein: data.ein || null,
     website: data.website || null,

@@ -163,6 +163,10 @@ CREATE POLICY "Categories are viewable by everyone" ON categories FOR SELECT USI
 -- Nonprofits: Anyone can read approved nonprofits
 CREATE POLICY "Approved nonprofits are viewable by everyone" ON nonprofits FOR SELECT USING (status = 'approved');
 
+-- Nonprofits: Anyone can submit applications (pending status only)
+-- Note: We use admin client in the app to bypass RLS for application submissions
+-- CREATE POLICY "Anyone can insert nonprofit applications" ON nonprofits FOR INSERT WITH CHECK (status = 'pending');
+
 -- Users: Users can read their own data
 CREATE POLICY "Users can view own data" ON users FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update own data" ON users FOR UPDATE USING (auth.uid() = id);
