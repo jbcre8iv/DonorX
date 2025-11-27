@@ -1,9 +1,49 @@
 import { createClient } from "@/lib/supabase/server";
-import { createMessage, SYSTEM_PROMPTS } from "@/lib/ai/client";
 import { NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
+
+const SYSTEM_PROMPT = `You are an expert philanthropic advisor helping donors create effective donation allocations.
+
+Your role is to:
+1. Understand the donor's giving goals and values
+2. Suggest allocation strategies across cause areas
+3. Recommend portfolio diversification for maximum impact
+4. Explain trade-offs between different allocation approaches
+
+Guidelines:
+- Ask clarifying questions to understand donor preferences
+- Consider both immediate impact and long-term sustainability
+- Suggest a mix of established and emerging organizations
+- Explain your reasoning for recommendations
+- Never be pushy - respect donor autonomy
+- Focus on impact metrics and organizational effectiveness`;
 
 export async function POST(request: Request) {
   try {
+    // Check if API key exists and log for debugging
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      console.error("ANTHROPIC_API_KEY is not set");
+      return NextResponse.json(
+        { error: "AI service not configured" },
+        { status: 500 }
+      );
+    }
+
+    // Check for newlines in the key (common Vercel copy-paste issue)
+    if (apiKey.includes('\n') || apiKey.includes('\r')) {
+      console.error("ANTHROPIC_API_KEY contains newline characters");
+      return NextResponse.json(
+        { error: "AI service configuration error" },
+        { status: 500 }
+      );
+    }
+
+    // Create Anthropic client with explicit API key
+    const anthropic = new Anthropic({
+      apiKey: apiKey.trim(),
+    });
+
     const supabase = await createClient();
 
     // Get authenticated user
@@ -102,10 +142,23 @@ Please provide allocation advice in the following JSON format:
 Ensure percentages sum to 100 and amounts match the donation amount. Provide 3-6 allocation recommendations.`;
 
     // Get AI advice
-    const response = await createMessage(SYSTEM_PROMPTS.allocationAdvisor, userPrompt);
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1024,
+      system: SYSTEM_PROMPT,
+      messages: [
+        {
+          role: "user",
+          content: userPrompt,
+        },
+      ],
+    });
+
+    const textBlock = response.content.find((block) => block.type === "text");
+    const responseText = textBlock?.type === "text" ? textBlock.text : "";
 
     // Parse JSON from response
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       return NextResponse.json({
         error: "Unable to generate allocation advice",
