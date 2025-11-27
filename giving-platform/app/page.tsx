@@ -8,6 +8,7 @@ import {
   Shield,
   ArrowRight,
   CheckCircle,
+  Sparkles,
 } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
@@ -143,6 +144,52 @@ export default async function HomePage() {
                 <p className="mt-2 text-slate-600">{step.description}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* For Nonprofits Section */}
+      <section className="bg-gradient-to-r from-emerald-50 to-teal-50 py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center gap-8 lg:flex-row lg:justify-between">
+            <div className="max-w-xl text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-medium text-emerald-700">
+                <Building2 className="h-4 w-4" />
+                For Nonprofits
+              </div>
+              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+                Get Your Organization Listed
+              </h2>
+              <p className="mt-4 text-lg text-slate-600">
+                Join our directory and connect with donors who want to support your mission.
+                Our AI-powered Quick Fill makes applying fast and easy.
+              </p>
+              <ul className="mt-6 space-y-3 text-left">
+                <li className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-600" />
+                  <span className="text-slate-700">Free to list your organization</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-600" />
+                  <span className="text-slate-700">AI-powered Quick Fill from your website</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-600" />
+                  <span className="text-slate-700">Connect with corporate donors</span>
+                </li>
+              </ul>
+            </div>
+            <div className="flex flex-col items-center gap-4">
+              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700" asChild>
+                <Link href="/apply">
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Apply to Join
+                </Link>
+              </Button>
+              <p className="text-sm text-slate-500">
+                No account required
+              </p>
+            </div>
           </div>
         </div>
       </section>

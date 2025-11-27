@@ -18,6 +18,7 @@ import {
   Newspaper,
   FileBarChart,
   Sparkles,
+  Heart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -43,8 +44,9 @@ const adminLinks: SidebarLink[] = [
   { href: "/admin", label: "Dashboard", icon: BarChart3 },
   { href: "/admin/nonprofits", label: "Nonprofits", icon: Building2 },
   { href: "/admin/donations", label: "Donations", icon: CreditCard },
+  { href: "/admin/donors", label: "Donors", icon: Heart },
   { href: "/admin/categories", label: "Categories", icon: Tag },
-  { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/users", label: "Team", icon: Users },
 ];
 
 interface SidebarProps {

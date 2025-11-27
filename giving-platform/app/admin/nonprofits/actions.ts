@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { requireOwner } from "@/lib/auth/permissions";
 import Anthropic from "@anthropic-ai/sdk";
 
 export async function approveNonprofit(nonprofitId: string) {
@@ -50,6 +51,12 @@ export async function toggleFeatured(nonprofitId: string, featured: boolean) {
 }
 
 export async function deleteNonprofit(nonprofitId: string) {
+  // Only owners can delete nonprofits
+  const ownerCheck = await requireOwner();
+  if ("error" in ownerCheck) {
+    return { error: ownerCheck.error };
+  }
+
   const supabase = await createClient();
 
   // First check if there are any allocations to this nonprofit

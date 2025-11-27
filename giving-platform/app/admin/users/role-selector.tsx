@@ -51,7 +51,18 @@ export function RoleSelector({
     setIsOpen(false);
   };
 
+  // Show disabled state for owner's own row or other owners
   if (!canChangeRoles) {
+    if (isCurrentUser) {
+      return (
+        <span className="text-xs text-slate-400">—</span>
+      );
+    }
+    if (currentRole === "owner") {
+      return (
+        <span className="text-xs text-slate-400">Owner</span>
+      );
+    }
     return null;
   }
 

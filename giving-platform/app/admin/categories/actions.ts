@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { requireOwner } from "@/lib/auth/permissions";
 
 export async function createCategory(formData: FormData) {
   const supabase = await createClient();
@@ -61,6 +62,12 @@ export async function updateCategory(categoryId: string, formData: FormData) {
 }
 
 export async function deleteCategory(categoryId: string) {
+  // Only owners can delete categories
+  const ownerCheck = await requireOwner();
+  if ("error" in ownerCheck) {
+    return { error: ownerCheck.error };
+  }
+
   const supabase = await createClient();
 
   // Check if there are any nonprofits in this category

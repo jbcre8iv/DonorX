@@ -253,7 +253,7 @@ export function AllocationBuilder({
                         variant="ghost"
                         size="icon"
                         onClick={() => setDetailsItem(item)}
-                        className="h-9 w-9 text-slate-400 hover:text-blue-600"
+                        className="h-9 w-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 border border-blue-200"
                         title="View details"
                       >
                         <Info className="h-4 w-4" />

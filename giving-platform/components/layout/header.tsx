@@ -13,6 +13,7 @@ import { logout } from "@/app/(auth)/actions";
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/directory", label: "Directory" },
+  { href: "/apply", label: "For Nonprofits" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];

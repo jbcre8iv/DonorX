@@ -13,10 +13,27 @@ export async function login(formData: FormData) {
     password: formData.get("password") as string,
   };
 
-  const { error } = await supabase.auth.signInWithPassword(data);
+  const { data: authData, error } = await supabase.auth.signInWithPassword(data);
 
   if (error) {
     return { error: error.message };
+  }
+
+  // Check user status to redirect appropriately
+  if (authData.user) {
+    const adminClient = createAdminClient();
+    const { data: userData } = await adminClient
+      .from("users")
+      .select("status")
+      .eq("id", authData.user.id)
+      .single();
+
+    revalidatePath("/", "layout");
+
+    // Redirect pending/rejected users to pending-approval page
+    if (userData?.status === "pending" || userData?.status === "rejected") {
+      redirect("/pending-approval");
+    }
   }
 
   revalidatePath("/", "layout");
@@ -95,14 +112,25 @@ export async function register(formData: FormData) {
       // Continue without avatar - not a critical error
     }
 
+    // Check if this is the first user (will become owner and auto-approved)
+    const { count: userCount } = await adminClient
+      .from("users")
+      .select("*", { count: "exact", head: true });
+
+    const isFirstUser = userCount === 0;
+
     // Create the user profile
+    // First user becomes owner and is auto-approved
+    // Subsequent users start as pending members until approved by owner
     const { error: userError } = await adminClient.from("users").insert({
       id: authData.user.id,
       email: email,
       first_name: firstName,
       last_name: lastName,
       organization_id: orgData.id,
-      role: "owner",
+      role: isFirstUser ? "owner" : "member",
+      status: isFirstUser ? "approved" : "pending",
+      approved_at: isFirstUser ? new Date().toISOString() : null,
       avatar_url: avatarUrl,
     });
 
@@ -110,6 +138,15 @@ export async function register(formData: FormData) {
       console.error("Error creating user profile:", JSON.stringify(userError, null, 2));
       return { error: `Failed to create user profile: ${userError.message}` };
     }
+
+    revalidatePath("/", "layout");
+
+    // Redirect pending users to the pending page, approved users to dashboard
+    if (!isFirstUser) {
+      redirect("/pending-approval");
+    }
+
+    redirect("/dashboard");
   }
 
   revalidatePath("/", "layout");
