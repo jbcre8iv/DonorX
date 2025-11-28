@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, Tag, Trash2, Edit, X } from "lucide-react";
+import { Plus, Tag, Trash2, Edit, X, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { createCategory, updateCategory, deleteCategory } from "./actions";
+import { createCategory, updateCategory, deleteCategory, generateCategoryInfo } from "./actions";
 
 interface Category {
   id: string;
@@ -25,6 +25,15 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  // Quick Fill state
+  const [quickFillInput, setQuickFillInput] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [formValues, setFormValues] = useState({
+    name: "",
+    description: "",
+    icon: "",
+  });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -66,6 +75,33 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
     setShowForm(false);
     setEditingCategory(null);
     setError(null);
+    setQuickFillInput("");
+    setFormValues({ name: "", description: "", icon: "" });
+  };
+
+  const handleQuickFill = async () => {
+    if (!quickFillInput.trim()) return;
+
+    setIsGenerating(true);
+    setError(null);
+
+    try {
+      const result = await generateCategoryInfo(quickFillInput);
+
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setFormValues({
+          name: result.name || "",
+          description: result.description || "",
+          icon: result.icon || "",
+        });
+      }
+    } catch {
+      setError("Failed to generate category info");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -164,6 +200,64 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
               </button>
             </div>
 
+            {/* Quick Fill Section - only show for new categories */}
+            {!editingCategory && (
+              <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-800">
+                    AI Quick Fill
+                  </span>
+                </div>
+                <p className="text-xs text-green-700 mb-3">
+                  Enter a category name or description and let AI generate the details
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    value={quickFillInput}
+                    onChange={(e) => setQuickFillInput(e.target.value)}
+                    placeholder="e.g., religious, sports ministry, environment..."
+                    className="flex-1 bg-white"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleQuickFill();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleQuickFill}
+                    disabled={isGenerating || !quickFillInput.trim()}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {isGenerating ? (
+                      <span className="flex items-center gap-1">
+                        <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="none"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                      </span>
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {error && (
               <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
                 {error}
@@ -177,7 +271,9 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
                 </label>
                 <Input
                   name="name"
+                  value={editingCategory ? undefined : formValues.name}
                   defaultValue={editingCategory?.name || ""}
+                  onChange={editingCategory ? undefined : (e) => setFormValues({ ...formValues, name: e.target.value })}
                   placeholder="e.g., Education"
                   required
                 />
@@ -189,7 +285,9 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
                 </label>
                 <textarea
                   name="description"
+                  value={editingCategory ? undefined : formValues.description}
                   defaultValue={editingCategory?.description || ""}
+                  onChange={editingCategory ? undefined : (e) => setFormValues({ ...formValues, description: e.target.value })}
                   placeholder="Brief description of this category..."
                   rows={3}
                   className="w-full rounded-lg border border-slate-300 px-4 py-2 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -202,7 +300,9 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
                 </label>
                 <Input
                   name="icon"
+                  value={editingCategory ? undefined : formValues.icon}
                   defaultValue={editingCategory?.icon || ""}
+                  onChange={editingCategory ? undefined : (e) => setFormValues({ ...formValues, icon: e.target.value })}
                   placeholder="Icon name or emoji"
                 />
               </div>
