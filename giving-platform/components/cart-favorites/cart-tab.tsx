@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Trash2, Tag, Building2, ArrowRight, HandHeart } from "lucide-react";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
@@ -83,19 +82,19 @@ export function CartTab() {
               className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3"
             >
               {/* Logo/Icon */}
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 overflow-hidden">
                 {item.nonprofit?.logoUrl ? (
-                  <Image
+                  <img
                     src={item.nonprofit.logoUrl}
                     alt={item.nonprofit.name}
-                    width={40}
-                    height={40}
-                    className="rounded-lg object-cover"
+                    className="h-10 w-10 rounded-lg object-contain"
                   />
                 ) : item.category?.icon ? (
                   <span className="text-xl">{item.category.icon}</span>
                 ) : item.nonprofit ? (
-                  <Building2 className="h-5 w-5 text-slate-400" />
+                  <span className="text-lg font-semibold text-slate-600">
+                    {item.nonprofit.name.charAt(0)}
+                  </span>
                 ) : (
                   <Tag className="h-5 w-5 text-slate-400" />
                 )}
