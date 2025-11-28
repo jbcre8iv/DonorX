@@ -108,6 +108,15 @@ body {
   animation: bounceSubtle 0.6s ease-out;
 }
 
+/* Hide scrollbar utility */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Range slider styling */
 input[type="range"] {
   -webkit-appearance: none;
