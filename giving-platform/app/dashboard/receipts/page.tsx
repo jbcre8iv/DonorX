@@ -167,13 +167,19 @@ export default async function ReceiptsPage() {
                             {formatDate(donation.completed_at || donation.created_at)}
                           </span>
                         </div>
-                        <p className="mt-1 text-sm text-slate-500 truncate max-w-xs">
-                          {recipients?.slice(0, 2).join(", ")}
-                          {recipients && recipients.length > 2 && ` +${recipients.length - 2} more`}
-                        </p>
+                        {recipients && recipients.length > 0 && (
+                          <ul className="mt-2 space-y-1">
+                            {recipients.map((name: string, idx: number) => (
+                              <li key={idx} className="text-sm text-slate-500 flex items-center gap-2">
+                                <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                                {name}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </div>
                     </div>
-                    <Button variant="outline" asChild>
+                    <Button variant="outline" asChild className="self-start sm:self-center">
                       <Link href={`/dashboard/receipts/${donation.id}`}>
                         <Eye className="mr-2 h-4 w-4" />
                         View Receipt
