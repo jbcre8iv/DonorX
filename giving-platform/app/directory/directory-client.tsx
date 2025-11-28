@@ -265,8 +265,17 @@ export function DirectoryClient({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search nonprofits..."
-                className="pl-10"
+                className="pl-10 pr-10"
               />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 flex items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 text-slate-500 hover:text-slate-700 transition-colors"
+                  aria-label="Clear search"
+                >
+                  <span className="text-xs font-medium">×</span>
+                </button>
+              )}
             </div>
             <div className="flex items-center rounded-lg border border-slate-200 p-1">
               <Button
