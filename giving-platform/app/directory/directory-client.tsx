@@ -9,6 +9,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { NonprofitCard } from "@/components/directory/nonprofit-card";
 import { NonprofitTable } from "@/components/directory/nonprofit-table";
 import { NonprofitModal } from "@/components/directory/nonprofit-modal";
+import { usePreferences } from "@/hooks/use-preferences";
 import { cn } from "@/lib/utils";
 import type { Nonprofit, Category } from "@/types/database";
 
@@ -26,18 +27,13 @@ export function DirectoryClient({
 }: DirectoryClientProps) {
   const searchParams = useSearchParams();
   const categorySlug = searchParams.get("category");
+  const { preferences, setPreference, loading: preferencesLoading } = usePreferences();
 
   // Find category ID from slug in URL
   const matchedCategory = categorySlug
     ? categories.find((c) => c.slug === categorySlug)
     : null;
   const initialCategoryId = matchedCategory?.id || null;
-
-  // Debug: log category matching
-  console.log("URL category slug:", categorySlug);
-  console.log("Available categories:", categories.map(c => ({ id: c.id, slug: c.slug })));
-  console.log("Matched category:", matchedCategory);
-  console.log("Initial category ID:", initialCategoryId);
 
   const [search, setSearch] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(
@@ -46,7 +42,12 @@ export function DirectoryClient({
   const [selectedNonprofit, setSelectedNonprofit] = React.useState<Nonprofit | null>(null);
   const [modalOpen, setModalOpen] = React.useState(false);
   const [currentPage, setCurrentPage] = React.useState(1);
-  const [viewMode, setViewMode] = React.useState<"grid" | "table">("grid");
+
+  // View mode is now managed by preferences hook
+  const viewMode = preferences.directory_view_mode || "grid";
+  const setViewMode = (mode: "grid" | "table") => {
+    setPreference("directory_view_mode", mode);
+  };
 
   const handleQuickView = (nonprofit: Nonprofit) => {
     setSelectedNonprofit(nonprofit);
