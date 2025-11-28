@@ -261,12 +261,19 @@ Extract (ALWAYS provide values for ALL fields - infer if not explicitly stated):
 2. **Logo URL**: Look in og:image, twitter:image, JSON-LD logo, link rel="icon", apple-touch-icon. Convert relative URLs to absolute using base: ${websiteUrl}
 3. **Short Description**: 1-2 sentences about what they do. Use og:description, meta description, or INFER from organization name and any context clues
 4. **Mission Statement**: Their mission/purpose. If not explicitly found, GENERATE a plausible mission statement based on the organization name, description, and category (e.g., "812 MX Ministry exists to share the love of Christ through the sport of motocross, providing a welcoming community for riders and families.")
-5. **Category**: ALWAYS select the best fit from: Education, Health, Environment, Animals, Arts & Culture, Human Services, International, Religion, Sports Ministry, Community Development, Youth Development, Disaster Relief. Infer from organization name (e.g., "Ministry" suggests Religion or Sports Ministry, "Foundation" could be various, "MX" suggests motocross/sports)
+5. **Category**: ALWAYS select EXACTLY ONE from this list (use exact spelling): Animal Welfare, Arts & Culture, Disaster Relief, Education, Environment, Healthcare, Housing, Human Rights, Hunger Relief, Military Veterans, Sports Ministry, Youth Development. Infer from organization name and context:
+   - Military/veteran organizations → "Military Veterans"
+   - Food banks, hunger relief → "Hunger Relief"
+   - Medical/health → "Healthcare"
+   - Animal rescue/shelters → "Animal Welfare"
+   - Faith-based sports → "Sports Ministry"
+   - Civil rights, advocacy → "Human Rights"
+   - Homeless services, affordable housing → "Housing"
 
 CRITICAL RULES:
-- NEVER return null for category - always make your best guess
+- NEVER return null for category - always select from the exact list above
 - NEVER return null for mission - generate one if not found
-- For faith-based sports organizations, use "Sports Ministry" category
+- The category MUST be one of the 12 exact options listed above (case-sensitive)
 - Be creative and use all context clues available
 
 Respond ONLY with valid JSON (no markdown, no explanation):
