@@ -56,6 +56,16 @@ function CategoryScroller({
     }
   };
 
+  // Find the selected category object
+  const selectedCategoryObj = selectedCategory
+    ? categories.find(c => c.id === selectedCategory)
+    : null;
+
+  // Categories to show in scroller (exclude selected one since it's shown as sticky)
+  const scrollableCategories = selectedCategory
+    ? categories.filter(c => c.id !== selectedCategory)
+    : categories;
+
   return (
     <div className="relative flex items-center gap-2 max-w-4xl mx-auto">
       {/* Fixed "All" Button */}
@@ -70,6 +80,20 @@ function CategoryScroller({
       >
         All
       </button>
+
+      {/* Selected Category - Sticky (only shown when a category is selected) */}
+      {selectedCategoryObj && (
+        <>
+          <button
+            onClick={() => onSelectCategory(null)}
+            className="flex-shrink-0 rounded-full px-3 py-1.5 text-sm font-medium bg-blue-700 text-white flex items-center gap-1 whitespace-nowrap"
+          >
+            {selectedCategoryObj.icon && <span>{selectedCategoryObj.icon}</span>}
+            {selectedCategoryObj.name}
+            <span className="ml-1 text-blue-200 hover:text-white">×</span>
+          </button>
+        </>
+      )}
 
       {/* Divider */}
       <div className="h-6 w-px bg-slate-200 flex-shrink-0" />
@@ -93,16 +117,11 @@ function CategoryScroller({
         className="flex-1 overflow-x-auto scrollbar-hide flex gap-2 py-1"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        {categories.map((category) => (
+        {scrollableCategories.map((category) => (
           <button
             key={category.id}
             onClick={() => onSelectCategory(category.id)}
-            className={cn(
-              "flex-shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-1",
-              selectedCategory === category.id
-                ? "bg-blue-700 text-white"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            )}
+            className="flex-shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-1 bg-slate-100 text-slate-600 hover:bg-slate-200"
           >
             {category.icon && <span>{category.icon}</span>}
             {category.name}
