@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { FileText, Download, Calendar, DollarSign, Building2, TrendingUp } from "lucide-react";
+import { FileText, Download, Calendar, DollarSign, Building2, TrendingUp, Eye } from "lucide-react";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -271,20 +271,29 @@ export default async function QuarterlyReportsPage({
             </Card>
           )}
 
-          {/* Download Report */}
+          {/* View Full Report */}
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-slate-900">Download Full Report</p>
+                  <p className="font-medium text-slate-900">Full Impact Report</p>
                   <p className="text-sm text-slate-500">
-                    Get a detailed report for your records or to share with stakeholders
+                    View and download a detailed report for your records
                   </p>
                 </div>
-                <Button variant="outline" disabled={!simulationMode}>
-                  <Download className="mr-2 h-4 w-4" />
-                  {simulationMode ? "Download PDF" : "Download PDF (Coming Soon)"}
-                </Button>
+                {simulationMode ? (
+                  <Button variant="outline" asChild>
+                    <Link href={`/dashboard/reports/preview?quarter=${selectedQuarter}&year=${selectedYear}`}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      View Full Report
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button variant="outline" disabled>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PDF (Coming Soon)
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

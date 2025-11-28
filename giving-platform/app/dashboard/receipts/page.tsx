@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { Download, FileText, Calendar, CreditCard, TestTube } from "lucide-react";
+import Link from "next/link";
+import { Download, FileText, Calendar, CreditCard, TestTube, Eye } from "lucide-react";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -103,10 +104,19 @@ export default async function ReceiptsPage() {
                   {thisYearDonations.length} donation{thisYearDonations.length !== 1 ? "s" : ""}
                 </p>
               </div>
-              <Button size="lg" disabled={!simulationMode}>
-                <Download className="mr-2 h-5 w-5" />
-                {simulationMode ? "Download Annual Statement" : "Annual Statement (Available Jan 15)"}
-              </Button>
+              {simulationMode ? (
+                <Button size="lg" asChild>
+                  <Link href={`/dashboard/receipts/annual/${currentYear}`}>
+                    <Eye className="mr-2 h-5 w-5" />
+                    View Annual Statement
+                  </Link>
+                </Button>
+              ) : (
+                <Button size="lg" disabled>
+                  <Download className="mr-2 h-5 w-5" />
+                  Annual Statement (Available Jan 15)
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -163,9 +173,11 @@ export default async function ReceiptsPage() {
                         </p>
                       </div>
                     </div>
-                    <Button variant="outline">
-                      <Download className="mr-2 h-4 w-4" />
-                      Download PDF
+                    <Button variant="outline" asChild>
+                      <Link href={`/dashboard/receipts/${donation.id}`}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Receipt
+                      </Link>
                     </Button>
                   </div>
                 );
@@ -202,10 +214,19 @@ export default async function ReceiptsPage() {
                   <p className="text-2xl font-bold text-slate-900 mb-3">
                     {formatCurrency(donationsByYear[year].total)}
                   </p>
-                  <Button variant="outline" size="sm" fullWidth disabled={year === currentYear && !simulationMode}>
-                    <Download className="mr-2 h-4 w-4" />
-                    {year === currentYear && !simulationMode ? "Available Jan 15" : "Download Summary"}
-                  </Button>
+                  {year === currentYear && !simulationMode ? (
+                    <Button variant="outline" size="sm" fullWidth disabled>
+                      <Download className="mr-2 h-4 w-4" />
+                      Available Jan 15
+                    </Button>
+                  ) : (
+                    <Button variant="outline" size="sm" fullWidth asChild>
+                      <Link href={`/dashboard/receipts/annual/${year}`}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Statement
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
