@@ -89,6 +89,25 @@ body {
   animation: slideUp 0.4s ease-out;
 }
 
+@keyframes bounceSubtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-4px);
+  }
+  50% {
+    transform: translateY(0);
+  }
+  75% {
+    transform: translateY(-2px);
+  }
+}
+
+.animate-bounce-subtle {
+  animation: bounceSubtle 0.6s ease-out;
+}
+
 /* Range slider styling */
 input[type="range"] {
   -webkit-appearance: none;

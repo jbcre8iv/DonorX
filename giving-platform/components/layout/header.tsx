@@ -22,16 +22,34 @@ const navLinks = [
 // Giving List button component to avoid hook issues
 function GivingListButton() {
   const { cartItems, setSidebarOpen } = useCartFavorites();
+  const [isAnimating, setIsAnimating] = React.useState(false);
+  const prevCountRef = React.useRef(cartItems.length);
+
+  // Detect when items are added and trigger animation
+  React.useEffect(() => {
+    if (cartItems.length > prevCountRef.current) {
+      setIsAnimating(true);
+      const timer = setTimeout(() => setIsAnimating(false), 600);
+      return () => clearTimeout(timer);
+    }
+    prevCountRef.current = cartItems.length;
+  }, [cartItems.length]);
 
   return (
     <button
       onClick={() => setSidebarOpen(true)}
-      className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+      className={cn(
+        "relative rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors",
+        isAnimating && "animate-bounce-subtle"
+      )}
       aria-label="Open giving list"
     >
-      <HandHeart className="h-5 w-5" />
+      <HandHeart className={cn("h-5 w-5", isAnimating && "text-blue-600")} />
       {cartItems.length > 0 && (
-        <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
+        <span className={cn(
+          "absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white transition-transform",
+          isAnimating && "scale-125"
+        )}>
           {cartItems.length > 9 ? "9+" : cartItems.length}
         </span>
       )}
