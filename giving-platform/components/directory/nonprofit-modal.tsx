@@ -24,7 +24,7 @@ export function NonprofitModal({ nonprofit, open, onClose }: NonprofitModalProps
             <img
               src={nonprofit.logo_url}
               alt={`${nonprofit.name} logo`}
-              className="h-16 w-16 rounded-xl object-cover border border-slate-200"
+              className="h-16 w-16 rounded-xl object-contain border border-slate-200"
             />
           ) : (
             <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-slate-100 text-slate-600 font-bold text-2xl">
