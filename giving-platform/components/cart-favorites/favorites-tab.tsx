@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Heart, Trash2, Tag, Building2, Plus, ExternalLink } from "lucide-react";
-import { useCartFavorites } from "@/contexts/cart-favorites-context";
+import { Heart, Trash2, Tag, Building2, Plus, Eye, X, Globe } from "lucide-react";
+import { useCartFavorites, type FavoriteItem } from "@/contexts/cart-favorites-context";
 import { Button } from "@/components/ui/button";
 
 export function FavoritesTab() {
@@ -14,6 +15,8 @@ export function FavoritesTab() {
     setSidebarOpen,
     setActiveTab,
   } = useCartFavorites();
+
+  const [quickViewItem, setQuickViewItem] = useState<FavoriteItem | null>(null);
 
   const handleAddToCart = async (item: typeof favorites[0]) => {
     await addToCart({
@@ -95,14 +98,13 @@ export function FavoritesTab() {
 
                 {/* Actions */}
                 <div className="mt-3 flex items-center justify-between">
-                  <Link
-                    href={`/directory/${item.nonprofitId}`}
-                    onClick={() => setSidebarOpen(false)}
+                  <button
+                    onClick={() => setQuickViewItem(item)}
                     className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
                   >
-                    <ExternalLink className="h-3 w-3" />
-                    View details
-                  </Link>
+                    <Eye className="h-3 w-3" />
+                    Quick view
+                  </button>
                   <div className="flex items-center gap-2">
                     {isInCart(item.nonprofitId) ? (
                       <span className="text-xs text-green-600">In giving list</span>
@@ -197,6 +199,90 @@ export function FavoritesTab() {
           View all favorites in dashboard
         </Link>
       </div>
+
+      {/* Quick View Modal */}
+      {quickViewItem && quickViewItem.nonprofit && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setQuickViewItem(null)}
+          />
+          {/* Modal */}
+          <div className="relative w-full max-w-md rounded-xl bg-white shadow-xl">
+            {/* Header */}
+            <div className="flex items-start gap-4 p-4 border-b border-slate-200">
+              {quickViewItem.nonprofit.logoUrl ? (
+                <img
+                  src={quickViewItem.nonprofit.logoUrl}
+                  alt={quickViewItem.nonprofit.name}
+                  className="h-14 w-14 rounded-xl object-contain border border-slate-200"
+                />
+              ) : (
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 text-slate-600 font-bold text-xl">
+                  {quickViewItem.nonprofit.name.charAt(0)}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-bold text-slate-900">
+                  {quickViewItem.nonprofit.name}
+                </h3>
+                <p className="text-sm text-slate-500">Nonprofit</p>
+              </div>
+              <button
+                onClick={() => setQuickViewItem(null)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-4">
+              {quickViewItem.nonprofit.mission ? (
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900 mb-2">Mission</h4>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    {quickViewItem.nonprofit.mission}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500 italic">
+                  No mission statement available.
+                </p>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center gap-2 p-4 border-t border-slate-200 bg-slate-50 rounded-b-xl">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => setQuickViewItem(null)}
+              >
+                Close
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1"
+                asChild
+              >
+                <Link
+                  href={`/directory/${quickViewItem.nonprofitId}`}
+                  onClick={() => {
+                    setQuickViewItem(null);
+                    setSidebarOpen(false);
+                  }}
+                >
+                  <Globe className="h-4 w-4 mr-1" />
+                  Full Profile
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
