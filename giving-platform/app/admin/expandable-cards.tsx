@@ -43,9 +43,14 @@ interface ExpandableRecentDonationsProps {
   donations: DonationWithDetails[];
 }
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 interface ExpandablePendingApprovalsProps {
   nonprofits: PendingNonprofit[];
-  getCategoryName: (categoryId: string | null) => string;
+  categories: Category[];
 }
 
 export function ExpandableRecentDonations({ donations }: ExpandableRecentDonationsProps) {
@@ -171,12 +176,18 @@ export function ExpandableRecentDonations({ donations }: ExpandableRecentDonatio
 
 export function ExpandablePendingApprovals({
   nonprofits,
-  getCategoryName
+  categories
 }: ExpandablePendingApprovalsProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
+  };
+
+  const getCategoryName = (categoryId: string | null) => {
+    if (!categoryId) return "Uncategorized";
+    const category = categories.find((c) => c.id === categoryId);
+    return category?.name || "Unknown";
   };
 
   return (

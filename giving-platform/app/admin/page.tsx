@@ -97,13 +97,6 @@ export default async function AdminDashboardPage() {
     },
   ];
 
-  // Get category name helper
-  const getCategoryName = (categoryId: string | null) => {
-    if (!categoryId) return "Uncategorized";
-    const category = allCategories.find((c) => c.id === categoryId);
-    return category?.name || "Unknown";
-  };
-
   // Recent donations (last 5)
   const recentDonations = completedDonations
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -166,7 +159,7 @@ export default async function AdminDashboardPage() {
         {/* Pending Approvals - Expandable */}
         <ExpandablePendingApprovals
           nonprofits={pendingNonprofits}
-          getCategoryName={getCategoryName}
+          categories={allCategories}
         />
       </div>
 
