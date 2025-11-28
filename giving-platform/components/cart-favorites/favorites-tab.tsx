@@ -25,8 +25,7 @@ export function FavoritesTab() {
       nonprofit: item.nonprofit,
       category: item.category,
     });
-    // Switch to cart tab to show the added item
-    setActiveTab("cart");
+    // Stay on favorites tab - don't switch to cart
   };
 
   if (favorites.length === 0) {
