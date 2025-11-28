@@ -141,7 +141,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
 
 /* Print styles for receipt/report pages */
 @media print {
-  /* Hide all UI elements */
+  /* Hide all UI elements completely - no space taken */
   header,
   nav,
   aside,
@@ -150,6 +150,11 @@ input[type="range"]:focus::-webkit-slider-thumb {
   [data-sidebar],
   [data-topbar] {
     display: none !important;
+    height: 0 !important;
+    width: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
   }
 
   /* Reset body and html */
@@ -157,23 +162,52 @@ input[type="range"]:focus::-webkit-slider-thumb {
     background: white !important;
     margin: 0 !important;
     padding: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
   }
 
-  /* Make main content full width */
-  main {
+  /* Remove flex layout from dashboard wrapper */
+  body > div,
+  #__next,
+  .flex.min-h-screen,
+  .flex.min-h-\\[calc\\(100vh-4rem\\)\\] {
+    display: block !important;
+    min-height: auto !important;
+    height: auto !important;
+  }
+
+  /* Make main content full width and remove padding */
+  main,
+  main > div,
+  .flex-1 {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
+    flex: none !important;
+    display: block !important;
+  }
+
+  /* The page content container */
+  .p-6,
+  .lg\\:p-8 {
+    padding: 0 !important;
+  }
+
+  /* Hide the space-y-6 gap before print content */
+  .space-y-6 > .no-print {
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   /* Style the printable content */
   .print-content {
-    margin: 0 !important;
+    margin: 0 auto !important;
     padding: 20px !important;
     box-shadow: none !important;
     border: none !important;
     max-width: 100% !important;
+    width: 100% !important;
   }
 
   /* Hide buttons and navigation elements */
@@ -185,6 +219,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
 
   /* Ensure proper page breaks */
   .print-content {
+    page-break-before: auto;
     page-break-inside: avoid;
   }
 }

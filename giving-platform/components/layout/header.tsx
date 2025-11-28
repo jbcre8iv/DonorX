@@ -148,7 +148,7 @@ export function Header({ initialUser = null }: HeaderProps) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur transition-shadow",
+        "sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur transition-shadow no-print",
         isScrolled && "shadow-sm"
       )}
     >
