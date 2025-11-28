@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
-import { X, Sparkles, Loader2 } from "lucide-react";
+import { X, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -35,6 +35,7 @@ export function NonprofitForm({ nonprofit, categories, onClose }: NonprofitFormP
   const [logoUrl, setLogoUrl] = useState(nonprofit?.logo_url || "");
   const [isDetectingLogo, setIsDetectingLogo] = useState(false);
   const [isExtractingInfo, setIsExtractingInfo] = useState(false);
+  const [logoLoadState, setLogoLoadState] = useState<"loading" | "loaded" | "error">("loading");
   const [quickFillUrl, setQuickFillUrl] = useState("");
   const websiteInputRef = useRef<HTMLInputElement>(null);
 
@@ -73,16 +74,27 @@ export function NonprofitForm({ nonprofit, categories, onClose }: NonprofitFormP
 
         if (result.logoUrl) {
           setLogoUrl(result.logoUrl);
+          setLogoLoadState("loading");
         }
 
         // Try to match suggested category
         if (result.suggestedCategory) {
-          const matchedCategory = categories.find(
-            (c) => c.name.toLowerCase().includes(result.suggestedCategory!.toLowerCase()) ||
-                   result.suggestedCategory!.toLowerCase().includes(c.name.toLowerCase())
+          const suggested = result.suggestedCategory.toLowerCase().trim();
+          // First try exact match
+          let matchedCategory = categories.find(
+            (c) => c.name.toLowerCase().trim() === suggested
           );
+          // Then try partial matching
+          if (!matchedCategory) {
+            matchedCategory = categories.find(
+              (c) => c.name.toLowerCase().includes(suggested) ||
+                     suggested.includes(c.name.toLowerCase())
+            );
+          }
           if (matchedCategory) {
             setFormData((prev) => ({ ...prev, categoryId: matchedCategory.id }));
+          } else {
+            console.log("Category not matched:", result.suggestedCategory, "Available:", categories.map(c => c.name));
           }
         }
       }
@@ -109,6 +121,7 @@ export function NonprofitForm({ nonprofit, categories, onClose }: NonprofitFormP
         setError(result.error);
       } else if (result.logoUrl) {
         setLogoUrl(result.logoUrl);
+        setLogoLoadState("loading");
       }
     } catch (err) {
       setError("Failed to detect logo");
@@ -261,7 +274,10 @@ export function NonprofitForm({ nonprofit, categories, onClose }: NonprofitFormP
                 name="logo_url"
                 type="url"
                 value={logoUrl}
-                onChange={(e) => setLogoUrl(e.target.value)}
+                onChange={(e) => {
+                  setLogoUrl(e.target.value);
+                  setLogoLoadState("loading");
+                }}
                 placeholder="https://example.org/logo.png"
                 className="flex-1"
               />
@@ -281,17 +297,33 @@ export function NonprofitForm({ nonprofit, categories, onClose }: NonprofitFormP
             </div>
             {logoUrl && (
               <div className="mt-2 flex items-center gap-2">
+                {logoLoadState === "loading" && (
+                  <div className="h-8 w-8 rounded border bg-slate-100 flex items-center justify-center">
+                    <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                  </div>
+                )}
+                {logoLoadState === "error" && (
+                  <div className="h-8 w-8 rounded border border-red-200 bg-red-50 flex items-center justify-center" title="Failed to load image">
+                    <AlertCircle className="h-4 w-4 text-red-400" />
+                  </div>
+                )}
                 <img
                   src={logoUrl}
                   alt="Logo preview"
-                  className="h-8 w-8 rounded object-contain border"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
+                  className={`h-8 w-8 rounded object-contain border ${logoLoadState !== "loaded" ? "hidden" : ""}`}
+                  onLoad={() => setLogoLoadState("loaded")}
+                  onError={() => setLogoLoadState("error")}
                 />
-                <span className="text-xs text-slate-500 truncate max-w-[200px]">
-                  {logoUrl}
-                </span>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs text-slate-500 truncate max-w-[200px]">
+                    {logoUrl}
+                  </span>
+                  {logoLoadState === "error" && (
+                    <span className="text-xs text-red-500">
+                      Image failed to load (CORS or invalid URL)
+                    </span>
+                  )}
+                </div>
               </div>
             )}
           </div>
