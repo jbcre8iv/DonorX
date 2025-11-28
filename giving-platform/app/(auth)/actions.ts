@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { generateInitialsAvatar } from "@/lib/avatar";
 
 export async function login(formData: FormData) {
   const rememberMe = formData.get("rememberMe") === "on";
@@ -93,33 +92,6 @@ export async function register(formData: FormData) {
       return { error: `Failed to create organization: ${orgError.message}` };
     }
 
-    // Generate and upload initial avatar
-    let avatarUrl: string | null = null;
-    try {
-      const avatarSvg = generateInitialsAvatar(firstName, lastName, email);
-      const avatarBlob = new Blob([avatarSvg], { type: "image/svg+xml" });
-      const fileName = `${authData.user.id}/avatar.svg`;
-
-      const { error: uploadError } = await adminClient.storage
-        .from("avatars")
-        .upload(fileName, avatarBlob, {
-          upsert: true,
-          contentType: "image/svg+xml",
-        });
-
-      if (!uploadError) {
-        const { data: { publicUrl } } = adminClient.storage
-          .from("avatars")
-          .getPublicUrl(fileName);
-        avatarUrl = publicUrl;
-      } else {
-        console.error("Avatar upload error:", uploadError);
-      }
-    } catch (avatarError) {
-      console.error("Error generating avatar:", avatarError);
-      // Continue without avatar - not a critical error
-    }
-
     // Check if this is the first user (will become owner and auto-approved)
     const { count: userCount } = await adminClient
       .from("users")
@@ -130,6 +102,7 @@ export async function register(formData: FormData) {
     // Create the user profile
     // First user becomes owner and is auto-approved
     // Subsequent users start as pending members until approved by owner
+    // Note: avatar_url can be set later via profile settings
     const { error: userError } = await adminClient.from("users").insert({
       id: authData.user.id,
       email: email,
@@ -139,7 +112,6 @@ export async function register(formData: FormData) {
       role: isFirstUser ? "owner" : "member",
       status: isFirstUser ? "approved" : "pending",
       approved_at: isFirstUser ? new Date().toISOString() : null,
-      avatar_url: avatarUrl,
     });
 
     if (userError) {
