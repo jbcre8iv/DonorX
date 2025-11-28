@@ -2,15 +2,18 @@
 
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
+import { Search, LayoutGrid, List } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { NonprofitCard } from "@/components/directory/nonprofit-card";
+import { NonprofitTable } from "@/components/directory/nonprofit-table";
 import { NonprofitModal } from "@/components/directory/nonprofit-modal";
 import { cn } from "@/lib/utils";
 import type { Nonprofit, Category } from "@/types/database";
 
-const ITEMS_PER_PAGE = 9;
+const ITEMS_PER_PAGE_GRID = 9;
+const ITEMS_PER_PAGE_TABLE = 25;
 
 interface DirectoryClientProps {
   initialNonprofits: Nonprofit[];
@@ -43,6 +46,7 @@ export function DirectoryClient({
   const [selectedNonprofit, setSelectedNonprofit] = React.useState<Nonprofit | null>(null);
   const [modalOpen, setModalOpen] = React.useState(false);
   const [currentPage, setCurrentPage] = React.useState(1);
+  const [viewMode, setViewMode] = React.useState<"grid" | "table">("grid");
 
   const handleQuickView = (nonprofit: Nonprofit) => {
     setSelectedNonprofit(nonprofit);
@@ -59,10 +63,10 @@ export function DirectoryClient({
     setSelectedCategory(initialCategoryId);
   }, [initialCategoryId]);
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when filters or view mode change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [search, selectedCategory]);
+  }, [search, selectedCategory, viewMode]);
 
   const filteredNonprofits = initialNonprofits.filter((nonprofit) => {
     const matchesSearch =
@@ -77,11 +81,12 @@ export function DirectoryClient({
   const featuredNonprofits = filteredNonprofits.filter((n) => n.featured);
   const otherNonprofits = filteredNonprofits.filter((n) => !n.featured);
 
-  // Pagination for non-featured nonprofits
-  const totalPages = Math.ceil(otherNonprofits.length / ITEMS_PER_PAGE);
+  // Pagination for non-featured nonprofits (more items per page in table view)
+  const itemsPerPage = viewMode === "table" ? ITEMS_PER_PAGE_TABLE : ITEMS_PER_PAGE_GRID;
+  const totalPages = Math.ceil(otherNonprofits.length / itemsPerPage);
   const paginatedNonprofits = otherNonprofits.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   return (
@@ -99,15 +104,37 @@ export function DirectoryClient({
 
         {/* Search and Filters */}
         <div className="mt-10 space-y-4">
-          <div className="relative max-w-md mx-auto">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <Input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search nonprofits..."
-              className="pl-10"
-            />
+          <div className="flex items-center gap-3 max-w-xl mx-auto">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search nonprofits..."
+                className="pl-10"
+              />
+            </div>
+            <div className="flex items-center rounded-lg border border-slate-200 p-1">
+              <Button
+                variant={viewMode === "grid" ? "default" : "ghost"}
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setViewMode("grid")}
+                title="Grid view"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "table" ? "default" : "ghost"}
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setViewMode("table")}
+                title="Table view"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           {/* Category Filter Pills */}
@@ -152,15 +179,22 @@ export function DirectoryClient({
             <h2 className="text-xl font-semibold text-slate-900 mb-6">
               Featured Organizations
             </h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {featuredNonprofits.map((nonprofit) => (
-                <NonprofitCard
-                  key={nonprofit.id}
-                  nonprofit={nonprofit}
-                  onQuickView={handleQuickView}
-                />
-              ))}
-            </div>
+            {viewMode === "grid" ? (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {featuredNonprofits.map((nonprofit) => (
+                  <NonprofitCard
+                    key={nonprofit.id}
+                    nonprofit={nonprofit}
+                    onQuickView={handleQuickView}
+                  />
+                ))}
+              </div>
+            ) : (
+              <NonprofitTable
+                nonprofits={featuredNonprofits}
+                onQuickView={handleQuickView}
+              />
+            )}
           </div>
         )}
 
@@ -173,15 +207,22 @@ export function DirectoryClient({
           </h2>
           {paginatedNonprofits.length > 0 ? (
             <>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {paginatedNonprofits.map((nonprofit) => (
-                  <NonprofitCard
-                    key={nonprofit.id}
-                    nonprofit={nonprofit}
-                    onQuickView={handleQuickView}
-                  />
-                ))}
-              </div>
+              {viewMode === "grid" ? (
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {paginatedNonprofits.map((nonprofit) => (
+                    <NonprofitCard
+                      key={nonprofit.id}
+                      nonprofit={nonprofit}
+                      onQuickView={handleQuickView}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <NonprofitTable
+                  nonprofits={paginatedNonprofits}
+                  onQuickView={handleQuickView}
+                />
+              )}
               {/* Pagination */}
               {totalPages > 1 && (
                 <Pagination
