@@ -71,13 +71,24 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
       if (info.description) setDescription(info.description);
       if (info.mission) setMission(info.mission);
 
-      // Match category by name
+      // Match category by name with partial matching
       if (info.suggestedCategory) {
-        const matchedCategory = categories.find(
-          (c) => c.name.toLowerCase() === info.suggestedCategory?.toLowerCase()
+        const suggested = info.suggestedCategory.toLowerCase().trim();
+        // First try exact match
+        let matchedCategory = categories.find(
+          (c) => c.name.toLowerCase().trim() === suggested
         );
+        // Then try partial matching
+        if (!matchedCategory) {
+          matchedCategory = categories.find(
+            (c) => c.name.toLowerCase().includes(suggested) ||
+                   suggested.includes(c.name.toLowerCase())
+          );
+        }
         if (matchedCategory) {
           setCategoryId(matchedCategory.id);
+        } else {
+          console.log("Category not matched:", info.suggestedCategory, "Available:", categories.map(c => c.name));
         }
       }
 
