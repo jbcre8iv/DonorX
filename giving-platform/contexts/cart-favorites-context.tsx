@@ -427,7 +427,12 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         createdAt: new Date().toISOString(),
       };
 
-      // If logged in, save to database
+      // Update local state immediately (optimistic update)
+      const updatedCart = [...cartItems, newItem];
+      setCartItems(updatedCart);
+      saveToLocalStorage(updatedCart, favorites);
+
+      // If logged in, save to database in background
       if (userId) {
         try {
           const { data, error } = await supabase
@@ -442,16 +447,16 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
             .single();
 
           if (!error && data) {
-            newItem.id = data.id;
+            // Update the item with the real database ID
+            setCartItems(prev => prev.map(cartItem =>
+              cartItem.id === newItem.id ? { ...cartItem, id: data.id } : cartItem
+            ));
           }
         } catch (error) {
           console.error("Error adding to cart:", error);
+          // Item still exists in local state, will sync later
         }
       }
-
-      const updatedCart = [...cartItems, newItem];
-      setCartItems(updatedCart);
-      saveToLocalStorage(updatedCart, favorites);
     },
     [cartItems, favorites, userId, supabase, isInCart, saveToLocalStorage]
   );
@@ -535,7 +540,12 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         createdAt: new Date().toISOString(),
       };
 
-      // If logged in, save to database
+      // Update local state immediately (optimistic update)
+      const updatedFavorites = [...favorites, newItem];
+      setFavorites(updatedFavorites);
+      saveToLocalStorage(cartItems, updatedFavorites);
+
+      // If logged in, save to database in background
       if (userId) {
         try {
           const { data, error } = await supabase
@@ -549,16 +559,16 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
             .single();
 
           if (!error && data) {
-            newItem.id = data.id;
+            // Update the item with the real database ID
+            setFavorites(prev => prev.map(favItem =>
+              favItem.id === newItem.id ? { ...favItem, id: data.id } : favItem
+            ));
           }
         } catch (error) {
           console.error("Error adding to favorites:", error);
+          // Item still exists in local state, will sync later
         }
       }
-
-      const updatedFavorites = [...favorites, newItem];
-      setFavorites(updatedFavorites);
-      saveToLocalStorage(cartItems, updatedFavorites);
     },
     [favorites, cartItems, userId, supabase, isFavorite, saveToLocalStorage]
   );
