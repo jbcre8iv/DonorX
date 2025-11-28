@@ -173,11 +173,36 @@ export function DirectoryClient({
     setCurrentPage(1);
   }, [search, selectedCategory, viewMode]);
 
-  const filteredNonprofits = initialNonprofits.filter((nonprofit) => {
-    const matchesSearch = smartFilterNonprofit(nonprofit, search);
-    const matchesCategory =
-      selectedCategory === null || nonprofit.category_id === selectedCategory;
-    return matchesSearch && matchesCategory;
+  // First filter by search only (to determine which categories to show)
+  const searchFilteredNonprofits = initialNonprofits.filter((nonprofit) =>
+    smartFilterNonprofit(nonprofit, search)
+  );
+
+  // Get category IDs that have matching nonprofits
+  const relevantCategoryIds = React.useMemo(() => {
+    const ids = new Set<string>();
+    searchFilteredNonprofits.forEach((n) => {
+      if (n.category_id) ids.add(n.category_id);
+    });
+    return ids;
+  }, [searchFilteredNonprofits]);
+
+  // Filter categories to only show relevant ones when searching
+  const filteredCategories = React.useMemo(() => {
+    if (!search.trim()) return categories;
+    return categories.filter((c) => relevantCategoryIds.has(c.id));
+  }, [categories, search, relevantCategoryIds]);
+
+  // Reset category selection if the selected category is no longer relevant
+  React.useEffect(() => {
+    if (search.trim() && selectedCategory && !relevantCategoryIds.has(selectedCategory)) {
+      setSelectedCategory(null);
+    }
+  }, [search, selectedCategory, relevantCategoryIds]);
+
+  // Then apply category filter for final results
+  const filteredNonprofits = searchFilteredNonprofits.filter((nonprofit) => {
+    return selectedCategory === null || nonprofit.category_id === selectedCategory;
   });
 
   // Featured section disabled - all nonprofits shown in single list
@@ -243,7 +268,7 @@ export function DirectoryClient({
 
           {/* Category Filter - Horizontal Scrollable */}
           <CategoryScroller
-            categories={categories}
+            categories={filteredCategories}
             selectedCategory={selectedCategory}
             onSelectCategory={setSelectedCategory}
           />
