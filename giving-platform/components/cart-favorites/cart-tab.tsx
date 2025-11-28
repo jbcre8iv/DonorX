@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Trash2, Tag, Building2, ArrowRight, HandHeart } from "lucide-react";
+import { Trash2, Tag, ArrowRight, HandHeart, ExternalLink } from "lucide-react";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { Button } from "@/components/ui/button";
 
@@ -79,45 +79,61 @@ export function CartTab() {
           {cartItems.map((item) => (
             <div
               key={item.id}
-              className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3"
+              className="rounded-lg border border-slate-200 bg-white p-3"
             >
-              {/* Logo/Icon */}
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 overflow-hidden">
-                {item.nonprofit?.logoUrl ? (
-                  <img
-                    src={item.nonprofit.logoUrl}
-                    alt={item.nonprofit.name}
-                    className="h-10 w-10 rounded-lg object-contain"
-                  />
-                ) : item.category?.icon ? (
-                  <span className="text-xl">{item.category.icon}</span>
-                ) : item.nonprofit ? (
-                  <span className="text-lg font-semibold text-slate-600">
-                    {item.nonprofit.name.charAt(0)}
-                  </span>
-                ) : (
-                  <Tag className="h-5 w-5 text-slate-400" />
-                )}
+              <div className="flex items-center gap-3">
+                {/* Logo/Icon */}
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 overflow-hidden">
+                  {item.nonprofit?.logoUrl ? (
+                    <img
+                      src={item.nonprofit.logoUrl}
+                      alt={item.nonprofit.name}
+                      className="h-10 w-10 rounded-lg object-contain"
+                    />
+                  ) : item.category?.icon ? (
+                    <span className="text-xl">{item.category.icon}</span>
+                  ) : item.nonprofit ? (
+                    <span className="text-lg font-semibold text-slate-600">
+                      {item.nonprofit.name.charAt(0)}
+                    </span>
+                  ) : (
+                    <Tag className="h-5 w-5 text-slate-400" />
+                  )}
+                </div>
+
+                {/* Name and Type */}
+                <div className="min-w-0 flex-1">
+                  <h4 className="truncate font-medium text-slate-900">
+                    {item.nonprofit?.name || item.category?.name}
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    {item.nonprofit ? "Nonprofit" : "Category"}
+                  </p>
+                </div>
+
+                {/* Remove button */}
+                <button
+                  onClick={() => removeFromCart(item.id)}
+                  className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                  title="Remove from giving list"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
 
-              {/* Name and Type */}
-              <div className="min-w-0 flex-1">
-                <h4 className="truncate font-medium text-slate-900">
-                  {item.nonprofit?.name || item.category?.name}
-                </h4>
-                <p className="text-xs text-slate-500">
-                  {item.nonprofit ? "Nonprofit" : "Category"}
-                </p>
-              </div>
-
-              {/* Remove button */}
-              <button
-                onClick={() => removeFromCart(item.id)}
-                className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
-                title="Remove from cart"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              {/* View Details Link */}
+              {item.nonprofitId && (
+                <div className="mt-2 pt-2 border-t border-slate-100">
+                  <Link
+                    href={`/directory/${item.nonprofitId}`}
+                    onClick={() => setSidebarOpen(false)}
+                    className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    View details
+                  </Link>
+                </div>
+              )}
             </div>
           ))}
         </div>
