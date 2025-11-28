@@ -176,11 +176,11 @@ export function NonprofitForm({ nonprofit, categories, onClose }: NonprofitFormP
 
         {/* Quick Fill Section - only show for new nonprofits */}
         {!nonprofit && (
-          <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
-            <label className="block text-sm font-medium text-blue-800 mb-2">
+          <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+            <label className="block text-sm font-medium text-emerald-800 mb-2">
               Quick Fill from Website
             </label>
-            <p className="text-xs text-blue-600 mb-3">
+            <p className="text-xs text-emerald-600 mb-3">
               Paste the nonprofit&apos;s website URL and let AI fill in the details
             </p>
             <div className="flex gap-2">
@@ -195,7 +195,7 @@ export function NonprofitForm({ nonprofit, categories, onClose }: NonprofitFormP
                 type="button"
                 onClick={handleQuickFill}
                 disabled={isExtractingInfo}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-emerald-600 hover:bg-emerald-700"
               >
                 {isExtractingInfo ? (
                   <>
