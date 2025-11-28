@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { X, ShoppingCart, Heart } from "lucide-react";
+import { X, HandHeart, Heart } from "lucide-react";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { CartTab } from "./cart-tab";
 import { FavoritesTab } from "./favorites-tab";
@@ -69,8 +69,8 @@ export function CartFavoritesSidebar() {
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <ShoppingCart className="h-4 w-4" />
-              Cart
+              <HandHeart className="h-4 w-4" />
+              Giving List
               {cartItems.length > 0 && (
                 <span className="ml-1 rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-semibold text-blue-700">
                   {cartItems.length}

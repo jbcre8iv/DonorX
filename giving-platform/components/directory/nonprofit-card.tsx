@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, Eye, Heart, ShoppingCart, Check, Plus } from "lucide-react";
+import { ExternalLink, Eye, Heart, HandHeart, Check, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -119,7 +119,7 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
             variant={inCart ? "secondary" : "outline"}
             size="sm"
             onClick={handleAddToCart}
-            title={inCart ? "Already in cart" : "Add to cart"}
+            title={inCart ? "In giving list" : "Add to giving list"}
             disabled={inCart}
           >
             {inCart ? (
@@ -127,7 +127,7 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
             ) : (
               <span className="flex items-center gap-0.5">
                 <Plus className="h-3 w-3" />
-                <ShoppingCart className="h-4 w-4" />
+                <HandHeart className="h-4 w-4" />
               </span>
             )}
           </Button>

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, LogOut, LayoutDashboard, Settings, Shield, ShoppingCart } from "lucide-react";
+import { Menu, X, LogOut, LayoutDashboard, Settings, Shield, HandHeart } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -19,17 +19,17 @@ const navLinks = [
   { href: "/contact", label: "Contact" },
 ];
 
-// Cart button component to avoid hook issues
-function CartButton() {
+// Giving List button component to avoid hook issues
+function GivingListButton() {
   const { cartItems, setSidebarOpen } = useCartFavorites();
 
   return (
     <button
       onClick={() => setSidebarOpen(true)}
       className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
-      aria-label="Open cart"
+      aria-label="Open giving list"
     >
-      <ShoppingCart className="h-5 w-5" />
+      <HandHeart className="h-5 w-5" />
       {cartItems.length > 0 && (
         <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
           {cartItems.length > 9 ? "9+" : cartItems.length}
@@ -39,8 +39,8 @@ function CartButton() {
   );
 }
 
-// Mobile cart button for the mobile menu
-function MobileCartButton({ onClose }: { onClose: () => void }) {
+// Mobile giving list button for the mobile menu
+function MobileGivingListButton({ onClose }: { onClose: () => void }) {
   const { cartItems, setSidebarOpen } = useCartFavorites();
 
   return (
@@ -52,8 +52,8 @@ function MobileCartButton({ onClose }: { onClose: () => void }) {
         setSidebarOpen(true);
       }}
     >
-      <ShoppingCart className="h-4 w-4 mr-2" />
-      Allocation Cart
+      <HandHeart className="h-4 w-4 mr-2" />
+      Giving List
       {cartItems.length > 0 && (
         <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
           {cartItems.length}
@@ -191,7 +191,7 @@ export function Header({ initialUser = null }: HeaderProps) {
         <div className="hidden md:flex items-center gap-3">
           {user ? (
             <>
-              <CartButton />
+              <GivingListButton />
               <Button asChild>
                 <Link href="/dashboard">
                   <LayoutDashboard className="h-4 w-4 mr-2" />
@@ -316,7 +316,7 @@ export function Header({ initialUser = null }: HeaderProps) {
                       <p className="text-sm text-slate-500 truncate">{user.email}</p>
                     </div>
                   </div>
-                  <MobileCartButton onClose={() => setMobileMenuOpen(false)} />
+                  <MobileGivingListButton onClose={() => setMobileMenuOpen(false)} />
                   <Button variant="outline" asChild fullWidth>
                     <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
                       Dashboard

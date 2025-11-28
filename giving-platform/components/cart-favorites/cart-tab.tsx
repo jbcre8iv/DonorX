@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Trash2, Tag, Building2, ArrowRight, ShoppingCart } from "lucide-react";
+import { Trash2, Tag, Building2, ArrowRight, HandHeart } from "lucide-react";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { Button } from "@/components/ui/button";
 
@@ -43,10 +43,10 @@ export function CartTab() {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center">
         <div className="mb-4 rounded-full bg-slate-100 p-4">
-          <ShoppingCart className="h-8 w-8 text-slate-400" />
+          <HandHeart className="h-8 w-8 text-slate-400" />
         </div>
         <h3 className="mb-2 text-lg font-medium text-slate-900">
-          Your cart is empty
+          Your giving list is empty
         </h3>
         <p className="mb-6 text-sm text-slate-500">
           Browse the directory and add nonprofits or categories to quickly
