@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, Eye, Heart, ShoppingCart, Check } from "lucide-react";
+import { ExternalLink, Eye, Heart, ShoppingCart, Check, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -125,7 +125,10 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
             {inCart ? (
               <Check className="h-4 w-4" />
             ) : (
-              <ShoppingCart className="h-4 w-4" />
+              <span className="relative">
+                <ShoppingCart className="h-4 w-4" />
+                <Plus className="h-2.5 w-2.5 absolute -top-1 -right-1 stroke-[3]" />
+              </span>
             )}
           </Button>
           {onQuickView && (
