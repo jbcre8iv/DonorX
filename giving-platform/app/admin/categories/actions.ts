@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { requireOwner } from "@/lib/auth/permissions";
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -65,7 +65,8 @@ Examples:
 }
 
 export async function createCategory(formData: FormData) {
-  const supabase = await createClient();
+  // Use admin client to bypass RLS for admin operations
+  const adminSupabase = createAdminClient();
 
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
@@ -75,7 +76,7 @@ export async function createCategory(formData: FormData) {
     return { error: "Name is required" };
   }
 
-  const { error } = await supabase.from("categories").insert({
+  const { error } = await adminSupabase.from("categories").insert({
     name,
     description: description || null,
     icon: icon || null,
@@ -92,7 +93,8 @@ export async function createCategory(formData: FormData) {
 }
 
 export async function updateCategory(categoryId: string, formData: FormData) {
-  const supabase = await createClient();
+  // Use admin client to bypass RLS for admin operations
+  const adminSupabase = createAdminClient();
 
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
@@ -102,7 +104,7 @@ export async function updateCategory(categoryId: string, formData: FormData) {
     return { error: "Name is required" };
   }
 
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("categories")
     .update({
       name,
@@ -128,10 +130,11 @@ export async function deleteCategory(categoryId: string) {
     return { error: ownerCheck.error };
   }
 
-  const supabase = await createClient();
+  // Use admin client to bypass RLS for admin operations
+  const adminSupabase = createAdminClient();
 
   // Check if there are any nonprofits in this category
-  const { data: nonprofits } = await supabase
+  const { data: nonprofits } = await adminSupabase
     .from("nonprofits")
     .select("id")
     .eq("category_id", categoryId)
@@ -142,7 +145,7 @@ export async function deleteCategory(categoryId: string) {
   }
 
   // Check if there are any allocations to this category
-  const { data: allocations } = await supabase
+  const { data: allocations } = await adminSupabase
     .from("allocations")
     .select("id")
     .eq("category_id", categoryId)
@@ -152,7 +155,7 @@ export async function deleteCategory(categoryId: string) {
     return { error: "Cannot delete category with existing donations" };
   }
 
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("categories")
     .delete()
     .eq("id", categoryId);
