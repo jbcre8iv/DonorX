@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, Eye, Heart, HandHeart, Check, Plus } from "lucide-react";
+import { Globe, Eye, Heart, HandHeart, Check, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -147,7 +147,7 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
                 rel="noopener noreferrer"
                 title="Visit Website"
               >
-                <ExternalLink className="h-4 w-4" />
+                <Globe className="h-4 w-4" />
               </a>
             </Button>
           )}
