@@ -79,13 +79,15 @@ export function DirectoryClient({
     return matchesSearch && matchesCategory;
   });
 
-  const featuredNonprofits = filteredNonprofits.filter((n) => n.featured);
-  const otherNonprofits = filteredNonprofits.filter((n) => !n.featured);
+  // Featured section disabled - all nonprofits shown in single list
+  // Database column preserved for future use
+  // const featuredNonprofits = filteredNonprofits.filter((n) => n.featured);
+  // const otherNonprofits = filteredNonprofits.filter((n) => !n.featured);
 
-  // Pagination for non-featured nonprofits (more items per page in table view)
+  // Pagination for all nonprofits (more items per page in table view)
   const itemsPerPage = viewMode === "table" ? ITEMS_PER_PAGE_TABLE : ITEMS_PER_PAGE_GRID;
-  const totalPages = Math.ceil(otherNonprofits.length / itemsPerPage);
-  const paginatedNonprofits = otherNonprofits.slice(
+  const totalPages = Math.ceil(filteredNonprofits.length / itemsPerPage);
+  const paginatedNonprofits = filteredNonprofits.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -174,38 +176,8 @@ export function DirectoryClient({
           </p>
         </div>
 
-        {/* Featured Nonprofits */}
-        {featuredNonprofits.length > 0 && (
-          <div className="mt-12">
-            <h2 className="text-xl font-semibold text-slate-900 mb-6">
-              Featured Organizations
-            </h2>
-            {viewMode === "grid" ? (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {featuredNonprofits.map((nonprofit) => (
-                  <NonprofitCard
-                    key={nonprofit.id}
-                    nonprofit={nonprofit}
-                    onQuickView={handleQuickView}
-                  />
-                ))}
-              </div>
-            ) : (
-              <NonprofitTable
-                nonprofits={featuredNonprofits}
-                onQuickView={handleQuickView}
-              />
-            )}
-          </div>
-        )}
-
-        {/* All Nonprofits */}
+        {/* All Nonprofits - single unified list */}
         <div className="mt-12">
-          <h2 className="text-xl font-semibold text-slate-900 mb-6">
-            {selectedCategory
-              ? categories.find((c) => c.id === selectedCategory)?.name
-              : "All Organizations"}
-          </h2>
           {paginatedNonprofits.length > 0 ? (
             <>
               {viewMode === "grid" ? (
@@ -234,11 +206,11 @@ export function DirectoryClient({
                 />
               )}
             </>
-          ) : featuredNonprofits.length === 0 ? (
+          ) : (
             <div className="text-center py-12 text-slate-500">
               <p>No nonprofits found matching your criteria.</p>
             </div>
-          ) : null}
+          )}
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, Eye, Star } from "lucide-react";
+import { ExternalLink, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Nonprofit } from "@/types/database";
@@ -48,14 +48,9 @@ export function NonprofitTable({ nonprofits, onQuickView }: NonprofitTableProps)
                     </div>
                   )}
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-900 group-hover:text-blue-700 transition-colors truncate">
-                        {nonprofit.name}
-                      </span>
-                      {nonprofit.featured && (
-                        <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500 flex-shrink-0" />
-                      )}
-                    </div>
+                    <span className="font-medium text-slate-900 group-hover:text-blue-700 transition-colors truncate">
+                      {nonprofit.name}
+                    </span>
                     {nonprofit.ein && (
                       <p className="text-xs text-slate-400">EIN: {nonprofit.ein}</p>
                     )}
