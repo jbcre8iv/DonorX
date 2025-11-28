@@ -31,30 +31,52 @@ interface NonprofitTableProps {
   onSort: (field: SortField) => void;
 }
 
-export function NonprofitTable({ nonprofits, onEdit, sortField, sortDirection, onSort }: NonprofitTableProps) {
-  const [isPending, startTransition] = useTransition();
-  const [actionId, setActionId] = useState<string | null>(null);
+// Sort icon component - defined outside render to avoid React hooks violation
+function SortIcon({ field, currentSortField, currentSortDirection }: {
+  field: SortField;
+  currentSortField: SortField;
+  currentSortDirection: SortDirection;
+}) {
+  if (currentSortField !== field) {
+    return <ArrowUpDown className="ml-1 h-3 w-3 text-slate-400" />;
+  }
+  return currentSortDirection === "asc"
+    ? <ArrowUp className="ml-1 h-3 w-3 text-blue-600" />
+    : <ArrowDown className="ml-1 h-3 w-3 text-blue-600" />;
+}
 
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="ml-1 h-3 w-3 text-slate-400" />;
-    }
-    return sortDirection === "asc"
-      ? <ArrowUp className="ml-1 h-3 w-3 text-blue-600" />
-      : <ArrowDown className="ml-1 h-3 w-3 text-blue-600" />;
-  };
-
-  const SortableHeader = ({ field, children, className = "" }: { field: SortField; children: React.ReactNode; className?: string }) => (
+// Sortable header component - defined outside render to avoid React hooks violation
+function SortableHeader({
+  field,
+  children,
+  className = "",
+  currentSortField,
+  currentSortDirection,
+  onSort
+}: {
+  field: SortField;
+  children: React.ReactNode;
+  className?: string;
+  currentSortField: SortField;
+  currentSortDirection: SortDirection;
+  onSort: (field: SortField) => void;
+}) {
+  return (
     <th className={`pb-3 font-medium ${className}`}>
       <button
         onClick={() => onSort(field)}
         className="flex items-center hover:text-blue-600 transition-colors"
       >
         {children}
-        <SortIcon field={field} />
+        <SortIcon field={field} currentSortField={currentSortField} currentSortDirection={currentSortDirection} />
       </button>
     </th>
   );
+}
+
+export function NonprofitTable({ nonprofits, onEdit, sortField, sortDirection, onSort }: NonprofitTableProps) {
+  const [isPending, startTransition] = useTransition();
+  const [actionId, setActionId] = useState<string | null>(null);
 
   const handleApprove = (id: string) => {
     setActionId(id);
@@ -89,17 +111,17 @@ export function NonprofitTable({ nonprofits, onEdit, sortField, sortDirection, o
       <table className="w-full">
         <thead>
           <tr className="border-b border-slate-200 text-left text-sm text-slate-600">
-            <SortableHeader field="name">Organization</SortableHeader>
-            <SortableHeader field="ein">EIN</SortableHeader>
-            <SortableHeader field="category">Category</SortableHeader>
-            <SortableHeader field="status">Status</SortableHeader>
+            <SortableHeader field="name" currentSortField={sortField} currentSortDirection={sortDirection} onSort={onSort}>Organization</SortableHeader>
+            <SortableHeader field="ein" currentSortField={sortField} currentSortDirection={sortDirection} onSort={onSort}>EIN</SortableHeader>
+            <SortableHeader field="category" currentSortField={sortField} currentSortDirection={sortDirection} onSort={onSort}>Category</SortableHeader>
+            <SortableHeader field="status" currentSortField={sortField} currentSortDirection={sortDirection} onSort={onSort}>Status</SortableHeader>
             <th className="pb-3 font-medium text-right">
               <button
                 onClick={() => onSort("total_received")}
                 className="flex items-center ml-auto hover:text-blue-600 transition-colors"
               >
                 Total Received
-                <SortIcon field="total_received" />
+                <SortIcon field="total_received" currentSortField={sortField} currentSortDirection={sortDirection} />
               </button>
             </th>
             <th className="pb-3 font-medium text-right">Actions</th>
