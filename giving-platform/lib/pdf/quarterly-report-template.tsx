@@ -166,6 +166,24 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
+  watermarkContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: -1,
+  },
+  watermark: {
+    fontSize: 72,
+    fontWeight: "bold",
+    color: "#f97316",
+    opacity: 0.15,
+    transform: "rotate(-45deg)",
+    textAlign: "center",
+  },
 });
 
 interface Allocation {
@@ -214,6 +232,13 @@ export function QuarterlyReportPDF({ data }: { data: QuarterlyReportData }) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
+        {/* Watermark for simulated reports */}
+        {data.hasSimulated && (
+          <View style={styles.watermarkContainer} fixed>
+            <Text style={styles.watermark}>SIMULATED</Text>
+          </View>
+        )}
+
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.logo}>DonorX</Text>
