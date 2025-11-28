@@ -6,7 +6,8 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { generateInitialsAvatar } from "@/lib/avatar";
 
 export async function login(formData: FormData) {
-  const supabase = await createClient();
+  const rememberMe = formData.get("rememberMe") === "on";
+  const supabase = await createClient({ persistSession: rememberMe });
 
   const data = {
     email: formData.get("email") as string,
