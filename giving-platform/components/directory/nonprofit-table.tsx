@@ -102,18 +102,21 @@ export function NonprofitTable({ nonprofits, onQuickView }: NonprofitTableProps)
                       <Eye className="h-4 w-4" />
                     </Button>
                   )}
-                  {nonprofit.website && (
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>
-                      <a
-                        href={nonprofit.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Visit Website"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  )}
+                  {/* Fixed-width container for external link to prevent layout shift */}
+                  <div className="w-8 h-8 flex items-center justify-center">
+                    {nonprofit.website && (
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>
+                        <a
+                          href={nonprofit.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Visit Website"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </td>
             </tr>
