@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, Eye } from "lucide-react";
+import { ExternalLink, Eye, Heart, ShoppingCart, Check } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import type { Nonprofit } from "@/types/database";
 
 interface NonprofitCardProps {
@@ -13,6 +14,44 @@ interface NonprofitCardProps {
 }
 
 export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
+  const { addToCart, isInCart, toggleFavorite, isFavorite, setSidebarOpen, setActiveTab } = useCartFavorites();
+
+  const inCart = isInCart(nonprofit.id);
+  const favorited = isFavorite(nonprofit.id);
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!inCart) {
+      await addToCart({
+        nonprofitId: nonprofit.id,
+        nonprofit: {
+          id: nonprofit.id,
+          name: nonprofit.name,
+          logoUrl: nonprofit.logo_url || undefined,
+          mission: nonprofit.mission || undefined,
+        },
+      });
+      // Open sidebar to show the added item
+      setActiveTab("cart");
+      setSidebarOpen(true);
+    }
+  };
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await toggleFavorite({
+      nonprofitId: nonprofit.id,
+      nonprofit: {
+        id: nonprofit.id,
+        name: nonprofit.name,
+        logoUrl: nonprofit.logo_url || undefined,
+        mission: nonprofit.mission || undefined,
+      },
+    });
+  };
+
   return (
     <Card className="flex flex-col h-full group hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
@@ -43,9 +82,22 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
               )}
             </div>
           </Link>
-          {nonprofit.featured && (
-            <Badge variant="success" className="flex-shrink-0">Featured</Badge>
-          )}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {nonprofit.featured && (
+              <Badge variant="success">Featured</Badge>
+            )}
+            <button
+              onClick={handleToggleFavorite}
+              className={`rounded-full p-1.5 transition-colors ${
+                favorited
+                  ? "text-pink-500 bg-pink-50 hover:bg-pink-100"
+                  : "text-slate-400 hover:text-pink-500 hover:bg-pink-50"
+              }`}
+              title={favorited ? "Remove from favorites" : "Add to favorites"}
+            >
+              <Heart className={`h-4 w-4 ${favorited ? "fill-current" : ""}`} />
+            </button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">
@@ -62,6 +114,19 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
         <div className="mt-4 flex items-center gap-2">
           <Button asChild size="sm" className="flex-1">
             <Link href={`/donate?nonprofit=${nonprofit.id}`}>Donate</Link>
+          </Button>
+          <Button
+            variant={inCart ? "secondary" : "outline"}
+            size="sm"
+            onClick={handleAddToCart}
+            title={inCart ? "Already in cart" : "Add to cart"}
+            disabled={inCart}
+          >
+            {inCart ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <ShoppingCart className="h-4 w-4" />
+            )}
           </Button>
           {onQuickView && (
             <Button

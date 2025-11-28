@@ -142,6 +142,37 @@ CREATE TABLE subscriptions (
   canceled_at TIMESTAMPTZ
 );
 
+-- User favorites (bookmarked nonprofits/categories)
+CREATE TABLE user_favorites (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  nonprofit_id UUID REFERENCES nonprofits(id) ON DELETE CASCADE,
+  category_id UUID REFERENCES categories(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT favorite_has_target CHECK (
+    (nonprofit_id IS NOT NULL AND category_id IS NULL) OR
+    (nonprofit_id IS NULL AND category_id IS NOT NULL)
+  ),
+  UNIQUE(user_id, nonprofit_id),
+  UNIQUE(user_id, category_id)
+);
+
+-- Allocation cart items (items ready to donate)
+CREATE TABLE cart_items (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  nonprofit_id UUID REFERENCES nonprofits(id) ON DELETE CASCADE,
+  category_id UUID REFERENCES categories(id) ON DELETE CASCADE,
+  percentage DECIMAL(5,2) DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT cart_item_has_target CHECK (
+    (nonprofit_id IS NOT NULL AND category_id IS NULL) OR
+    (nonprofit_id IS NULL AND category_id IS NOT NULL)
+  ),
+  UNIQUE(user_id, nonprofit_id),
+  UNIQUE(user_id, category_id)
+);
+
 -- Enable Row Level Security on all tables
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
@@ -154,6 +185,8 @@ ALTER TABLE allocation_template_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE impact_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_favorites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cart_items ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
 
@@ -214,6 +247,17 @@ CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.
 CREATE POLICY "Users can view own subscriptions" ON subscriptions FOR SELECT USING (user_id = auth.uid());
 CREATE POLICY "Users can insert own subscriptions" ON subscriptions FOR INSERT WITH CHECK (user_id = auth.uid());
 CREATE POLICY "Users can update own subscriptions" ON subscriptions FOR UPDATE USING (user_id = auth.uid());
+
+-- User Favorites: Users can manage their own favorites
+CREATE POLICY "Users can view own favorites" ON user_favorites FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own favorites" ON user_favorites FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can delete own favorites" ON user_favorites FOR DELETE USING (user_id = auth.uid());
+
+-- Cart Items: Users can manage their own cart
+CREATE POLICY "Users can view own cart" ON cart_items FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own cart items" ON cart_items FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update own cart items" ON cart_items FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete own cart items" ON cart_items FOR DELETE USING (user_id = auth.uid());
 
 -- Insert some default categories
 INSERT INTO categories (name, slug, description, icon) VALUES

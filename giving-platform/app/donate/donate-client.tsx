@@ -33,12 +33,43 @@ export function DonateClient({
 
   const [amount, setAmount] = React.useState(100000); // Start with first preset of middle range
   const [frequency, setFrequency] = React.useState<DonationFrequency>("one-time");
-  const [allocations, setAllocations] = React.useState<AllocationItem[]>(() => {
-    // If we have a preselected nonprofit, start with it
+  const [allocations, setAllocations] = React.useState<AllocationItem[]>([]);
+
+  // Initialize allocations from preselected nonprofit or cart
+  React.useEffect(() => {
+    const fromCart = searchParams.get("from") === "cart";
+
+    // If coming from cart, load items from sessionStorage
+    if (fromCart) {
+      try {
+        const cartData = sessionStorage.getItem("donorx_cart_checkout");
+        if (cartData) {
+          const cartItems = JSON.parse(cartData);
+          const cartAllocations: AllocationItem[] = cartItems.map((item: any) => ({
+            id: crypto.randomUUID(),
+            type: item.nonprofitId ? "nonprofit" : "category",
+            targetId: item.nonprofitId || item.categoryId,
+            targetName: item.nonprofit?.name || item.category?.name || "Unknown",
+            percentage: item.percentage,
+          }));
+
+          if (cartAllocations.length > 0) {
+            setAllocations(cartAllocations);
+            // Clear the checkout data
+            sessionStorage.removeItem("donorx_cart_checkout");
+            return;
+          }
+        }
+      } catch (error) {
+        console.error("Error loading cart data:", error);
+      }
+    }
+
+    // Otherwise, check for preselected nonprofit
     if (preselectedNonprofitId) {
       const nonprofit = nonprofits.find((n) => n.id === preselectedNonprofitId);
       if (nonprofit) {
-        return [
+        setAllocations([
           {
             id: crypto.randomUUID(),
             type: "nonprofit",
@@ -46,11 +77,10 @@ export function DonateClient({
             targetName: nonprofit.name,
             percentage: 100,
           },
-        ];
+        ]);
       }
     }
-    return [];
-  });
+  }, [preselectedNonprofitId, nonprofits, searchParams]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 

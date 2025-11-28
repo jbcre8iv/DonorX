@@ -30,6 +30,7 @@ interface SidebarLink {
 
 const donorLinks: SidebarLink[] = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard/favorites", label: "Favorites", icon: Heart },
   { href: "/dashboard/history", label: "Donation History", icon: History },
   { href: "/dashboard/subscriptions", label: "Recurring", icon: RefreshCw },
   { href: "/dashboard/impact", label: "Impact Feed", icon: Newspaper },
