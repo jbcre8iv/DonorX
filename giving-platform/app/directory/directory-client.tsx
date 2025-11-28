@@ -58,6 +58,22 @@ function CategoryScroller({
 
   return (
     <div className="relative flex items-center gap-2 max-w-4xl mx-auto">
+      {/* Fixed "All" Button */}
+      <button
+        onClick={() => onSelectCategory(null)}
+        className={cn(
+          "flex-shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
+          selectedCategory === null
+            ? "bg-blue-700 text-white"
+            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+        )}
+      >
+        All
+      </button>
+
+      {/* Divider */}
+      <div className="h-6 w-px bg-slate-200 flex-shrink-0" />
+
       {/* Left Arrow */}
       <button
         onClick={() => scroll("left")}
@@ -77,17 +93,6 @@ function CategoryScroller({
         className="flex-1 overflow-x-auto scrollbar-hide flex gap-2 py-1"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
-        <button
-          onClick={() => onSelectCategory(null)}
-          className={cn(
-            "flex-shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
-            selectedCategory === null
-              ? "bg-blue-700 text-white"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-          )}
-        >
-          All
-        </button>
         {categories.map((category) => (
           <button
             key={category.id}
