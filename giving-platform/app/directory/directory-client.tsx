@@ -11,6 +11,7 @@ import { NonprofitTable } from "@/components/directory/nonprofit-table";
 import { NonprofitModal } from "@/components/directory/nonprofit-modal";
 import { usePreferences } from "@/hooks/use-preferences";
 import { cn } from "@/lib/utils";
+import { smartFilterNonprofit } from "@/lib/smart-search";
 import type { Nonprofit, Category } from "@/types/database";
 
 const ITEMS_PER_PAGE_GRID = 9;
@@ -70,10 +71,7 @@ export function DirectoryClient({
   }, [search, selectedCategory, viewMode]);
 
   const filteredNonprofits = initialNonprofits.filter((nonprofit) => {
-    const matchesSearch =
-      search === "" ||
-      nonprofit.name.toLowerCase().includes(search.toLowerCase()) ||
-      nonprofit.mission?.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = smartFilterNonprofit(nonprofit, search);
     const matchesCategory =
       selectedCategory === null || nonprofit.category_id === selectedCategory;
     return matchesSearch && matchesCategory;

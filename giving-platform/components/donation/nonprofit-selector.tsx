@@ -6,6 +6,7 @@ import { Modal, ModalHeader, ModalBody } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { smartFilterNonprofit, smartFilterCategory } from "@/lib/smart-search";
 import type { Nonprofit, Category } from "@/types/database";
 
 type SelectionType = "nonprofit" | "category";
@@ -31,17 +32,11 @@ export function NonprofitSelector({
   const [activeTab, setActiveTab] = React.useState<"nonprofits" | "categories">("nonprofits");
 
   const filteredNonprofits = nonprofits.filter(
-    (n) =>
-      !excludeIds.includes(n.id) &&
-      (search === "" ||
-        n.name.toLowerCase().includes(search.toLowerCase()) ||
-        n.mission?.toLowerCase().includes(search.toLowerCase()))
+    (n) => !excludeIds.includes(n.id) && smartFilterNonprofit(n, search)
   );
 
   const filteredCategories = categories.filter(
-    (c) =>
-      !excludeIds.includes(c.id) &&
-      (search === "" || c.name.toLowerCase().includes(search.toLowerCase()))
+    (c) => !excludeIds.includes(c.id) && smartFilterCategory(c, search)
   );
 
   const handleSelect = (type: SelectionType, id: string, name: string) => {
