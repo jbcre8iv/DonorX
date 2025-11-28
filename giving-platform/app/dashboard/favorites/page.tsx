@@ -9,7 +9,7 @@ import {
   Building2,
   Plus,
   ExternalLink,
-  ShoppingCart,
+  HandHeart,
   ArrowRight,
 } from "lucide-react";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
@@ -113,8 +113,8 @@ export default function FavoritesPage() {
             setSidebarOpen(true);
           }}
         >
-          <ShoppingCart className="mr-2 h-4 w-4" />
-          Open Cart
+          <HandHeart className="mr-2 h-4 w-4" />
+          Open Giving List
         </Button>
       </div>
 
@@ -178,7 +178,7 @@ export default function FavoritesPage() {
                     </Button>
                     {isInCart(item.nonprofitId) ? (
                       <Button variant="secondary" size="sm" disabled>
-                        In Cart
+                        In List
                       </Button>
                     ) : (
                       <Button
@@ -187,7 +187,7 @@ export default function FavoritesPage() {
                         onClick={() => handleAddToCart(item)}
                       >
                         <Plus className="mr-1 h-3 w-3" />
-                        Cart
+                        Add
                       </Button>
                     )}
                     <Button variant="outline" size="sm" asChild>
@@ -251,7 +251,7 @@ export default function FavoritesPage() {
                     </Button>
                     {isInCart(undefined, item.categoryId) ? (
                       <Button variant="secondary" size="sm" disabled>
-                        In Cart
+                        In List
                       </Button>
                     ) : (
                       <Button
@@ -260,7 +260,7 @@ export default function FavoritesPage() {
                         onClick={() => handleAddToCart(item)}
                       >
                         <Plus className="mr-1 h-3 w-3" />
-                        Cart
+                        Add
                       </Button>
                     )}
                   </div>

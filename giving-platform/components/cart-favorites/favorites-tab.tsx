@@ -106,14 +106,14 @@ export function FavoritesTab() {
                   </Link>
                   <div className="flex items-center gap-2">
                     {isInCart(item.nonprofitId) ? (
-                      <span className="text-xs text-green-600">In cart</span>
+                      <span className="text-xs text-green-600">In giving list</span>
                     ) : (
                       <button
                         onClick={() => handleAddToCart(item)}
                         className="flex items-center gap-1 rounded bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100"
                       >
                         <Plus className="h-3 w-3" />
-                        Add to cart
+                        Add to giving list
                       </button>
                     )}
                     <button
@@ -164,14 +164,14 @@ export function FavoritesTab() {
                   {/* Actions */}
                   <div className="flex items-center gap-2">
                     {isInCart(undefined, item.categoryId) ? (
-                      <span className="text-xs text-green-600">In cart</span>
+                      <span className="text-xs text-green-600">In giving list</span>
                     ) : (
                       <button
                         onClick={() => handleAddToCart(item)}
                         className="flex items-center gap-1 rounded bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100"
                       >
                         <Plus className="h-3 w-3" />
-                        Add to cart
+                        Add to giving list
                       </button>
                     )}
                     <button
