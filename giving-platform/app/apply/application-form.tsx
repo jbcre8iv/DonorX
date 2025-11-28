@@ -239,12 +239,12 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
       )}
 
       {/* Quick Fill Section */}
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-        <h3 className="flex items-center gap-2 font-medium text-blue-900">
+      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+        <h3 className="flex items-center gap-2 font-medium text-emerald-900">
           <Sparkles className="h-4 w-4" />
           Quick Fill from Website
         </h3>
-        <p className="mt-1 text-sm text-blue-700">
+        <p className="mt-1 text-sm text-emerald-700">
           Enter your website URL and we&apos;ll automatically fill in your organization details.
         </p>
         <div className="mt-3 flex gap-2">
