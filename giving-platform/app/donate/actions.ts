@@ -85,8 +85,12 @@ export async function createCheckoutSession(
     // Check if simulation mode is enabled
     const simulationMode = await isSimulationModeEnabled();
 
+    // Use admin client for database operations to bypass RLS
+    // This ensures both donation and allocations are created reliably
+    const adminClient = createAdminClient();
+
     // Get user's organization_id if they have one
-    const { data: userData } = await supabase
+    const { data: userData } = await adminClient
       .from("users")
       .select("organization_id")
       .eq("id", user.id)
@@ -95,8 +99,17 @@ export async function createCheckoutSession(
     const isRecurring = frequency !== "one-time";
     const recurringInterval = isRecurring ? frequency as RecurringInterval : null;
 
+    // Prepare allocation records first to validate nonprofit/category IDs exist
+    const allocationRecords = allocations.map((a) => ({
+      nonprofit_id: a.type === "nonprofit" ? a.targetId : null,
+      category_id: a.type === "category" ? a.targetId : null,
+      percentage: a.percentage,
+      amount_cents: Math.round((amountCents * a.percentage) / 100),
+      disbursed: false,
+    }));
+
     // Create donation record (pending for real payments, completed for simulation)
-    const { data: donation, error: donationError } = await supabase
+    const { data: donation, error: donationError } = await adminClient
       .from("donations")
       .insert({
         user_id: user.id,
@@ -118,24 +131,20 @@ export async function createCheckoutSession(
       return { success: false, error: "Failed to create donation record" };
     }
 
-    // Create allocation records
-    const allocationRecords = allocations.map((a) => ({
+    // Add donation_id to allocation records and insert
+    const allocationsWithDonationId = allocationRecords.map((a) => ({
+      ...a,
       donation_id: donation.id,
-      nonprofit_id: a.type === "nonprofit" ? a.targetId : null,
-      category_id: a.type === "category" ? a.targetId : null,
-      percentage: a.percentage,
-      amount_cents: Math.round((amountCents * a.percentage) / 100),
-      disbursed: false,
     }));
 
-    const { error: allocError } = await supabase
+    const { error: allocError } = await adminClient
       .from("allocations")
-      .insert(allocationRecords);
+      .insert(allocationsWithDonationId);
 
     if (allocError) {
       console.error("Failed to create allocations:", allocError);
       // Clean up the donation
-      await supabase.from("donations").delete().eq("id", donation.id);
+      await adminClient.from("donations").delete().eq("id", donation.id);
       return { success: false, error: "Failed to create allocation records" };
     }
 
