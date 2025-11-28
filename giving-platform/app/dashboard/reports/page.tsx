@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { FileText, Download, Calendar, DollarSign, Building2, TrendingUp } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,20 @@ export const metadata = {
   title: "Quarterly Reports",
 };
 
+async function isSimulationMode(): Promise<boolean> {
+  try {
+    const adminClient = createAdminClient();
+    const { data } = await adminClient
+      .from("system_settings")
+      .select("value")
+      .eq("key", "simulation_mode")
+      .single();
+    return data?.value?.enabled === true;
+  } catch {
+    return false;
+  }
+}
+
 export default async function QuarterlyReportsPage({
   searchParams,
 }: {
@@ -23,6 +37,7 @@ export default async function QuarterlyReportsPage({
 }) {
   const params = await searchParams;
   const supabase = await createClient();
+  const simulationMode = await isSimulationMode();
 
   const {
     data: { user },
@@ -266,18 +281,10 @@ export default async function QuarterlyReportsPage({
                     Get a detailed report for your records or to share with stakeholders
                   </p>
                 </div>
-                <form
-                  action={async () => {
-                    "use server";
-                    // In production, this would generate a PDF
-                    // For now, we just show the button
-                  }}
-                >
-                  <Button variant="outline" disabled>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download PDF
-                  </Button>
-                </form>
+                <Button variant="outline" disabled={!simulationMode}>
+                  <Download className="mr-2 h-4 w-4" />
+                  {simulationMode ? "Download PDF" : "Download PDF (Coming Soon)"}
+                </Button>
               </div>
             </CardContent>
           </Card>

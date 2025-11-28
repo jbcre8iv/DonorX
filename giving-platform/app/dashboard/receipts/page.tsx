@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { Download, FileText, Calendar, CreditCard } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { Download, FileText, Calendar, CreditCard, TestTube } from "lucide-react";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +11,23 @@ export const metadata = {
   title: "Tax Receipts",
 };
 
+async function isSimulationMode(): Promise<boolean> {
+  try {
+    const adminClient = createAdminClient();
+    const { data } = await adminClient
+      .from("system_settings")
+      .select("value")
+      .eq("key", "simulation_mode")
+      .single();
+    return data?.value?.enabled === true;
+  } catch {
+    return false;
+  }
+}
+
 export default async function ReceiptsPage() {
   const supabase = await createClient();
+  const simulationMode = await isSimulationMode();
 
   const {
     data: { user },
@@ -88,9 +103,9 @@ export default async function ReceiptsPage() {
                   {thisYearDonations.length} donation{thisYearDonations.length !== 1 ? "s" : ""}
                 </p>
               </div>
-              <Button size="lg" disabled>
+              <Button size="lg" disabled={!simulationMode}>
                 <Download className="mr-2 h-5 w-5" />
-                Annual Statement (Available Jan 15)
+                {simulationMode ? "Download Annual Statement" : "Annual Statement (Available Jan 15)"}
               </Button>
             </div>
           </CardContent>
@@ -187,9 +202,9 @@ export default async function ReceiptsPage() {
                   <p className="text-2xl font-bold text-slate-900 mb-3">
                     {formatCurrency(donationsByYear[year].total)}
                   </p>
-                  <Button variant="outline" size="sm" fullWidth disabled={year === currentYear}>
+                  <Button variant="outline" size="sm" fullWidth disabled={year === currentYear && !simulationMode}>
                     <Download className="mr-2 h-4 w-4" />
-                    {year === currentYear ? "Available Jan 15" : "Download Summary"}
+                    {year === currentYear && !simulationMode ? "Available Jan 15" : "Download Summary"}
                   </Button>
                 </div>
               ))}
