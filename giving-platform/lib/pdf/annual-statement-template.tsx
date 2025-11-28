@@ -184,21 +184,20 @@ const styles = StyleSheet.create({
   },
   watermarkContainer: {
     position: "absolute",
-    top: 0,
+    top: 200,
     left: 0,
     right: 0,
-    bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    zIndex: -1,
   },
   watermark: {
-    fontSize: 72,
+    fontSize: 80,
     fontWeight: "bold",
-    color: "#f97316",
-    opacity: 0.15,
-    transform: "rotate(-45deg)",
+    color: "#dc2626",
+    opacity: 0.25,
+    transform: "rotate(-35deg)",
     textAlign: "center",
+    letterSpacing: 8,
   },
 });
 
@@ -231,13 +230,6 @@ export function AnnualStatementPDF({ data }: { data: AnnualStatementData }) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Watermark for simulated statements */}
-        {data.hasSimulated && (
-          <View style={styles.watermarkContainer} fixed>
-            <Text style={styles.watermark}>SIMULATED</Text>
-          </View>
-        )}
-
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.logo}>DonorX</Text>
@@ -330,6 +322,13 @@ export function AnnualStatementPDF({ data }: { data: AnnualStatementData }) {
             })}
           </Text>
         </View>
+
+        {/* Watermark for simulated statements - rendered last to appear on top */}
+        {data.hasSimulated && (
+          <View style={styles.watermarkContainer} fixed>
+            <Text style={styles.watermark}>SIMULATED</Text>
+          </View>
+        )}
       </Page>
     </Document>
   );
