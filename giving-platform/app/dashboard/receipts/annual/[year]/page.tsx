@@ -96,8 +96,8 @@ export default async function AnnualStatementPage({ params }: AnnualStatementPag
 
   return (
     <div className="space-y-6">
-      {/* Header with actions */}
-      <div className="flex items-center justify-between">
+      {/* Header with actions - hidden when printing */}
+      <div className="flex items-center justify-between no-print">
         <div className="flex items-center gap-4">
           <Link href="/dashboard/receipts">
             <Button variant="ghost" size="sm">
@@ -112,9 +112,9 @@ export default async function AnnualStatementPage({ params }: AnnualStatementPag
         </div>
       </div>
 
-      {/* Simulated Badge */}
+      {/* Simulated Badge - hidden when printing */}
       {hasSimulated && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 no-print">
           <div className="flex items-center gap-2 text-amber-800">
             <TestTube className="h-5 w-5" />
             <span className="font-medium">Includes Simulated Donations</span>
@@ -125,8 +125,8 @@ export default async function AnnualStatementPage({ params }: AnnualStatementPag
         </div>
       )}
 
-      {/* Statement Preview */}
-      <div className="mx-auto max-w-2xl bg-white rounded-lg border border-slate-200 shadow-sm print:shadow-none print:border-none">
+      {/* Statement Preview - main printable content */}
+      <div className="mx-auto max-w-2xl bg-white rounded-lg border border-slate-200 shadow-sm print:shadow-none print:border-none print-content">
         {/* Statement Header */}
         <div className="border-b border-slate-200 p-8 print:p-6">
           <div className="flex items-start justify-between">

@@ -85,8 +85,8 @@ export default async function QuarterlyReportPreviewPage({
 
   return (
     <div className="space-y-6">
-      {/* Header with actions */}
-      <div className="flex items-center justify-between">
+      {/* Header with actions - hidden when printing */}
+      <div className="flex items-center justify-between no-print">
         <div className="flex items-center gap-4">
           <Link href="/dashboard/reports">
             <Button variant="ghost" size="sm">
@@ -101,8 +101,8 @@ export default async function QuarterlyReportPreviewPage({
         </div>
       </div>
 
-      {/* Report Preview */}
-      <div className="mx-auto max-w-3xl bg-white rounded-lg border border-slate-200 shadow-sm print:shadow-none print:border-none">
+      {/* Report Preview - main printable content */}
+      <div className="mx-auto max-w-3xl bg-white rounded-lg border border-slate-200 shadow-sm print:shadow-none print:border-none print-content">
         {/* Report Header */}
         <div className="border-b border-slate-200 p-8 print:p-6">
           <div className="flex items-start justify-between">

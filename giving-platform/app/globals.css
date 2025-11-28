@@ -138,3 +138,53 @@ input[type="range"]::-moz-range-thumb:hover {
 input[type="range"]:focus::-webkit-slider-thumb {
   box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.2);
 }
+
+/* Print styles for receipt/report pages */
+@media print {
+  /* Hide all UI elements */
+  header,
+  nav,
+  aside,
+  .sidebar,
+  .no-print,
+  [data-sidebar],
+  [data-topbar] {
+    display: none !important;
+  }
+
+  /* Reset body and html */
+  html, body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Make main content full width */
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Style the printable content */
+  .print-content {
+    margin: 0 !important;
+    padding: 20px !important;
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+  }
+
+  /* Hide buttons and navigation elements */
+  button,
+  a[href^="/dashboard"],
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  /* Ensure proper page breaks */
+  .print-content {
+    page-break-inside: avoid;
+  }
+}

@@ -83,8 +83,8 @@ export default async function ReceiptPage({ params }: ReceiptPageProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header with actions */}
-      <div className="flex items-center justify-between">
+      {/* Header with actions - hidden when printing */}
+      <div className="flex items-center justify-between no-print">
         <div className="flex items-center gap-4">
           <Link href="/dashboard/receipts">
             <Button variant="ghost" size="sm">
@@ -99,9 +99,9 @@ export default async function ReceiptPage({ params }: ReceiptPageProps) {
         </div>
       </div>
 
-      {/* Simulated Badge */}
+      {/* Simulated Badge - hidden when printing */}
       {donation.is_simulated && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 no-print">
           <div className="flex items-center gap-2 text-amber-800">
             <TestTube className="h-5 w-5" />
             <span className="font-medium">Simulated Donation Receipt</span>
@@ -112,8 +112,8 @@ export default async function ReceiptPage({ params }: ReceiptPageProps) {
         </div>
       )}
 
-      {/* Receipt Preview */}
-      <div className="mx-auto max-w-2xl bg-white rounded-lg border border-slate-200 shadow-sm print:shadow-none print:border-none">
+      {/* Receipt Preview - main printable content */}
+      <div className="mx-auto max-w-2xl bg-white rounded-lg border border-slate-200 shadow-sm print:shadow-none print:border-none print-content">
         {/* Receipt Header */}
         <div className="border-b border-slate-200 p-8 print:p-6">
           <div className="flex items-start justify-between">
