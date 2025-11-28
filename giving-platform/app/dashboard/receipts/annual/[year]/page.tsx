@@ -126,7 +126,7 @@ export default async function AnnualStatementPage({ params }: AnnualStatementPag
       )}
 
       {/* Statement Preview - main printable content */}
-      <div className="mx-auto max-w-2xl bg-white rounded-lg border border-slate-200 shadow-sm print:shadow-none print:border-none print-content">
+      <div className={`mx-auto max-w-2xl bg-white rounded-lg border border-slate-200 shadow-sm print:shadow-none print:border-none print-content ${hasSimulated ? "simulated" : ""}`}>
         {/* Statement Header */}
         <div className="border-b border-slate-200 p-8 print:p-6">
           <div className="flex items-start justify-between">

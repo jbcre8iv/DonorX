@@ -222,4 +222,19 @@ input[type="range"]:focus::-webkit-slider-thumb {
     page-break-before: auto;
     page-break-inside: avoid;
   }
+
+  /* Show watermark when printing simulated content */
+  .print-content.simulated::before {
+    content: "SIMULATED";
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-35deg);
+    font-size: 80px;
+    font-weight: bold;
+    color: rgba(220, 38, 38, 0.25);
+    letter-spacing: 8px;
+    pointer-events: none;
+    z-index: 9999;
+  }
 }

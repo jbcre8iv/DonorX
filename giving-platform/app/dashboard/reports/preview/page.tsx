@@ -56,9 +56,13 @@ export default async function QuarterlyReportPreviewPage({
     ? `${profile.first_name} ${profile.last_name}`
     : profile?.email || user.email || "Donor";
 
-  // Check if any allocations are from simulated donations
-  // Note: We would need to extend the report generator to track this
-  const hasSimulated = false; // Placeholder - would need to be tracked
+  // Check if simulation mode is enabled (all donations in simulation mode are simulated)
+  const { data: simSetting } = await adminClient
+    .from("system_settings")
+    .select("value")
+    .eq("key", "simulation_mode")
+    .single();
+  const hasSimulated = simSetting?.value?.enabled === true;
 
   const reportData = {
     quarter,
@@ -102,7 +106,7 @@ export default async function QuarterlyReportPreviewPage({
       </div>
 
       {/* Report Preview - main printable content */}
-      <div className="mx-auto max-w-3xl bg-white rounded-lg border border-slate-200 shadow-sm print:shadow-none print:border-none print-content">
+      <div className={`mx-auto max-w-3xl bg-white rounded-lg border border-slate-200 shadow-sm print:shadow-none print:border-none print-content ${hasSimulated ? "simulated" : ""}`}>
         {/* Report Header */}
         <div className="border-b border-slate-200 p-8 print:p-6">
           <div className="flex items-start justify-between">
