@@ -12,6 +12,7 @@ export async function login(formData: FormData) {
     email: formData.get("email") as string,
     password: formData.get("password") as string,
   };
+  const redirectTo = formData.get("redirect") as string | null;
 
   const { data: authData, error } = await supabase.auth.signInWithPassword(data);
 
@@ -37,6 +38,12 @@ export async function login(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
+
+  // Redirect to the specified URL or default to dashboard
+  // Only allow internal redirects (starting with /)
+  if (redirectTo && redirectTo.startsWith("/")) {
+    redirect(redirectTo);
+  }
   redirect("/dashboard");
 }
 

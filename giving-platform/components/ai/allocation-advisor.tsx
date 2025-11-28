@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Loader2, Lightbulb, PieChart, ArrowRight, X, ChevronDown } from "lucide-react";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { Sparkles, Loader2, Lightbulb, PieChart, ArrowRight, X, ChevronDown, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
@@ -44,11 +46,13 @@ export function AllocationAdvisor({
 }: AllocationAdvisorProps) {
   // Use external amount if provided, otherwise allow manual input
   const hasExternalAmount = externalAmount !== undefined && externalAmount > 0;
+  const pathname = usePathname();
   const [goals, setGoals] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStrategy, setLoadingStrategy] = useState<string | null>(null);
   const [advice, setAdvice] = useState<AllocationAdvice | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [requiresLogin, setRequiresLogin] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   // The actual amount to use for calculations
@@ -63,6 +67,7 @@ export function AllocationAdvisor({
     setIsLoading(true);
     setLoadingStrategy(strategy || null);
     setError(null);
+    setRequiresLogin(false);
 
     try {
       const response = await fetch("/api/allocation-advice", {
@@ -79,7 +84,7 @@ export function AllocationAdvisor({
       if (!response.ok) {
         // Get more specific error message
         if (response.status === 401) {
-          setError("Please log in to use AI advice.");
+          setRequiresLogin(true);
           return;
         }
         const errorData = await response.json().catch(() => ({}));
@@ -259,7 +264,21 @@ export function AllocationAdvisor({
           </Button>
         </div>
 
-        {error && (
+        {requiresLogin && (
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+            <p className="text-sm text-slate-600 mb-3">
+              Sign in to get personalized AI allocation recommendations based on your giving goals.
+            </p>
+            <Link href={`/login?redirect=${encodeURIComponent(pathname)}`}>
+              <Button variant="outline" className="w-full">
+                <LogIn className="mr-2 h-4 w-4" />
+                Sign in to continue
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {error && !requiresLogin && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
             {error}
           </div>
