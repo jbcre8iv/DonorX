@@ -1,11 +1,10 @@
 import Link from "next/link";
-import { Building2, CreditCard, Users, TrendingUp, DollarSign, Calendar, CheckCircle, Clock } from "lucide-react";
+import { Building2, CreditCard, Users, TrendingUp, DollarSign, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import { PendingApprovalButtons } from "./pending-approval-buttons";
+import { formatCurrency } from "@/lib/utils";
+import { ExpandableRecentDonations, ExpandablePendingApprovals } from "./expandable-cards";
 
 export const metadata = {
   title: "Admin Dashboard",
@@ -17,11 +16,25 @@ export default async function AdminDashboardPage() {
   // Fetch platform stats
   const { data: donations } = await supabase
     .from("donations")
-    .select("amount_cents, status, created_at, user_id");
+    .select(`
+      id,
+      amount_cents,
+      status,
+      created_at,
+      user_id,
+      is_simulated,
+      user:users(first_name, last_name, email),
+      allocations(
+        amount_cents,
+        percentage,
+        nonprofit:nonprofits(name),
+        category:categories(name)
+      )
+    `);
 
   const { data: nonprofits } = await supabase
     .from("nonprofits")
-    .select("id, name, ein, status, category_id, created_at");
+    .select("id, name, ein, status, category_id, created_at, description, website, mission");
 
   const { data: users } = await supabase
     .from("users")
@@ -147,91 +160,14 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        {/* Recent Donations */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Recent Donations</CardTitle>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/admin/donations">View All</Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {recentDonations.length === 0 ? (
-              <p className="text-center text-slate-500 py-4">No donations yet</p>
-            ) : (
-              <div className="space-y-4">
-                {recentDonations.map((donation, idx) => (
-                  <div key={idx} className="flex items-start gap-3">
-                    <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100">
-                      <CreditCard className="h-4 w-4 text-emerald-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-slate-900">
-                        {formatCurrency(donation.amount_cents)}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {formatDate(donation.created_at)}
-                      </p>
-                    </div>
-                    <Badge variant="success">Completed</Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Recent Donations - Expandable */}
+        <ExpandableRecentDonations donations={recentDonations} />
 
-        {/* Pending Approvals */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Pending Approvals</CardTitle>
-            {pendingNonprofits.length > 0 && (
-              <Badge variant="warning">{pendingNonprofits.length} pending</Badge>
-            )}
-          </CardHeader>
-          <CardContent>
-            {pendingNonprofits.length === 0 ? (
-              <div className="text-center py-4">
-                <CheckCircle className="h-8 w-8 text-emerald-500 mx-auto mb-2" />
-                <p className="text-slate-500">All caught up!</p>
-                <p className="text-sm text-slate-400">No pending approvals</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {pendingNonprofits.slice(0, 5).map((nonprofit) => (
-                  <div
-                    key={nonprofit.id}
-                    className="flex items-center justify-between rounded-lg border border-slate-200 p-3"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-900">{nonprofit.name}</p>
-                      <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                        {nonprofit.ein && <span>EIN: {nonprofit.ein}</span>}
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {formatDate(nonprofit.created_at)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">
-                        {getCategoryName(nonprofit.category_id)}
-                      </Badge>
-                      <PendingApprovalButtons nonprofitId={nonprofit.id} />
-                    </div>
-                  </div>
-                ))}
-                {pendingNonprofits.length > 5 && (
-                  <Button variant="outline" fullWidth asChild>
-                    <Link href="/admin/nonprofits?status=pending">
-                      View all {pendingNonprofits.length} pending
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Pending Approvals - Expandable */}
+        <ExpandablePendingApprovals
+          nonprofits={pendingNonprofits}
+          getCategoryName={getCategoryName}
+        />
       </div>
 
       {/* Quick Actions */}
