@@ -21,7 +21,6 @@ interface CartCheckoutItem {
   categoryId?: string;
   nonprofit?: { name: string };
   category?: { name: string };
-  percentage: number;
 }
 
 interface DonateClientProps {
@@ -51,14 +50,23 @@ export function DonateClient({
       try {
         const cartData = sessionStorage.getItem("donorx_cart_checkout");
         if (cartData) {
-          const cartItems = JSON.parse(cartData);
-          const cartAllocations: AllocationItem[] = cartItems.map((item: CartCheckoutItem) => ({
-            id: crypto.randomUUID(),
-            type: item.nonprofitId ? "nonprofit" : "category",
-            targetId: item.nonprofitId || item.categoryId,
-            targetName: item.nonprofit?.name || item.category?.name || "Unknown",
-            percentage: item.percentage,
-          }));
+          const cartItems: CartCheckoutItem[] = JSON.parse(cartData);
+          const itemCount = cartItems.length;
+
+          // Distribute percentages evenly across all items
+          const evenPercentage = Math.floor(100 / itemCount);
+          const remainder = 100 - evenPercentage * itemCount;
+
+          const cartAllocations: AllocationItem[] = cartItems
+            .filter(item => item.nonprofitId || item.categoryId)
+            .map((item, index) => ({
+              id: crypto.randomUUID(),
+              type: item.nonprofitId ? "nonprofit" as const : "category" as const,
+              targetId: (item.nonprofitId || item.categoryId)!,
+              targetName: item.nonprofit?.name || item.category?.name || "Unknown",
+              // Give remainder to first item so total is exactly 100%
+              percentage: index === 0 ? evenPercentage + remainder : evenPercentage,
+            }));
 
           if (cartAllocations.length > 0) {
             setAllocations(cartAllocations);
