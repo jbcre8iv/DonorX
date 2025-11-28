@@ -14,7 +14,7 @@ interface NonprofitCardProps {
 }
 
 export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
-  const { addToCart, isInCart, toggleFavorite, isFavorite, setSidebarOpen, setActiveTab } = useCartFavorites();
+  const { addToCart, isInCart, toggleFavorite, isFavorite } = useCartFavorites();
 
   const inCart = isInCart(nonprofit.id);
   const favorited = isFavorite(nonprofit.id);
@@ -32,9 +32,7 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
           mission: nonprofit.mission || undefined,
         },
       });
-      // Open sidebar to show the added item
-      setActiveTab("cart");
-      setSidebarOpen(true);
+      // Don't open sidebar - let the header icon animation indicate the item was added
     }
   };
 

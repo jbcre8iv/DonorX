@@ -13,7 +13,7 @@ interface NonprofitTableProps {
 }
 
 function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuickView?: (nonprofit: Nonprofit) => void }) {
-  const { addToCart, isInCart, toggleFavorite, isFavorite, setSidebarOpen, setActiveTab } = useCartFavorites();
+  const { addToCart, isInCart, toggleFavorite, isFavorite } = useCartFavorites();
 
   const inCart = isInCart(nonprofit.id);
   const favorited = isFavorite(nonprofit.id);
@@ -31,8 +31,7 @@ function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuic
           mission: nonprofit.mission || undefined,
         },
       });
-      setActiveTab("cart");
-      setSidebarOpen(true);
+      // Don't open sidebar - let the header icon animation indicate the item was added
     }
   };
 
