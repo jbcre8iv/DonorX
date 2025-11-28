@@ -80,7 +80,7 @@ export default async function NonprofitPage({ params }: NonprofitPageProps) {
             <img
               src={typedNonprofit.logo_url}
               alt={`${typedNonprofit.name} logo`}
-              className="h-24 w-24 rounded-xl object-cover border border-slate-200"
+              className="h-24 w-24 rounded-xl object-contain border border-slate-200"
             />
           ) : (
             <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-slate-100 text-slate-600 font-bold text-3xl">
