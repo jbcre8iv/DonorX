@@ -9,6 +9,9 @@ import { Select } from "@/components/ui/select";
 import { NonprofitTable } from "./nonprofit-table";
 import { NonprofitForm } from "./nonprofit-form";
 
+export type SortField = "name" | "ein" | "category" | "status" | "total_received";
+export type SortDirection = "asc" | "desc";
+
 interface Nonprofit {
   id: string;
   name: string;
@@ -40,6 +43,17 @@ export function NonprofitsClient({ nonprofits, categories }: NonprofitsClientPro
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
 
   const handleEdit = (nonprofit: Nonprofit) => {
     setEditingNonprofit(nonprofit);
@@ -65,7 +79,8 @@ export function NonprofitsClient({ nonprofits, categories }: NonprofitsClientPro
   ];
 
   const filteredNonprofits = useMemo(() => {
-    return nonprofits.filter((np) => {
+    // First filter
+    const filtered = nonprofits.filter((np) => {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -88,7 +103,34 @@ export function NonprofitsClient({ nonprofits, categories }: NonprofitsClientPro
 
       return true;
     });
-  }, [nonprofits, searchQuery, statusFilter, categoryFilter]);
+
+    // Then sort
+    return filtered.sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortField) {
+        case "name":
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case "ein":
+          comparison = (a.ein || "").localeCompare(b.ein || "");
+          break;
+        case "category":
+          comparison = (a.category?.name || "").localeCompare(b.category?.name || "");
+          break;
+        case "status":
+          const statusOrder = { pending: 0, approved: 1, rejected: 2 };
+          comparison = (statusOrder[a.status as keyof typeof statusOrder] ?? 3) -
+                       (statusOrder[b.status as keyof typeof statusOrder] ?? 3);
+          break;
+        case "total_received":
+          comparison = a.total_received - b.total_received;
+          break;
+      }
+
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+  }, [nonprofits, searchQuery, statusFilter, categoryFilter, sortField, sortDirection]);
 
   const pendingCount = nonprofits.filter((np) => np.status === "pending").length;
   const approvedCount = nonprofits.filter((np) => np.status === "approved").length;
@@ -162,7 +204,13 @@ export function NonprofitsClient({ nonprofits, categories }: NonprofitsClientPro
               </p>
             </div>
           ) : (
-            <NonprofitTable nonprofits={filteredNonprofits} onEdit={handleEdit} />
+            <NonprofitTable
+              nonprofits={filteredNonprofits}
+              onEdit={handleEdit}
+              sortField={sortField}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+            />
           )}
         </CardContent>
       </Card>

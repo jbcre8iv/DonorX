@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ExternalLink, CheckCircle, XCircle, Trash2, Edit } from "lucide-react";
+import { ExternalLink, CheckCircle, XCircle, Trash2, Edit, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { approveNonprofit, rejectNonprofit, deleteNonprofit } from "./actions";
+import type { SortField, SortDirection } from "./nonprofits-client";
 
 interface Nonprofit {
   id: string;
@@ -25,11 +26,35 @@ interface Nonprofit {
 interface NonprofitTableProps {
   nonprofits: Nonprofit[];
   onEdit: (nonprofit: Nonprofit) => void;
+  sortField: SortField;
+  sortDirection: SortDirection;
+  onSort: (field: SortField) => void;
 }
 
-export function NonprofitTable({ nonprofits, onEdit }: NonprofitTableProps) {
+export function NonprofitTable({ nonprofits, onEdit, sortField, sortDirection, onSort }: NonprofitTableProps) {
   const [isPending, startTransition] = useTransition();
   const [actionId, setActionId] = useState<string | null>(null);
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="ml-1 h-3 w-3 text-slate-400" />;
+    }
+    return sortDirection === "asc"
+      ? <ArrowUp className="ml-1 h-3 w-3 text-blue-600" />
+      : <ArrowDown className="ml-1 h-3 w-3 text-blue-600" />;
+  };
+
+  const SortableHeader = ({ field, children, className = "" }: { field: SortField; children: React.ReactNode; className?: string }) => (
+    <th className={`pb-3 font-medium ${className}`}>
+      <button
+        onClick={() => onSort(field)}
+        className="flex items-center hover:text-blue-600 transition-colors"
+      >
+        {children}
+        <SortIcon field={field} />
+      </button>
+    </th>
+  );
 
   const handleApprove = (id: string) => {
     setActionId(id);
@@ -64,11 +89,19 @@ export function NonprofitTable({ nonprofits, onEdit }: NonprofitTableProps) {
       <table className="w-full">
         <thead>
           <tr className="border-b border-slate-200 text-left text-sm text-slate-600">
-            <th className="pb-3 font-medium">Organization</th>
-            <th className="pb-3 font-medium">EIN</th>
-            <th className="pb-3 font-medium">Category</th>
-            <th className="pb-3 font-medium">Status</th>
-            <th className="pb-3 font-medium text-right">Total Received</th>
+            <SortableHeader field="name">Organization</SortableHeader>
+            <SortableHeader field="ein">EIN</SortableHeader>
+            <SortableHeader field="category">Category</SortableHeader>
+            <SortableHeader field="status">Status</SortableHeader>
+            <th className="pb-3 font-medium text-right">
+              <button
+                onClick={() => onSort("total_received")}
+                className="flex items-center ml-auto hover:text-blue-600 transition-colors"
+              >
+                Total Received
+                <SortIcon field="total_received" />
+              </button>
+            </th>
             <th className="pb-3 font-medium text-right">Actions</th>
           </tr>
         </thead>
