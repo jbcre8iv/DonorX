@@ -506,17 +506,21 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
   // Clear cart
   const clearCart = useCallback(async () => {
+    // Clear local state first for immediate UI feedback
+    setCartItems([]);
+    saveToLocalStorage([], favorites);
+
     // If logged in, delete all from database
     if (userId) {
       try {
-        await supabase.from("cart_items").delete().eq("user_id", userId);
+        const { error } = await supabase.from("cart_items").delete().eq("user_id", userId);
+        if (error) {
+          console.error("Error clearing cart from database:", error);
+        }
       } catch (error) {
         console.error("Error clearing cart:", error);
       }
     }
-
-    setCartItems([]);
-    saveToLocalStorage([], favorites);
   }, [userId, supabase, favorites, saveToLocalStorage]);
 
   // Add to favorites

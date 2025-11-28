@@ -35,8 +35,13 @@ export function CartTab() {
 
   const handleClearCart = async () => {
     setIsClearing(true);
-    await clearCart();
-    setIsClearing(false);
+    try {
+      await clearCart();
+    } catch (error) {
+      console.error("Error clearing cart:", error);
+    } finally {
+      setIsClearing(false);
+    }
   };
 
   if (cartItems.length === 0) {
