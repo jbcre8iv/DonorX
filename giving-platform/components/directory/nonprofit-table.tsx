@@ -115,9 +115,9 @@ function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuic
             {inCart ? (
               <Check className="h-4 w-4" />
             ) : (
-              <span className="relative">
+              <span className="flex items-center gap-0.5">
+                <Plus className="h-3 w-3" />
                 <ShoppingCart className="h-4 w-4" />
-                <Plus className="h-2.5 w-2.5 absolute -top-1 -right-1 stroke-[3]" />
               </span>
             )}
           </Button>
