@@ -64,6 +64,14 @@ Examples:
   }
 }
 
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export async function createCategory(formData: FormData) {
   // Use admin client to bypass RLS for admin operations
   const adminSupabase = createAdminClient();
@@ -76,8 +84,11 @@ export async function createCategory(formData: FormData) {
     return { error: "Name is required" };
   }
 
+  const slug = generateSlug(name);
+
   const { error } = await adminSupabase.from("categories").insert({
     name,
+    slug,
     description: description || null,
     icon: icon || null,
   });
@@ -104,10 +115,13 @@ export async function updateCategory(categoryId: string, formData: FormData) {
     return { error: "Name is required" };
   }
 
+  const slug = generateSlug(name);
+
   const { error } = await adminSupabase
     .from("categories")
     .update({
       name,
+      slug,
       description: description || null,
       icon: icon || null,
     })
