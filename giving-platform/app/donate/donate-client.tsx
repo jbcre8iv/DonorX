@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Lock, AlertCircle, RefreshCw } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,14 @@ import { formatCurrency } from "@/lib/utils";
 import { createCheckoutSession, type AllocationInput } from "./actions";
 import type { Nonprofit, Category } from "@/types/database";
 
+interface CartCheckoutItem {
+  nonprofitId?: string;
+  categoryId?: string;
+  nonprofit?: { name: string };
+  category?: { name: string };
+  percentage: number;
+}
+
 interface DonateClientProps {
   nonprofits: Nonprofit[];
   categories: Category[];
@@ -27,7 +35,6 @@ export function DonateClient({
   categories,
   preselectedNonprofitId,
 }: DonateClientProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const canceled = searchParams.get("canceled") === "true";
 
@@ -45,7 +52,7 @@ export function DonateClient({
         const cartData = sessionStorage.getItem("donorx_cart_checkout");
         if (cartData) {
           const cartItems = JSON.parse(cartData);
-          const cartAllocations: AllocationItem[] = cartItems.map((item: any) => ({
+          const cartAllocations: AllocationItem[] = cartItems.map((item: CartCheckoutItem) => ({
             id: crypto.randomUUID(),
             type: item.nonprofitId ? "nonprofit" : "category",
             targetId: item.nonprofitId || item.categoryId,
