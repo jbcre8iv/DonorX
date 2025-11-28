@@ -1,10 +1,29 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getStripeServer } from "@/lib/stripe/client";
 import { config } from "@/lib/config";
 import type { RecurringInterval } from "@/types/database";
+
+async function isSimulationModeEnabled(): Promise<boolean> {
+  try {
+    const adminClient = createAdminClient();
+    const { data, error } = await adminClient
+      .from("system_settings")
+      .select("value")
+      .eq("key", "simulation_mode")
+      .single();
+
+    if (error || !data) {
+      return false;
+    }
+
+    return data.value?.enabled === true;
+  } catch {
+    return false;
+  }
+}
 
 export interface AllocationInput {
   type: "nonprofit" | "category";
@@ -63,7 +82,8 @@ export async function createCheckoutSession(
   }
 
   try {
-    const stripe = getStripeServer();
+    // Check if simulation mode is enabled
+    const simulationMode = await isSimulationModeEnabled();
 
     // Get user's organization_id if they have one
     const { data: userData } = await supabase
@@ -75,16 +95,20 @@ export async function createCheckoutSession(
     const isRecurring = frequency !== "one-time";
     const recurringInterval = isRecurring ? frequency as RecurringInterval : null;
 
-    // Create pending donation record
+    // Create donation record (pending for real payments, completed for simulation)
     const { data: donation, error: donationError } = await supabase
       .from("donations")
       .insert({
         user_id: user.id,
         organization_id: userData?.organization_id || null,
         amount_cents: amountCents,
-        status: "pending",
+        status: simulationMode ? "completed" : "pending",
         is_recurring: isRecurring,
         recurring_interval: recurringInterval,
+        is_simulated: simulationMode,
+        completed_at: simulationMode ? new Date().toISOString() : null,
+        stripe_payment_intent_id: simulationMode ? `sim_${Date.now()}` : null,
+        stripe_charge_id: simulationMode ? `sim_ch_${Date.now()}` : null,
       })
       .select()
       .single();
@@ -114,6 +138,15 @@ export async function createCheckoutSession(
       await supabase.from("donations").delete().eq("id", donation.id);
       return { success: false, error: "Failed to create allocation records" };
     }
+
+    // If simulation mode is enabled, skip Stripe and go directly to success page
+    if (simulationMode) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      return { success: true, url: `${baseUrl}/donate/success?donation_id=${donation.id}&simulated=true` };
+    }
+
+    // Real payment flow - create Stripe checkout session
+    const stripe = getStripeServer();
 
     // Build line item description
     const allocationSummary = allocations

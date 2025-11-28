@@ -48,6 +48,7 @@ const adminLinks: SidebarLink[] = [
   { href: "/admin/donors", label: "Donors", icon: Heart },
   { href: "/admin/categories", label: "Categories", icon: Tag },
   { href: "/admin/users", label: "Team", icon: Users },
+  { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 interface SidebarProps {

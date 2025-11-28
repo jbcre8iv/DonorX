@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle, Download, Mail, ArrowRight } from "lucide-react";
+import { CheckCircle, Download, Mail, ArrowRight, TestTube } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getStripeServer } from "@/lib/stripe/client";
 import { Button } from "@/components/ui/button";
@@ -12,12 +12,13 @@ export const metadata = {
 };
 
 interface SuccessPageProps {
-  searchParams: Promise<{ session_id?: string }>;
+  searchParams: Promise<{ session_id?: string; donation_id?: string; simulated?: string }>;
 }
 
 export default async function DonationSuccessPage({ searchParams }: SuccessPageProps) {
-  const { session_id } = await searchParams;
+  const { session_id, donation_id, simulated } = await searchParams;
   const supabase = await createClient();
+  const isSimulated = simulated === "true";
 
   let donation = null;
   let allocations: Array<{
@@ -29,7 +30,41 @@ export default async function DonationSuccessPage({ searchParams }: SuccessPageP
     category: { name: string } | null;
   }> = [];
 
-  if (session_id) {
+  // Handle simulated donations (direct donation_id)
+  if (isSimulated && donation_id) {
+    const { data: donationData } = await supabase
+      .from("donations")
+      .select("*")
+      .eq("id", donation_id)
+      .single();
+
+    donation = donationData;
+
+    if (donation) {
+      const { data: allocationData } = await supabase
+        .from("allocations")
+        .select(`
+          nonprofit_id,
+          category_id,
+          percentage,
+          amount_cents,
+          nonprofit:nonprofits(name),
+          category:categories(name)
+        `)
+        .eq("donation_id", donation.id);
+
+      allocations = (allocationData || []).map((a: Record<string, unknown>) => ({
+        nonprofit_id: a.nonprofit_id as string | null,
+        category_id: a.category_id as string | null,
+        percentage: a.percentage as number,
+        amount_cents: a.amount_cents as number,
+        nonprofit: Array.isArray(a.nonprofit) ? a.nonprofit[0] : a.nonprofit,
+        category: Array.isArray(a.category) ? a.category[0] : a.category,
+      }));
+    }
+  }
+  // Handle real Stripe payments
+  else if (session_id) {
     try {
       const stripe = getStripeServer();
       const session = await stripe.checkout.sessions.retrieve(session_id);
@@ -83,17 +118,37 @@ export default async function DonationSuccessPage({ searchParams }: SuccessPageP
     <div className="py-16">
       <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
+          {/* Simulation Mode Banner */}
+          {isSimulated && (
+            <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4">
+              <div className="flex items-center justify-center gap-2 text-amber-800">
+                <TestTube className="h-5 w-5" />
+                <span className="font-medium">Simulated Donation</span>
+              </div>
+              <p className="mt-1 text-sm text-amber-700">
+                This is a test donation. No real payment was processed.
+              </p>
+            </div>
+          )}
+
           {/* Success Icon */}
-          <div className="mx-auto w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-6">
-            <CheckCircle className="h-10 w-10 text-emerald-600" />
+          <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-6 ${isSimulated ? "bg-amber-100" : "bg-emerald-100"}`}>
+            {isSimulated ? (
+              <TestTube className="h-10 w-10 text-amber-600" />
+            ) : (
+              <CheckCircle className="h-10 w-10 text-emerald-600" />
+            )}
           </div>
 
           {/* Header */}
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Thank You for Your Generosity!
+            {isSimulated ? "Test Donation Complete!" : "Thank You for Your Generosity!"}
           </h1>
           <p className="text-lg text-slate-600 mb-8">
-            Your donation has been successfully processed.
+            {isSimulated
+              ? "Your simulated donation has been recorded for testing purposes."
+              : "Your donation has been successfully processed."
+            }
           </p>
 
           {/* Donation Details Card */}

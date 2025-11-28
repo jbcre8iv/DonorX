@@ -1,5 +1,25 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Header } from "./header";
+import { SimulationModeBanner } from "@/components/layout/simulation-mode-banner";
+
+async function getSimulationMode(): Promise<boolean> {
+  try {
+    const adminClient = createAdminClient();
+    const { data, error } = await adminClient
+      .from("system_settings")
+      .select("value")
+      .eq("key", "simulation_mode")
+      .single();
+
+    if (error || !data) {
+      return false;
+    }
+
+    return data.value?.enabled === true;
+  } catch {
+    return false;
+  }
+}
 
 export async function HeaderWrapper() {
   const supabase = await createClient();
@@ -44,5 +64,14 @@ export async function HeaderWrapper() {
     };
   }
 
-  return <Header initialUser={userData} />;
+  // Check simulation mode
+  const simulationEnabled = await getSimulationMode();
+  const isAdmin = userData?.role === "owner" || userData?.role === "admin";
+
+  return (
+    <>
+      <SimulationModeBanner enabled={simulationEnabled} isAdmin={isAdmin} />
+      <Header initialUser={userData} />
+    </>
+  );
 }
