@@ -61,6 +61,21 @@ export function CartTab() {
 
   return (
     <div className="flex h-full flex-col">
+      {/* Sticky Header with Proceed Button */}
+      <div className="border-b border-slate-200 bg-white p-4 shadow-sm">
+        <Button
+          onClick={handleProceedToDonate}
+          className="w-full mb-3"
+          size="lg"
+        >
+          Proceed to Donate
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+        <p className="text-xs text-slate-500 text-center">
+          Set your donation amount and allocation percentages on the next page.
+        </p>
+      </div>
+
       {/* Cart Items List */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="mb-4 flex items-center justify-between">
@@ -217,20 +232,6 @@ export function CartTab() {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Footer */}
-      <div className="border-t border-slate-200 bg-slate-50 p-4">
-        <p className="mb-3 text-xs text-slate-500 text-center">
-          Set your donation amount and allocation percentages on the next page.
-        </p>
-        <Button
-          onClick={handleProceedToDonate}
-          className="w-full"
-        >
-          Proceed to Donate
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
       </div>
     </div>
   );
