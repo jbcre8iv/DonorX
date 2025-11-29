@@ -13,7 +13,8 @@ import { AllocationBuilder, type AllocationItem } from "@/components/donation/al
 import { FrequencySelector, type DonationFrequency } from "@/components/donation/frequency-selector";
 import { type Allocation as AIAllocation } from "@/components/ai/allocation-advisor";
 import { formatCurrency } from "@/lib/utils";
-import { createCheckoutSession, saveTemplate, updateTemplate, loadTemplates, deleteTemplate, type AllocationInput, type DonationTemplate, type TemplateItem, type SaveTemplateResult } from "./actions";
+import { createCheckoutSession, saveTemplate, updateTemplate, loadTemplates, deleteTemplate, clearDraft, type AllocationInput, type DonationTemplate, type TemplateItem, type SaveTemplateResult } from "./actions";
+import { useCartFavorites, type DraftAllocation, type DonationDraft } from "@/contexts/cart-favorites-context";
 import type { Nonprofit, Category } from "@/types/database";
 
 interface CartCheckoutItem {
@@ -37,15 +38,21 @@ export function DonateClient({
   const searchParams = useSearchParams();
   const canceled = searchParams.get("canceled") === "true";
 
+  const { donationDraft, saveDonationDraft, clearDonationDraft } = useCartFavorites();
+  const [draftLoaded, setDraftLoaded] = React.useState(false);
+
   const [amount, setAmount] = React.useState(100000); // Start with first preset of middle range
   const [frequency, setFrequency] = React.useState<DonationFrequency>("one-time");
   const [allocations, setAllocations] = React.useState<AllocationItem[]>([]);
 
-  // Initialize allocations from preselected nonprofit or cart
+  // Initialize allocations from preselected nonprofit, cart, or draft
   React.useEffect(() => {
+    // Only run once on mount
+    if (draftLoaded) return;
+
     const fromCart = searchParams.get("from") === "cart";
 
-    // If coming from cart, load items from sessionStorage
+    // If coming from cart, load items from sessionStorage (highest priority)
     if (fromCart) {
       try {
         const cartData = sessionStorage.getItem("donorx_cart_checkout");
@@ -72,6 +79,7 @@ export function DonateClient({
             setAllocations(cartAllocations);
             // Clear the checkout data
             sessionStorage.removeItem("donorx_cart_checkout");
+            setDraftLoaded(true);
             return;
           }
         }
@@ -80,7 +88,7 @@ export function DonateClient({
       }
     }
 
-    // Otherwise, check for preselected nonprofit
+    // Check for preselected nonprofit (second priority)
     if (preselectedNonprofitId) {
       const nonprofit = nonprofits.find((n) => n.id === preselectedNonprofitId);
       if (nonprofit) {
@@ -93,9 +101,28 @@ export function DonateClient({
             percentage: 100,
           },
         ]);
+        setDraftLoaded(true);
+        return;
       }
     }
-  }, [preselectedNonprofitId, nonprofits, searchParams]);
+
+    // Otherwise, restore from draft if available
+    if (donationDraft && donationDraft.allocations.length > 0) {
+      setAmount(donationDraft.amountCents / 100);
+      setFrequency(donationDraft.frequency);
+      setAllocations(
+        donationDraft.allocations.map((a) => ({
+          id: crypto.randomUUID(),
+          type: a.type,
+          targetId: a.targetId,
+          targetName: a.targetName,
+          percentage: a.percentage,
+        }))
+      );
+    }
+
+    setDraftLoaded(true);
+  }, [preselectedNonprofitId, nonprofits, searchParams, donationDraft, draftLoaded]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -124,6 +151,32 @@ export function DonateClient({
     };
     fetchTemplates();
   }, []);
+
+  // Auto-save draft when donation state changes
+  React.useEffect(() => {
+    // Don't save until initial load is complete
+    if (!draftLoaded) return;
+    // Don't save if there are no allocations
+    if (allocations.length === 0) {
+      // If there's an existing draft but allocations are now empty, clear it
+      if (donationDraft) {
+        clearDonationDraft();
+      }
+      return;
+    }
+
+    const draft: DonationDraft = {
+      amountCents: amount * 100,
+      frequency,
+      allocations: allocations.map((a) => ({
+        type: a.type,
+        targetId: a.targetId,
+        targetName: a.targetName,
+        percentage: a.percentage,
+      })),
+    };
+    saveDonationDraft(draft);
+  }, [amount, frequency, allocations, draftLoaded, saveDonationDraft, clearDonationDraft, donationDraft]);
 
   const handleSaveTemplate = async () => {
     if (!templateName.trim()) {
@@ -333,6 +386,8 @@ export function DonateClient({
       const result = await createCheckoutSession(amountCents, allocationInputs, frequency);
 
       if (result.success && result.url) {
+        // Clear the draft since user is proceeding to payment
+        await clearDonationDraft();
         // Redirect to Stripe Checkout
         window.location.assign(result.url);
       } else {

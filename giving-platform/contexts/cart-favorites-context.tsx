@@ -48,6 +48,22 @@ export interface FavoriteItem {
   createdAt?: string;
 }
 
+// Donation draft types
+export interface DraftAllocation {
+  type: "nonprofit" | "category";
+  targetId: string;
+  targetName: string;
+  percentage: number;
+}
+
+export interface DonationDraft {
+  id?: string;
+  amountCents: number;
+  frequency: "one-time" | "monthly" | "quarterly" | "annually";
+  allocations: DraftAllocation[];
+  updatedAt?: string;
+}
+
 interface CartFavoritesContextType {
   // Cart
   cartItems: CartItem[];
@@ -80,6 +96,12 @@ interface CartFavoritesContextType {
   }) => Promise<void>;
   isFavorite: (nonprofitId?: string, categoryId?: string) => boolean;
 
+  // Donation Draft
+  donationDraft: DonationDraft | null;
+  hasDraft: boolean;
+  saveDonationDraft: (draft: DonationDraft) => Promise<void>;
+  clearDonationDraft: () => Promise<void>;
+
   // UI State
   isSidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
@@ -98,6 +120,7 @@ const CartFavoritesContext = createContext<CartFavoritesContextType | null>(
 
 const CART_STORAGE_KEY = "donorx_cart";
 const FAVORITES_STORAGE_KEY = "donorx_favorites";
+const DRAFT_STORAGE_KEY = "donorx_donation_draft";
 const MAX_CART_ITEMS = 10;
 
 // Helper to generate temp IDs for localStorage items
@@ -106,6 +129,7 @@ const generateTempId = () => `temp_${Date.now()}_${Math.random().toString(36).su
 export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [donationDraft, setDonationDraft] = useState<DonationDraft | null>(null);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"cart" | "favorites">("cart");
   const [isLoading, setIsLoading] = useState(true);
@@ -221,10 +245,29 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         })
       );
 
-      return { cart: transformedCart, favorites: transformedFavorites };
+      // Fetch donation draft
+      const { data: dbDraft } = await supabase
+        .from("donation_drafts")
+        .select("*")
+        .eq("user_id", uid)
+        .single();
+
+      const transformedDraft: DonationDraft | null = dbDraft
+        ? {
+            id: dbDraft.id,
+            amountCents: dbDraft.amount_cents,
+            frequency: dbDraft.frequency,
+            allocations: typeof dbDraft.allocations === "string"
+              ? JSON.parse(dbDraft.allocations)
+              : dbDraft.allocations,
+            updatedAt: dbDraft.updated_at,
+          }
+        : null;
+
+      return { cart: transformedCart, favorites: transformedFavorites, draft: transformedDraft };
     } catch (error) {
       console.error("Error fetching from database:", error);
-      return { cart: [], favorites: [] };
+      return { cart: [], favorites: [], draft: null };
     }
   }, [supabase]);
 
@@ -285,6 +328,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         const freshData = await fetchFromDatabase(userId);
         setCartItems(freshData.cart);
         setFavorites(freshData.favorites);
+        setDonationDraft(freshData.draft);
         saveToLocalStorage(freshData.cart, freshData.favorites);
       } catch {
         // Silent fail - will retry on next visibility change
@@ -384,11 +428,13 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           if (syncedData) {
             setCartItems(syncedData.cart);
             setFavorites(syncedData.favorites);
+            setDonationDraft(syncedData.draft);
             saveToLocalStorage(syncedData.cart, syncedData.favorites);
           }
         } else {
           setCartItems(mergedCart);
           setFavorites(mergedFavorites);
+          setDonationDraft(dbData.draft);
           saveToLocalStorage(mergedCart, mergedFavorites);
         }
 
@@ -505,6 +551,12 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       nonprofit?: CartItem["nonprofit"];
       category?: CartItem["category"];
     }) => {
+      // Block adding items when there's an active donation draft
+      if (donationDraft && donationDraft.allocations.length > 0) {
+        console.warn("Cannot add to cart while a donation is in progress. Clear the draft first.");
+        return;
+      }
+
       if (cartItems.length >= MAX_CART_ITEMS) {
         console.warn("Cart is full");
         return;
@@ -557,7 +609,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         }
       }
     },
-    [cartItems, favorites, userId, supabase, isInCart, saveToLocalStorage]
+    [cartItems, favorites, userId, supabase, isInCart, saveToLocalStorage, donationDraft]
   );
 
   // Remove from cart
@@ -731,11 +783,56 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       const freshData = await fetchFromDatabase(userId);
       setCartItems(freshData.cart);
       setFavorites(freshData.favorites);
+      setDonationDraft(freshData.draft);
       saveToLocalStorage(freshData.cart, freshData.favorites);
     } catch (error) {
       console.error("Error refreshing from database:", error);
     }
   }, [userId, fetchFromDatabase, saveToLocalStorage]);
+
+  // Save donation draft
+  const saveDonationDraft = useCallback(async (draft: DonationDraft) => {
+    // Update local state immediately
+    setDonationDraft(draft);
+
+    // If logged in, save to database
+    if (userId) {
+      try {
+        await supabase
+          .from("donation_drafts")
+          .upsert(
+            {
+              user_id: userId,
+              amount_cents: draft.amountCents,
+              frequency: draft.frequency,
+              allocations: JSON.stringify(draft.allocations),
+            },
+            { onConflict: "user_id" }
+          );
+      } catch (error) {
+        console.error("Error saving draft:", error);
+      }
+    }
+  }, [userId, supabase]);
+
+  // Clear donation draft
+  const clearDonationDraft = useCallback(async () => {
+    setDonationDraft(null);
+
+    if (userId) {
+      try {
+        await supabase
+          .from("donation_drafts")
+          .delete()
+          .eq("user_id", userId);
+      } catch (error) {
+        console.error("Error clearing draft:", error);
+      }
+    }
+  }, [userId, supabase]);
+
+  // Helper to check if there's an active draft with allocations
+  const hasDraft = donationDraft !== null && donationDraft.allocations.length > 0;
 
   const value: CartFavoritesContextType = {
     cartItems,
@@ -750,6 +847,10 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     removeFromFavorites,
     toggleFavorite,
     isFavorite,
+    donationDraft,
+    hasDraft,
+    saveDonationDraft,
+    clearDonationDraft,
     isSidebarOpen,
     setSidebarOpen,
     activeTab,

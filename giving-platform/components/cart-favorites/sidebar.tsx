@@ -70,7 +70,7 @@ export function CartFavoritesSidebar() {
               }`}
             >
               <HandHeart className="h-4 w-4" />
-              Giving List
+              <span className="hidden sm:inline">Giving List</span>
               {cartItems.length > 0 && (
                 <span className="ml-1 rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-semibold text-blue-700">
                   {cartItems.length}
@@ -86,7 +86,7 @@ export function CartFavoritesSidebar() {
               }`}
             >
               <Heart className="h-4 w-4" />
-              Favorites
+              <span className="hidden sm:inline">Favorites</span>
               {favorites.length > 0 && (
                 <span className="ml-1 rounded-full bg-pink-100 px-1.5 py-0.5 text-xs font-semibold text-pink-700">
                   {favorites.length}

@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe } from "lucide-react";
+import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, AlertCircle, RefreshCw } from "lucide-react";
 import { useCartFavorites, type CartItem } from "@/contexts/cart-favorites-context";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/utils";
 
 export function CartTab() {
   const router = useRouter();
@@ -14,9 +15,13 @@ export function CartTab() {
     removeFromCart,
     clearCart,
     setSidebarOpen,
+    donationDraft,
+    hasDraft,
+    clearDonationDraft,
   } = useCartFavorites();
 
   const [isClearing, setIsClearing] = useState(false);
+  const [isClearingDraft, setIsClearingDraft] = useState(false);
   const [quickViewItem, setQuickViewItem] = useState<CartItem | null>(null);
 
   const handleProceedToDonate = async () => {
@@ -47,6 +52,108 @@ export function CartTab() {
       setIsClearing(false);
     }
   };
+
+  const handleContinueDonation = () => {
+    setSidebarOpen(false);
+    router.push("/donate");
+  };
+
+  const handleClearDraftAndStartOver = async () => {
+    setIsClearingDraft(true);
+    try {
+      await clearDonationDraft();
+    } catch (error) {
+      console.error("Error clearing draft:", error);
+    } finally {
+      setIsClearingDraft(false);
+    }
+  };
+
+  // Get frequency label for draft display
+  const frequencyLabel = donationDraft?.frequency === "one-time"
+    ? "One-time"
+    : donationDraft?.frequency
+      ? donationDraft.frequency.charAt(0).toUpperCase() + donationDraft.frequency.slice(1)
+      : "";
+
+  // If there's an active draft, show the active donation banner
+  if (hasDraft && donationDraft) {
+    return (
+      <div className="flex h-full flex-col">
+        {/* Active Donation Banner */}
+        <div className="border-b border-emerald-200 bg-emerald-50 p-4">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="flex-shrink-0 rounded-full bg-emerald-100 p-2">
+              <AlertCircle className="h-5 w-5 text-emerald-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-emerald-900">
+                Active Donation in Progress
+              </h3>
+              <p className="text-sm text-emerald-700 mt-1">
+                You have an incomplete donation. Continue where you left off or start fresh.
+              </p>
+            </div>
+          </div>
+
+          {/* Draft Summary */}
+          <div className="rounded-lg bg-white border border-emerald-200 p-3 mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-slate-700">Amount</span>
+              <span className="font-bold text-slate-900">
+                {formatCurrency(donationDraft.amountCents)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-slate-700">Frequency</span>
+              <span className="flex items-center text-sm font-medium text-slate-900">
+                {donationDraft.frequency !== "one-time" && (
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                )}
+                {frequencyLabel}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-700">Allocations</span>
+              <span className="text-sm text-slate-900">
+                {donationDraft.allocations.length} item{donationDraft.allocations.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-2">
+            <Button
+              onClick={handleContinueDonation}
+              className="w-full bg-emerald-600 hover:bg-emerald-700"
+              size="lg"
+            >
+              Continue Donation
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleClearDraftAndStartOver}
+              disabled={isClearingDraft}
+              className="w-full border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+            >
+              {isClearingDraft ? "Clearing..." : "Clear & Start Over"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Blocked State Message */}
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+          <div className="mb-4 rounded-full bg-slate-100 p-4">
+            <HandHeart className="h-8 w-8 text-slate-300" />
+          </div>
+          <p className="text-sm text-slate-500 max-w-[200px]">
+            Clear your active donation above to add new items to your giving list.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (cartItems.length === 0) {
     return (

@@ -71,6 +71,28 @@ export interface LoadTemplatesResult {
   error?: string;
 }
 
+// Draft types
+export interface DraftAllocation {
+  type: "nonprofit" | "category";
+  targetId: string;
+  targetName: string;
+  percentage: number;
+}
+
+export interface DonationDraft {
+  id: string;
+  amountCents: number;
+  frequency: DonationFrequency;
+  allocations: DraftAllocation[];
+  updatedAt: string;
+}
+
+export interface DraftResult {
+  success: boolean;
+  draft?: DonationDraft;
+  error?: string;
+}
+
 export async function saveTemplate(
   name: string,
   items: TemplateItem[],
@@ -358,6 +380,135 @@ export async function deleteTemplate(templateId: string): Promise<{ success: boo
   } catch (error) {
     console.error("Delete template error:", error);
     return { success: false, error: "Failed to delete template" };
+  }
+}
+
+// Draft functions for cross-device donation progress
+export async function saveDraft(
+  amountCents: number,
+  frequency: DonationFrequency,
+  allocations: DraftAllocation[]
+): Promise<DraftResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "You must be logged in to save drafts" };
+  }
+
+  try {
+    // Upsert the draft (one per user)
+    const { data: draft, error } = await supabase
+      .from("donation_drafts")
+      .upsert(
+        {
+          user_id: user.id,
+          amount_cents: amountCents,
+          frequency,
+          allocations: JSON.stringify(allocations),
+        },
+        { onConflict: "user_id" }
+      )
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Failed to save draft:", error);
+      return { success: false, error: "Failed to save draft" };
+    }
+
+    return {
+      success: true,
+      draft: {
+        id: draft.id,
+        amountCents: draft.amount_cents,
+        frequency: draft.frequency,
+        allocations: typeof draft.allocations === "string"
+          ? JSON.parse(draft.allocations)
+          : draft.allocations,
+        updatedAt: draft.updated_at,
+      },
+    };
+  } catch (error) {
+    console.error("Save draft error:", error);
+    return { success: false, error: "Failed to save draft" };
+  }
+}
+
+export async function loadDraft(): Promise<DraftResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "You must be logged in to load drafts" };
+  }
+
+  try {
+    const { data: draft, error } = await supabase
+      .from("donation_drafts")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        // No draft found - that's okay
+        return { success: true, draft: undefined };
+      }
+      console.error("Failed to load draft:", error);
+      return { success: false, error: "Failed to load draft" };
+    }
+
+    return {
+      success: true,
+      draft: {
+        id: draft.id,
+        amountCents: draft.amount_cents,
+        frequency: draft.frequency,
+        allocations: typeof draft.allocations === "string"
+          ? JSON.parse(draft.allocations)
+          : draft.allocations,
+        updatedAt: draft.updated_at,
+      },
+    };
+  } catch (error) {
+    console.error("Load draft error:", error);
+    return { success: false, error: "Failed to load draft" };
+  }
+}
+
+export async function clearDraft(): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "You must be logged in to clear drafts" };
+  }
+
+  try {
+    const { error } = await supabase
+      .from("donation_drafts")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("Failed to clear draft:", error);
+      return { success: false, error: "Failed to clear draft" };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Clear draft error:", error);
+    return { success: false, error: "Failed to clear draft" };
   }
 }
 
