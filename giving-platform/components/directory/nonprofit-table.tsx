@@ -13,46 +13,25 @@ interface NonprofitTableProps {
   onQuickView?: (nonprofit: Nonprofit) => void;
 }
 
-function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuickView?: (nonprofit: Nonprofit) => void }) {
-  const { addToCart, isInCart, toggleFavorite, isFavorite } = useCartFavorites();
-  const [expanded, setExpanded] = React.useState(false);
-
-  const inCart = isInCart(nonprofit.id);
-  const favorited = isFavorite(nonprofit.id);
-
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!inCart) {
-      await addToCart({
-        nonprofitId: nonprofit.id,
-        nonprofit: {
-          id: nonprofit.id,
-          name: nonprofit.name,
-          logoUrl: nonprofit.logo_url || undefined,
-          mission: nonprofit.mission || undefined,
-        },
-      });
-      // Don't open sidebar - let the header icon animation indicate the item was added
-    }
-  };
-
-  const handleToggleFavorite = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    await toggleFavorite({
-      nonprofitId: nonprofit.id,
-      nonprofit: {
-        id: nonprofit.id,
-        name: nonprofit.name,
-        logoUrl: nonprofit.logo_url || undefined,
-        mission: nonprofit.mission || undefined,
-      },
-    });
-  };
-
-  // Shared action buttons component
-  const ActionButtons = ({ className = "" }: { className?: string }) => (
+// Action buttons component - defined outside to avoid recreating during render
+function ActionButtons({
+  className = "",
+  nonprofit,
+  inCart,
+  favorited,
+  onAddToCart,
+  onToggleFavorite,
+  onQuickView,
+}: {
+  className?: string;
+  nonprofit: Nonprofit;
+  inCart: boolean;
+  favorited: boolean;
+  onAddToCart: (e: React.MouseEvent) => void;
+  onToggleFavorite: (e: React.MouseEvent) => void;
+  onQuickView?: (nonprofit: Nonprofit) => void;
+}) {
+  return (
     <div className={`flex items-center gap-1 ${className}`}>
       <Button asChild size="sm" className="h-8">
         <Link href={`/donate?nonprofit=${nonprofit.id}`}>Donate</Link>
@@ -61,7 +40,7 @@ function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuic
         variant={inCart ? "secondary" : "ghost"}
         size="sm"
         className="h-8 w-8 p-0"
-        onClick={handleAddToCart}
+        onClick={onAddToCart}
         title={inCart ? "In giving list" : "Add to giving list"}
         disabled={inCart}
       >
@@ -75,7 +54,7 @@ function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuic
         )}
       </Button>
       <button
-        onClick={handleToggleFavorite}
+        onClick={onToggleFavorite}
         className={`h-8 w-8 flex items-center justify-center rounded-md transition-colors ${
           favorited
             ? "text-pink-500 bg-pink-50 hover:bg-pink-100"
@@ -113,6 +92,45 @@ function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuic
       </div>
     </div>
   );
+}
+
+function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuickView?: (nonprofit: Nonprofit) => void }) {
+  const { addToCart, isInCart, toggleFavorite, isFavorite } = useCartFavorites();
+  const [expanded, setExpanded] = React.useState(false);
+
+  const inCart = isInCart(nonprofit.id);
+  const favorited = isFavorite(nonprofit.id);
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!inCart) {
+      await addToCart({
+        nonprofitId: nonprofit.id,
+        nonprofit: {
+          id: nonprofit.id,
+          name: nonprofit.name,
+          logoUrl: nonprofit.logo_url || undefined,
+          mission: nonprofit.mission || undefined,
+        },
+      });
+      // Don't open sidebar - let the header icon animation indicate the item was added
+    }
+  };
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await toggleFavorite({
+      nonprofitId: nonprofit.id,
+      nonprofit: {
+        id: nonprofit.id,
+        name: nonprofit.name,
+        logoUrl: nonprofit.logo_url || undefined,
+        mission: nonprofit.mission || undefined,
+      },
+    });
+  };
 
   return (
     <>
@@ -166,7 +184,15 @@ function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuic
         </td>
         {/* Desktop actions - hidden on mobile */}
         <td className="py-3 hidden sm:table-cell">
-          <ActionButtons className="justify-end" />
+          <ActionButtons
+            className="justify-end"
+            nonprofit={nonprofit}
+            inCart={inCart}
+            favorited={favorited}
+            onAddToCart={handleAddToCart}
+            onToggleFavorite={handleToggleFavorite}
+            onQuickView={onQuickView}
+          />
         </td>
         {/* Mobile expand button */}
         <td className="py-3 sm:hidden">
@@ -183,7 +209,15 @@ function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuic
       {expanded && (
         <tr className="sm:hidden bg-slate-50">
           <td colSpan={2} className="py-3 px-4">
-            <ActionButtons className="justify-start flex-wrap" />
+            <ActionButtons
+              className="justify-start flex-wrap"
+              nonprofit={nonprofit}
+              inCart={inCart}
+              favorited={favorited}
+              onAddToCart={handleAddToCart}
+              onToggleFavorite={handleToggleFavorite}
+              onQuickView={onQuickView}
+            />
           </td>
         </tr>
       )}
