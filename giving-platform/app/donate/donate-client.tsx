@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft, Lock, AlertCircle, RefreshCw, Save, FolderOpen, Trash2, X } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ export function DonateClient({
   categories,
   preselectedNonprofitId,
 }: DonateClientProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const canceled = searchParams.get("canceled") === "true";
 
@@ -129,17 +130,15 @@ export function DonateClient({
     setDraftLoaded(true);
   }, [preselectedNonprofitId, nonprofits, searchParams, donationDraft, draftLoaded]);
 
-  // Reset the page when draft is cleared externally (e.g., from "Clear & Start Over" in sidebar)
-  // Only reset if the allocations were originally loaded from a draft
+  // Redirect when draft is cleared externally (e.g., from "Clear & Start Over" on another device)
+  // Only redirect if the allocations were originally loaded from a draft
   React.useEffect(() => {
     if (draftLoaded && loadedFromDraft && donationDraft === null && allocations.length > 0) {
-      // Draft was cleared externally - reset the page
-      setAmount(100000);
-      setFrequency("one-time");
-      setAllocations([]);
-      setLoadedFromDraft(false);
+      // Draft was cleared externally - redirect to directory
+      console.log('[Donate] Draft cleared on another device, redirecting to directory');
+      router.push('/directory');
     }
-  }, [donationDraft, draftLoaded, loadedFromDraft, allocations.length]);
+  }, [donationDraft, draftLoaded, loadedFromDraft, allocations.length, router]);
 
   // Sync incoming draft changes from other devices (realtime)
   React.useEffect(() => {
