@@ -24,7 +24,7 @@ export function CartTab() {
   const [isClearingDraft, setIsClearingDraft] = useState(false);
   const [quickViewItem, setQuickViewItem] = useState<CartItem | null>(null);
 
-  const handleProceedToDonate = async () => {
+  const handleProceedToDonate = () => {
     // Store cart items in sessionStorage for the donate page to pick up
     // The donate page will handle the percentage allocation
     const cartData = cartItems.map(item => ({
@@ -35,10 +35,13 @@ export function CartTab() {
     }));
     sessionStorage.setItem("donorx_cart_checkout", JSON.stringify(cartData));
 
-    // Clear the giving list after transferring to donation page
-    await clearCart();
-
+    // Close sidebar first, then navigate
     setSidebarOpen(false);
+
+    // Clear cart in background (don't await - let navigation happen immediately)
+    clearCart().catch(error => console.error("Error clearing cart:", error));
+
+    // Navigate to donate page
     router.push("/donate?from=cart");
   };
 
