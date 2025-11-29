@@ -143,9 +143,21 @@ function NonprofitRow({
 
   return (
     <>
-      <tr className="text-sm hover:bg-slate-50 transition-colors">
+      <tr
+        className="text-sm hover:bg-slate-50 transition-colors sm:cursor-default cursor-pointer"
+        onClick={() => {
+          // On mobile, clicking the row expands/collapses
+          if (window.innerWidth < 640) {
+            onToggleExpand();
+          }
+        }}
+      >
         <td className="py-3 pr-2 sm:pr-4">
-          <Link href={`/directory/${nonprofit.id}`} className="flex items-center gap-2 sm:gap-3 group">
+          {/* Desktop: Link to detail page */}
+          <Link
+            href={`/directory/${nonprofit.id}`}
+            className="hidden sm:flex items-center gap-3 group"
+          >
             {nonprofit.logo_url ? (
               <img
                 src={nonprofit.logo_url}
@@ -164,9 +176,30 @@ function NonprofitRow({
               {nonprofit.ein && (
                 <p className="text-xs text-slate-400 truncate">EIN: {nonprofit.ein}</p>
               )}
-              {/* Show category on mobile */}
+            </div>
+          </Link>
+          {/* Mobile: Non-link content (row click handles expand) */}
+          <div className="flex sm:hidden items-center gap-2">
+            {nonprofit.logo_url ? (
+              <img
+                src={nonprofit.logo_url}
+                alt={`${nonprofit.name} logo`}
+                className="h-10 w-10 rounded-lg object-contain flex-shrink-0"
+              />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600 font-semibold flex-shrink-0">
+                {nonprofit.name.charAt(0)}
+              </div>
+            )}
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <span className="font-medium text-slate-900 block truncate">
+                {nonprofit.name}
+              </span>
+              {nonprofit.ein && (
+                <p className="text-xs text-slate-400 truncate">EIN: {nonprofit.ein}</p>
+              )}
               {nonprofit.category && (
-                <Badge variant="secondary" className="mt-1 sm:hidden text-xs">
+                <Badge variant="secondary" className="mt-1 text-xs">
                   {nonprofit.category.icon && (
                     <span className="mr-1">{nonprofit.category.icon}</span>
                   )}
@@ -174,7 +207,7 @@ function NonprofitRow({
                 </Badge>
               )}
             </div>
-          </Link>
+          </div>
         </td>
         <td className="py-3 pr-4 hidden sm:table-cell">
           {nonprofit.category && (
