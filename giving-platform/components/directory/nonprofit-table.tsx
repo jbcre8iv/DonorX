@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Globe, Eye, Heart, HandHeart, Check, Plus, ChevronDown } from "lucide-react";
+import { Globe, Eye, Heart, HandHeart, Check, Plus, ChevronDown, CreditCard } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
@@ -19,16 +19,20 @@ function ActionButtons({
   className = "",
   nonprofit,
   inCart,
+  inDraft,
+  hasDraft,
   favorited,
-  onAddToCart,
+  onAddToCartOrDraft,
   onToggleFavorite,
   onQuickView,
 }: {
   className?: string;
   nonprofit: Nonprofit;
   inCart: boolean;
+  inDraft: boolean;
+  hasDraft: boolean;
   favorited: boolean;
-  onAddToCart: (e: React.MouseEvent) => void;
+  onAddToCartOrDraft: (e: React.MouseEvent) => void;
   onToggleFavorite: (e: React.MouseEvent) => void;
   onQuickView?: (nonprofit: Nonprofit) => void;
 }) {
@@ -37,23 +41,44 @@ function ActionButtons({
       <Button asChild size="sm" className="h-8">
         <Link href={`/donate?nonprofit=${nonprofit.id}`}>Donate</Link>
       </Button>
-      <Button
-        variant={inCart ? "secondary" : "ghost"}
-        size="sm"
-        className="h-8 w-8 p-0"
-        onClick={onAddToCart}
-        title={inCart ? "In giving list" : "Add to giving list"}
-        disabled={inCart}
-      >
-        {inCart ? (
-          <Check className="h-4 w-4" />
-        ) : (
-          <span className="flex items-center gap-0.5">
-            <Plus className="h-3 w-3" />
-            <HandHeart className="h-4 w-4" />
-          </span>
-        )}
-      </Button>
+      {/* Add to donation/cart button - changes based on draft state */}
+      {hasDraft ? (
+        <Button
+          variant={inDraft ? "secondary" : "ghost"}
+          size="sm"
+          className={`h-8 w-8 p-0 ${!inDraft ? "text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800" : ""}`}
+          onClick={onAddToCartOrDraft}
+          title={inDraft ? "In donation" : "Add to donation"}
+          disabled={inDraft}
+        >
+          {inDraft ? (
+            <Check className="h-4 w-4" />
+          ) : (
+            <span className="flex items-center gap-0.5">
+              <Plus className="h-3 w-3" />
+              <CreditCard className="h-4 w-4" />
+            </span>
+          )}
+        </Button>
+      ) : (
+        <Button
+          variant={inCart ? "secondary" : "ghost"}
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={onAddToCartOrDraft}
+          title={inCart ? "In giving list" : "Add to giving list"}
+          disabled={inCart}
+        >
+          {inCart ? (
+            <Check className="h-4 w-4" />
+          ) : (
+            <span className="flex items-center gap-0.5">
+              <Plus className="h-3 w-3" />
+              <HandHeart className="h-4 w-4" />
+            </span>
+          )}
+        </Button>
+      )}
       <button
         onClick={onToggleFavorite}
         className={`h-8 w-8 flex items-center justify-center rounded-md transition-colors ${
@@ -106,15 +131,31 @@ function NonprofitRow({
   isExpanded: boolean;
   onToggleExpand: () => void;
 }) {
-  const { addToCart, isInCart, toggleFavorite, isFavorite, openCartSidebar } = useCartFavorites();
+  const { addToCart, isInCart, toggleFavorite, isFavorite, hasDraft, addToDraft, isInDraft } = useCartFavorites();
   const { addToast } = useToast();
 
   const inCart = isInCart(nonprofit.id);
+  const inDraft = isInDraft(nonprofit.id);
   const favorited = isFavorite(nonprofit.id);
 
-  const handleAddToCart = async (e: React.MouseEvent) => {
+  const handleAddToCartOrDraft = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // If there's an active draft, add directly to the draft allocations
+    if (hasDraft) {
+      if (!inDraft) {
+        await addToDraft({
+          type: "nonprofit",
+          targetId: nonprofit.id,
+          targetName: nonprofit.name,
+        });
+        addToast(`Added ${nonprofit.name} to your donation`, "success", 3000);
+      }
+      return;
+    }
+
+    // Otherwise, add to cart as before
     if (!inCart) {
       const result = await addToCart({
         nonprofitId: nonprofit.id,
@@ -127,10 +168,7 @@ function NonprofitRow({
       });
 
       if (!result.success) {
-        if (result.reason === "blocked_by_draft") {
-          addToast("You have an active donation in progress. Continue or clear it first.", "warning", 5000);
-          openCartSidebar();
-        } else if (result.reason === "cart_full") {
+        if (result.reason === "cart_full") {
           addToast("Your giving list is full (max 10 items).", "warning");
         }
       }
@@ -240,8 +278,10 @@ function NonprofitRow({
             className="justify-end"
             nonprofit={nonprofit}
             inCart={inCart}
+            inDraft={inDraft}
+            hasDraft={hasDraft}
             favorited={favorited}
-            onAddToCart={handleAddToCart}
+            onAddToCartOrDraft={handleAddToCartOrDraft}
             onToggleFavorite={handleToggleFavorite}
             onQuickView={onQuickView}
           />
@@ -265,8 +305,10 @@ function NonprofitRow({
               className="justify-start flex-wrap"
               nonprofit={nonprofit}
               inCart={inCart}
+              inDraft={inDraft}
+              hasDraft={hasDraft}
               favorited={favorited}
-              onAddToCart={handleAddToCart}
+              onAddToCartOrDraft={handleAddToCartOrDraft}
               onToggleFavorite={handleToggleFavorite}
               onQuickView={onQuickView}
             />

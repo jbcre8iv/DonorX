@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Globe, Eye, Heart, HandHeart, Check, Plus } from "lucide-react";
+import { Globe, Eye, Heart, HandHeart, Check, Plus, CreditCard } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,15 +15,31 @@ interface NonprofitCardProps {
 }
 
 export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
-  const { addToCart, isInCart, toggleFavorite, isFavorite, openCartSidebar } = useCartFavorites();
+  const { addToCart, isInCart, toggleFavorite, isFavorite, hasDraft, addToDraft, isInDraft } = useCartFavorites();
   const { addToast } = useToast();
 
   const inCart = isInCart(nonprofit.id);
+  const inDraft = isInDraft(nonprofit.id);
   const favorited = isFavorite(nonprofit.id);
 
-  const handleAddToCart = async (e: React.MouseEvent) => {
+  const handleAddToCartOrDraft = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // If there's an active draft, add directly to the draft allocations
+    if (hasDraft) {
+      if (!inDraft) {
+        await addToDraft({
+          type: "nonprofit",
+          targetId: nonprofit.id,
+          targetName: nonprofit.name,
+        });
+        addToast(`Added ${nonprofit.name} to your donation`, "success", 3000);
+      }
+      return;
+    }
+
+    // Otherwise, add to cart as before
     if (!inCart) {
       const result = await addToCart({
         nonprofitId: nonprofit.id,
@@ -36,10 +52,7 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
       });
 
       if (!result.success) {
-        if (result.reason === "blocked_by_draft") {
-          addToast("You have an active donation in progress. Continue or clear it first.", "warning", 5000);
-          openCartSidebar();
-        } else if (result.reason === "cart_full") {
+        if (result.reason === "cart_full") {
           addToast("Your giving list is full (max 10 items).", "warning");
         }
       }
@@ -123,22 +136,43 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
           <Button asChild size="sm" className="flex-1">
             <Link href={`/donate?nonprofit=${nonprofit.id}`}>Donate</Link>
           </Button>
-          <Button
-            variant={inCart ? "secondary" : "outline"}
-            size="sm"
-            onClick={handleAddToCart}
-            title={inCart ? "In giving list" : "Add to giving list"}
-            disabled={inCart}
-          >
-            {inCart ? (
-              <Check className="h-4 w-4" />
-            ) : (
-              <span className="flex items-center gap-0.5">
-                <Plus className="h-3 w-3" />
-                <HandHeart className="h-4 w-4" />
-              </span>
-            )}
-          </Button>
+          {/* Add to donation/cart button - changes based on draft state */}
+          {hasDraft ? (
+            <Button
+              variant={inDraft ? "secondary" : "outline"}
+              size="sm"
+              onClick={handleAddToCartOrDraft}
+              title={inDraft ? "In donation" : "Add to donation"}
+              disabled={inDraft}
+              className={!inDraft ? "border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800" : ""}
+            >
+              {inDraft ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <span className="flex items-center gap-0.5">
+                  <Plus className="h-3 w-3" />
+                  <CreditCard className="h-4 w-4" />
+                </span>
+              )}
+            </Button>
+          ) : (
+            <Button
+              variant={inCart ? "secondary" : "outline"}
+              size="sm"
+              onClick={handleAddToCartOrDraft}
+              title={inCart ? "In giving list" : "Add to giving list"}
+              disabled={inCart}
+            >
+              {inCart ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <span className="flex items-center gap-0.5">
+                  <Plus className="h-3 w-3" />
+                  <HandHeart className="h-4 w-4" />
+                </span>
+              )}
+            </Button>
+          )}
           {onQuickView && (
             <Button
               variant="outline"

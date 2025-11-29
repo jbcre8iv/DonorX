@@ -107,6 +107,12 @@ interface CartFavoritesContextType {
   hasDraft: boolean;
   saveDonationDraft: (draft: DonationDraft) => Promise<void>;
   clearDonationDraft: () => Promise<void>;
+  addToDraft: (item: {
+    type: "nonprofit" | "category";
+    targetId: string;
+    targetName: string;
+  }) => Promise<void>;
+  isInDraft: (nonprofitId?: string, categoryId?: string) => boolean;
 
   // UI State
   isSidebarOpen: boolean;
@@ -843,6 +849,56 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     }
   }, [userId, supabase]);
 
+  // Check if item is in draft allocations
+  const isInDraft = useCallback(
+    (nonprofitId?: string, categoryId?: string) => {
+      if (!donationDraft) return false;
+      return donationDraft.allocations.some(
+        (a) =>
+          (nonprofitId && a.type === "nonprofit" && a.targetId === nonprofitId) ||
+          (categoryId && a.type === "category" && a.targetId === categoryId)
+      );
+    },
+    [donationDraft]
+  );
+
+  // Add item directly to donation draft allocations
+  const addToDraft = useCallback(
+    async (item: {
+      type: "nonprofit" | "category";
+      targetId: string;
+      targetName: string;
+    }) => {
+      if (!donationDraft) return;
+
+      // Check if already in draft
+      const alreadyInDraft = donationDraft.allocations.some(
+        (a) => a.type === item.type && a.targetId === item.targetId
+      );
+      if (alreadyInDraft) return;
+
+      // Add new allocation and redistribute percentages evenly
+      const newAllocations = [...donationDraft.allocations, { ...item, percentage: 0 }];
+      const count = newAllocations.length;
+      const evenPercentage = Math.floor(100 / count);
+      const remainder = 100 - evenPercentage * count;
+
+      const redistributedAllocations = newAllocations.map((a, index) => ({
+        ...a,
+        percentage: index === 0 ? evenPercentage + remainder : evenPercentage,
+      }));
+
+      const updatedDraft: DonationDraft = {
+        ...donationDraft,
+        allocations: redistributedAllocations,
+      };
+
+      // Save the updated draft
+      await saveDonationDraft(updatedDraft);
+    },
+    [donationDraft, saveDonationDraft]
+  );
+
   // Helper to check if there's an active draft (even without allocations)
   const hasDraft = donationDraft !== null;
 
@@ -864,6 +920,8 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     hasDraft,
     saveDonationDraft,
     clearDonationDraft,
+    addToDraft,
+    isInDraft,
     isSidebarOpen,
     setSidebarOpen,
     activeTab,
