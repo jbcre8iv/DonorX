@@ -135,8 +135,8 @@ function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuic
   return (
     <>
       <tr className="text-sm hover:bg-slate-50 transition-colors">
-        <td className="py-3 pr-4">
-          <Link href={`/directory/${nonprofit.id}`} className="flex items-center gap-3 group">
+        <td className="py-3 pr-2 sm:pr-4">
+          <Link href={`/directory/${nonprofit.id}`} className="flex items-center gap-2 sm:gap-3 group">
             {nonprofit.logo_url ? (
               <img
                 src={nonprofit.logo_url}
@@ -148,12 +148,12 @@ function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuic
                 {nonprofit.name.charAt(0)}
               </div>
             )}
-            <div className="min-w-0">
-              <span className="font-medium text-slate-900 group-hover:text-blue-700 transition-colors truncate">
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <span className="font-medium text-slate-900 group-hover:text-blue-700 transition-colors block truncate">
                 {nonprofit.name}
               </span>
               {nonprofit.ein && (
-                <p className="text-xs text-slate-400">EIN: {nonprofit.ein}</p>
+                <p className="text-xs text-slate-400 truncate">EIN: {nonprofit.ein}</p>
               )}
               {/* Show category on mobile */}
               {nonprofit.category && (
@@ -235,8 +235,8 @@ export function NonprofitTable({ nonprofits, onQuickView }: NonprofitTableProps)
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
+    <div className="sm:overflow-x-auto">
+      <table className="w-full table-fixed sm:table-auto">
         <thead>
           <tr className="border-b border-slate-200 text-left text-sm text-slate-600">
             <th className="pb-3 font-medium">Organization</th>
