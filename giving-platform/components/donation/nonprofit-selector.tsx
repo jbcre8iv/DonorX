@@ -31,7 +31,7 @@ export function NonprofitSelector({
 }: NonprofitSelectorProps) {
   const [search, setSearch] = React.useState("");
   const [activeTab, setActiveTab] = React.useState<"nonprofits" | "categories">("nonprofits");
-  const [viewMode, setViewMode] = React.useState<"grid" | "table">("grid");
+  const [viewMode, setViewMode] = React.useState<"grid" | "table">("table");
 
   // Reset search when modal closes
   React.useEffect(() => {
