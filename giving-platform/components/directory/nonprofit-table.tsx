@@ -1,8 +1,7 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
-import { Globe, Eye, Heart, HandHeart, Check, Plus, MoreHorizontal, X } from "lucide-react";
+import { Globe, Eye, Heart, HandHeart, Check, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
@@ -15,7 +14,6 @@ interface NonprofitTableProps {
 
 function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuickView?: (nonprofit: Nonprofit) => void }) {
   const { addToCart, isInCart, toggleFavorite, isFavorite } = useCartFavorites();
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   const inCart = isInCart(nonprofit.id);
   const favorited = isFavorite(nonprofit.id);
@@ -101,8 +99,7 @@ function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuic
         </p>
       </td>
       <td className="py-3">
-        {/* Desktop actions - hidden on mobile */}
-        <div className="hidden sm:flex items-center justify-end gap-1">
+        <div className="flex items-center justify-end gap-1">
           <Button asChild size="sm" className="h-8">
             <Link href={`/donate?nonprofit=${nonprofit.id}`}>Donate</Link>
           </Button>
@@ -160,97 +157,6 @@ function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuic
               </Button>
             )}
           </div>
-        </div>
-
-        {/* Mobile actions - expandable menu */}
-        <div className="sm:hidden flex justify-end relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? (
-              <X className="h-4 w-4" />
-            ) : (
-              <MoreHorizontal className="h-4 w-4" />
-            )}
-          </Button>
-
-          {/* Expanded mobile menu */}
-          {mobileMenuOpen && (
-            <div className="absolute right-0 top-10 z-20 bg-white rounded-lg shadow-lg border border-slate-200 p-2 min-w-[160px]">
-              <Link
-                href={`/donate?nonprofit=${nonprofit.id}`}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm font-medium text-white bg-blue-700 rounded-md hover:bg-blue-800"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Donate
-              </Link>
-              <button
-                onClick={(e) => {
-                  handleAddToCart(e);
-                  setMobileMenuOpen(false);
-                }}
-                disabled={inCart}
-                className={`flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md mt-1 ${
-                  inCart
-                    ? "text-slate-400 bg-slate-50"
-                    : "text-slate-700 hover:bg-slate-100"
-                }`}
-              >
-                {inCart ? (
-                  <>
-                    <Check className="h-4 w-4" />
-                    In Giving List
-                  </>
-                ) : (
-                  <>
-                    <HandHeart className="h-4 w-4" />
-                    Add to Giving List
-                  </>
-                )}
-              </button>
-              <button
-                onClick={(e) => {
-                  handleToggleFavorite(e);
-                  setMobileMenuOpen(false);
-                }}
-                className={`flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md ${
-                  favorited
-                    ? "text-pink-500 bg-pink-50"
-                    : "text-slate-700 hover:bg-slate-100"
-                }`}
-              >
-                <Heart className={`h-4 w-4 ${favorited ? "fill-current" : ""}`} />
-                {favorited ? "Remove Favorite" : "Add to Favorites"}
-              </button>
-              {onQuickView && (
-                <button
-                  onClick={() => {
-                    onQuickView(nonprofit);
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-700 rounded-md hover:bg-slate-100"
-                >
-                  <Eye className="h-4 w-4" />
-                  Quick View
-                </button>
-              )}
-              {nonprofit.website && (
-                <a
-                  href={nonprofit.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-700 rounded-md hover:bg-slate-100"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Globe className="h-4 w-4" />
-                  Visit Website
-                </a>
-              )}
-            </div>
-          )}
         </div>
       </td>
     </tr>
