@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft, Lock, AlertCircle, RefreshCw, Save, FolderOpen, Trash2, X } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
@@ -36,12 +36,15 @@ export function DonateClient({
   preselectedNonprofitId,
 }: DonateClientProps) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const canceled = searchParams.get("canceled") === "true";
 
   const { donationDraft, saveDonationDraft, clearDonationDraft } = useCartFavorites();
   const [draftLoaded, setDraftLoaded] = React.useState(false);
   // Track if allocations were loaded from a draft (vs preselected nonprofit or cart)
   const [loadedFromDraft, setLoadedFromDraft] = React.useState(false);
+  // Track the previous draft state to detect when cleared from another device
+  const hadDraftRef = React.useRef(false);
 
   const [amount, setAmount] = React.useState(100000); // Start with first preset of middle range
   const [frequency, setFrequency] = React.useState<DonationFrequency>("one-time");
@@ -127,17 +130,26 @@ export function DonateClient({
     setDraftLoaded(true);
   }, [preselectedNonprofitId, nonprofits, searchParams, donationDraft, draftLoaded]);
 
-  // Reset the page when draft is cleared externally (e.g., from "Clear & Start Over" in sidebar)
-  // Only reset if the allocations were originally loaded from a draft
+  // Track when we have a draft so we can detect when it's cleared
   React.useEffect(() => {
-    if (draftLoaded && loadedFromDraft && donationDraft === null && allocations.length > 0) {
-      // Draft was cleared externally - reset the page
-      setAmount(100000);
-      setFrequency("one-time");
-      setAllocations([]);
-      setLoadedFromDraft(false);
+    if (donationDraft !== null) {
+      hadDraftRef.current = true;
     }
-  }, [donationDraft, draftLoaded, loadedFromDraft, allocations.length]);
+  }, [donationDraft]);
+
+  // Handle when draft is cleared (from this device's sidebar or another device via realtime)
+  // Redirect to directory when cleared
+  React.useEffect(() => {
+    // Only act if:
+    // 1. Initial load is complete
+    // 2. We previously had a draft (tracked in ref)
+    // 3. Now we don't have a draft
+    // 4. We have allocations displayed (meaning we're actively working on a donation)
+    if (draftLoaded && hadDraftRef.current && donationDraft === null && allocations.length > 0) {
+      // Draft was cleared - redirect to directory
+      router.push("/directory");
+    }
+  }, [donationDraft, draftLoaded, allocations.length, router]);
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
