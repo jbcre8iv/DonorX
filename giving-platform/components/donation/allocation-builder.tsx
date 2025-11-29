@@ -454,6 +454,9 @@ export function AllocationBuilder({
             <div className="space-y-3">
               {allocations.map((item, index) => {
                 const colors = getAllocationColor(index);
+                const details = getItemDetails(item);
+                const nonprofit = item.type === "nonprofit" ? details as Nonprofit | undefined : undefined;
+                const category = item.type === "category" ? details as Category | undefined : undefined;
                 return (
                 <div
                   key={item.id}
@@ -461,9 +464,21 @@ export function AllocationBuilder({
                 >
                   {/* Top row: Name and info/delete */}
                   <div className="flex items-start gap-3">
-                    <div className={`h-10 w-10 rounded-lg ${colors.bg} flex items-center justify-center flex-shrink-0`}>
-                      <HandHeart className={`h-5 w-5 ${colors.icon}`} />
-                    </div>
+                    {nonprofit?.logo_url ? (
+                      <img
+                        src={nonprofit.logo_url}
+                        alt={`${item.targetName} logo`}
+                        className="h-10 w-10 rounded-lg object-contain flex-shrink-0"
+                      />
+                    ) : category?.icon ? (
+                      <div className={`h-10 w-10 rounded-lg ${colors.bg} flex items-center justify-center flex-shrink-0 text-xl`}>
+                        {category.icon}
+                      </div>
+                    ) : (
+                      <div className={`h-10 w-10 rounded-lg ${colors.bg} flex items-center justify-center flex-shrink-0`}>
+                        <HandHeart className={`h-5 w-5 ${colors.icon}`} />
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-slate-900 leading-tight">
                         {item.targetName}
@@ -758,9 +773,17 @@ export function AllocationBuilder({
               <>
                 <ModalHeader>
                   <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                      <Building2 className="h-6 w-6 text-emerald-600" />
-                    </div>
+                    {nonprofit.logo_url ? (
+                      <img
+                        src={nonprofit.logo_url}
+                        alt={`${nonprofit.name} logo`}
+                        className="h-12 w-12 rounded-lg object-contain flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="h-12 w-12 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                        <Building2 className="h-6 w-6 text-emerald-600" />
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <h2 className="text-xl font-semibold text-slate-900 pr-8">
                         {nonprofit.name}
@@ -828,8 +851,8 @@ export function AllocationBuilder({
               <>
                 <ModalHeader>
                   <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-                      <Tag className="h-6 w-6 text-purple-600" />
+                    <div className="h-12 w-12 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0 text-2xl">
+                      {category.icon || <Tag className="h-6 w-6 text-purple-600" />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <h2 className="text-xl font-semibold text-slate-900 pr-8">
