@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { X, HandHeart, Heart } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, HandHeart, Heart, RefreshCw } from "lucide-react";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { CartTab } from "./cart-tab";
 import { FavoritesTab } from "./favorites-tab";
@@ -14,7 +14,18 @@ export function CartFavoritesSidebar() {
     setActiveTab,
     cartItems,
     favorites,
+    refreshFromDatabase,
+    userId,
   } = useCartFavorites();
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    await refreshFromDatabase();
+    setIsRefreshing(false);
+  };
 
   // Close sidebar on escape key
   useEffect(() => {
@@ -95,13 +106,25 @@ export function CartFavoritesSidebar() {
             </button>
           </div>
 
-          {/* Close button */}
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          {/* Refresh and Close buttons */}
+          <div className="flex items-center gap-1">
+            {userId && (
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50"
+                title="Sync with server"
+              >
+                <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
+            )}
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* Content */}

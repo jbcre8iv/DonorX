@@ -89,6 +89,7 @@ interface CartFavoritesContextType {
   // Loading/sync
   isLoading: boolean;
   userId: string | null;
+  refreshFromDatabase: () => Promise<void>;
 }
 
 const CartFavoritesContext = createContext<CartFavoritesContextType | null>(
@@ -268,10 +269,50 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     [supabase, fetchFromDatabase]
   );
 
+  // Re-fetch data when tab becomes visible (handles sync when switching between devices/tabs)
+  useEffect(() => {
+    let lastSyncTime = 0;
+
+    const syncData = async () => {
+      // Throttle to prevent rapid re-syncing (minimum 2 seconds between syncs)
+      const now = Date.now();
+      if (now - lastSyncTime < 2000) return;
+      lastSyncTime = now;
+
+      if (!userId) return;
+
+      try {
+        const freshData = await fetchFromDatabase(userId);
+        setCartItems(freshData.cart);
+        setFavorites(freshData.favorites);
+        saveToLocalStorage(freshData.cart, freshData.favorites);
+      } catch {
+        // Silent fail - will retry on next visibility change
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncData();
+      }
+    };
+
+    const handleFocus = () => {
+      syncData();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [userId, fetchFromDatabase, saveToLocalStorage]);
+
   // Initialize - check auth and load data
   useEffect(() => {
-    let cartSubscription: ReturnType<typeof supabase.channel> | null = null;
-    let favoritesSubscription: ReturnType<typeof supabase.channel> | null = null;
+    const channels: ReturnType<typeof supabase.channel>[] = [];
 
     const initialize = async () => {
       setIsLoading(true);
@@ -352,8 +393,8 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         }
 
         // Set up real-time subscriptions for cross-device sync
-        cartSubscription = supabase
-          .channel(`cart_items_${user.id}`)
+        const cartChannel = supabase
+          .channel(`cart_sync_${user.id}_${Date.now()}`)
           .on(
             'postgres_changes',
             {
@@ -362,20 +403,21 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
               table: 'cart_items',
               filter: `user_id=eq.${user.id}`,
             },
-            async () => {
+            async (payload) => {
+              console.log('[Realtime] Cart change detected:', payload.eventType);
               // Re-fetch all data when changes occur from another device
               const freshData = await fetchFromDatabase(user.id);
               setCartItems(freshData.cart);
-              setFavorites(prev => {
-                saveToLocalStorage(freshData.cart, prev);
-                return prev;
-              });
+              saveToLocalStorage(freshData.cart, freshData.favorites);
             }
           )
-          .subscribe();
+          .subscribe((status) => {
+            console.log('[Realtime] Cart subscription status:', status);
+          });
+        channels.push(cartChannel);
 
-        favoritesSubscription = supabase
-          .channel(`user_favorites_${user.id}`)
+        const favoritesChannel = supabase
+          .channel(`favorites_sync_${user.id}_${Date.now()}`)
           .on(
             'postgres_changes',
             {
@@ -384,17 +426,18 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
               table: 'user_favorites',
               filter: `user_id=eq.${user.id}`,
             },
-            async () => {
+            async (payload) => {
+              console.log('[Realtime] Favorites change detected:', payload.eventType);
               // Re-fetch all data when changes occur from another device
               const freshData = await fetchFromDatabase(user.id);
               setFavorites(freshData.favorites);
-              setCartItems(prev => {
-                saveToLocalStorage(prev, freshData.favorites);
-                return prev;
-              });
+              saveToLocalStorage(freshData.cart, freshData.favorites);
             }
           )
-          .subscribe();
+          .subscribe((status) => {
+            console.log('[Realtime] Favorites subscription status:', status);
+          });
+        channels.push(favoritesChannel);
       } else {
         setUserId(null);
       }
@@ -415,24 +458,14 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       } else if (event === "SIGNED_OUT") {
         setUserId(null);
         // Clean up subscriptions
-        if (cartSubscription) {
-          supabase.removeChannel(cartSubscription);
-        }
-        if (favoritesSubscription) {
-          supabase.removeChannel(favoritesSubscription);
-        }
+        channels.forEach(channel => supabase.removeChannel(channel));
         // Keep localStorage data, just mark as not synced
       }
     });
 
     return () => {
       subscription.unsubscribe();
-      if (cartSubscription) {
-        supabase.removeChannel(cartSubscription);
-      }
-      if (favoritesSubscription) {
-        supabase.removeChannel(favoritesSubscription);
-      }
+      channels.forEach(channel => supabase.removeChannel(channel));
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -510,7 +543,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
             .select()
             .single();
 
-          if (!error && data) {
+          if (error) {
+            console.error("Error adding to cart:", error);
+          } else if (data) {
             // Update the item with the real database ID
             setCartItems(prev => prev.map(cartItem =>
               cartItem.id === newItem.id ? { ...cartItem, id: data.id } : cartItem
@@ -528,6 +563,11 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   // Remove from cart
   const removeFromCart = useCallback(
     async (itemId: string) => {
+      // Update local state first for immediate UI feedback
+      const updatedCart = cartItems.filter((item) => item.id !== itemId);
+      setCartItems(updatedCart);
+      saveToLocalStorage(updatedCart, favorites);
+
       // If logged in and not a temp ID, delete from database
       if (userId && !itemId.startsWith("temp_")) {
         try {
@@ -536,10 +576,6 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           console.error("Error removing from cart:", error);
         }
       }
-
-      const updatedCart = cartItems.filter((item) => item.id !== itemId);
-      setCartItems(updatedCart);
-      saveToLocalStorage(updatedCart, favorites);
     },
     [cartItems, favorites, userId, supabase, saveToLocalStorage]
   );
@@ -547,6 +583,13 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   // Update cart item percentage
   const updateCartPercentage = useCallback(
     async (itemId: string, percentage: number) => {
+      // Update local state first for immediate UI feedback
+      const updatedCart = cartItems.map((item) =>
+        item.id === itemId ? { ...item, percentage } : item
+      );
+      setCartItems(updatedCart);
+      saveToLocalStorage(updatedCart, favorites);
+
       // If logged in and not a temp ID, update in database
       if (userId && !itemId.startsWith("temp_")) {
         try {
@@ -558,12 +601,6 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           console.error("Error updating cart percentage:", error);
         }
       }
-
-      const updatedCart = cartItems.map((item) =>
-        item.id === itemId ? { ...item, percentage } : item
-      );
-      setCartItems(updatedCart);
-      saveToLocalStorage(updatedCart, favorites);
     },
     [cartItems, favorites, userId, supabase, saveToLocalStorage]
   );
@@ -626,7 +663,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
             .select()
             .single();
 
-          if (!error && data) {
+          if (error) {
+            console.error("Error adding to favorites:", error);
+          } else if (data) {
             // Update the item with the real database ID
             setFavorites(prev => prev.map(favItem =>
               favItem.id === newItem.id ? { ...favItem, id: data.id } : favItem
@@ -644,6 +683,11 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   // Remove from favorites
   const removeFromFavorites = useCallback(
     async (itemId: string) => {
+      // Update local state first for immediate UI feedback
+      const updatedFavorites = favorites.filter((item) => item.id !== itemId);
+      setFavorites(updatedFavorites);
+      saveToLocalStorage(cartItems, updatedFavorites);
+
       // If logged in and not a temp ID, delete from database
       if (userId && !itemId.startsWith("temp_")) {
         try {
@@ -652,10 +696,6 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           console.error("Error removing from favorites:", error);
         }
       }
-
-      const updatedFavorites = favorites.filter((item) => item.id !== itemId);
-      setFavorites(updatedFavorites);
-      saveToLocalStorage(cartItems, updatedFavorites);
     },
     [favorites, cartItems, userId, supabase, saveToLocalStorage]
   );
@@ -683,6 +723,20 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     [favorites, addToFavorites, removeFromFavorites]
   );
 
+  // Manual refresh from database
+  const refreshFromDatabase = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const freshData = await fetchFromDatabase(userId);
+      setCartItems(freshData.cart);
+      setFavorites(freshData.favorites);
+      saveToLocalStorage(freshData.cart, freshData.favorites);
+    } catch (error) {
+      console.error("Error refreshing from database:", error);
+    }
+  }, [userId, fetchFromDatabase, saveToLocalStorage]);
+
   const value: CartFavoritesContextType = {
     cartItems,
     addToCart,
@@ -702,6 +756,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     setActiveTab,
     isLoading,
     userId,
+    refreshFromDatabase,
   };
 
   return (
