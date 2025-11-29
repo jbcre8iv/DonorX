@@ -21,7 +21,7 @@ const navLinks = [
 
 // Giving List button component to avoid hook issues
 function GivingListButton() {
-  const { cartItems, setSidebarOpen } = useCartFavorites();
+  const { cartItems, setSidebarOpen, hasDraft } = useCartFavorites();
   const [isAnimating, setIsAnimating] = React.useState(false);
   const prevCountRef = React.useRef(cartItems.length);
 
@@ -39,13 +39,24 @@ function GivingListButton() {
     <button
       onClick={() => setSidebarOpen(true)}
       className={cn(
-        "relative rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors",
+        "relative rounded-lg p-2 transition-colors",
+        hasDraft
+          ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100"
+          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
         isAnimating && "animate-bounce-subtle"
       )}
       aria-label="Open giving list"
     >
-      <HandHeart className={cn("h-5 w-5", isAnimating && "text-blue-600")} />
-      {cartItems.length > 0 && (
+      <HandHeart className={cn("h-5 w-5", isAnimating && !hasDraft && "text-blue-600")} />
+      {/* Active donation indicator - pulsing green dot */}
+      {hasDraft && (
+        <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+          <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500"></span>
+        </span>
+      )}
+      {/* Cart count badge - only show when no draft */}
+      {!hasDraft && cartItems.length > 0 && (
         <span className={cn(
           "absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white transition-transform",
           isAnimating && "scale-125"
