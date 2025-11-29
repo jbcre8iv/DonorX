@@ -283,18 +283,21 @@ export function Header({ initialUser = null }: HeaderProps) {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
-        <button
-          type="button"
-          className="md:hidden p-2 text-slate-600"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          {mobileMenuOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <Menu className="h-6 w-6" />
-          )}
-        </button>
+        {/* Mobile: Giving List + Menu Button */}
+        <div className="md:hidden flex items-center gap-1">
+          {user && <GivingListButton />}
+          <button
+            type="button"
+            className="p-2 text-slate-600"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
