@@ -64,6 +64,11 @@ export interface DonationDraft {
   updatedAt?: string;
 }
 
+// Result type for addToCart operation
+export type AddToCartResult =
+  | { success: true }
+  | { success: false; reason: "blocked_by_draft" | "cart_full" | "already_in_cart" };
+
 interface CartFavoritesContextType {
   // Cart
   cartItems: CartItem[];
@@ -72,12 +77,13 @@ interface CartFavoritesContextType {
     categoryId?: string;
     nonprofit?: CartItem["nonprofit"];
     category?: CartItem["category"];
-  }) => Promise<void>;
+  }) => Promise<AddToCartResult>;
   removeFromCart: (itemId: string) => Promise<void>;
   updateCartPercentage: (itemId: string, percentage: number) => Promise<void>;
   clearCart: () => Promise<void>;
   isInCart: (nonprofitId?: string, categoryId?: string) => boolean;
   cartTotal: number;
+  openCartSidebar: () => void;
 
   // Favorites
   favorites: FavoriteItem[];
@@ -543,6 +549,12 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     [favorites]
   );
 
+  // Helper to open cart sidebar
+  const openCartSidebar = useCallback(() => {
+    setActiveTab("cart");
+    setSidebarOpen(true);
+  }, []);
+
   // Add to cart
   const addToCart = useCallback(
     async (item: {
@@ -550,20 +562,18 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       categoryId?: string;
       nonprofit?: CartItem["nonprofit"];
       category?: CartItem["category"];
-    }) => {
+    }): Promise<AddToCartResult> => {
       // Block adding items when there's an active donation draft
       if (donationDraft) {
-        console.warn("Cannot add to cart while a donation is in progress. Clear the draft first.");
-        return;
+        return { success: false, reason: "blocked_by_draft" };
       }
 
       if (cartItems.length >= MAX_CART_ITEMS) {
-        console.warn("Cart is full");
-        return;
+        return { success: false, reason: "cart_full" };
       }
 
       if (isInCart(item.nonprofitId, item.categoryId)) {
-        return; // Already in cart
+        return { success: false, reason: "already_in_cart" };
       }
 
       const newItem: CartItem = {
@@ -608,6 +618,8 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           // Item still exists in local state, will sync later
         }
       }
+
+      return { success: true };
     },
     [cartItems, favorites, userId, supabase, isInCart, saveToLocalStorage, donationDraft]
   );
@@ -842,6 +854,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     clearCart,
     isInCart,
     cartTotal,
+    openCartSidebar,
     favorites,
     addToFavorites,
     removeFromFavorites,

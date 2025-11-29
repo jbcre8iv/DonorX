@@ -13,6 +13,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
+import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -26,16 +27,28 @@ export default function FavoritesPage() {
     setActiveTab,
     isLoading,
   } = useCartFavorites();
+  const { addToast } = useToast();
 
   const handleAddToCart = async (item: (typeof favorites)[0]) => {
-    await addToCart({
+    const result = await addToCart({
       nonprofitId: item.nonprofitId,
       categoryId: item.categoryId,
       nonprofit: item.nonprofit,
       category: item.category,
     });
-    setActiveTab("cart");
-    setSidebarOpen(true);
+
+    if (!result.success) {
+      if (result.reason === "blocked_by_draft") {
+        addToast("You have an active donation in progress. Continue or clear it first.", "warning", 5000);
+        setActiveTab("cart");
+        setSidebarOpen(true);
+      } else if (result.reason === "cart_full") {
+        addToast("Your giving list is full (max 10 items).", "warning");
+      }
+    } else {
+      setActiveTab("cart");
+      setSidebarOpen(true);
+    }
   };
 
   const nonprofitFavorites = favorites.filter((f) => f.nonprofitId);

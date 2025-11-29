@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Heart, Trash2, Tag, Building2, Plus, Eye, X, Globe } from "lucide-react";
 import { useCartFavorites, type FavoriteItem } from "@/contexts/cart-favorites-context";
+import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 
 export function FavoritesTab() {
@@ -15,17 +16,26 @@ export function FavoritesTab() {
     setSidebarOpen,
     setActiveTab,
   } = useCartFavorites();
+  const { addToast } = useToast();
 
   const [quickViewItem, setQuickViewItem] = useState<FavoriteItem | null>(null);
 
   const handleAddToCart = async (item: typeof favorites[0]) => {
-    await addToCart({
+    const result = await addToCart({
       nonprofitId: item.nonprofitId,
       categoryId: item.categoryId,
       nonprofit: item.nonprofit,
       category: item.category,
     });
-    // Stay on favorites tab - don't switch to cart
+
+    if (!result.success) {
+      if (result.reason === "blocked_by_draft") {
+        addToast("You have an active donation in progress. Continue or clear it first.", "warning", 5000);
+        setActiveTab("cart"); // Switch to cart tab to show the active donation banner
+      } else if (result.reason === "cart_full") {
+        addToast("Your giving list is full (max 10 items).", "warning");
+      }
+    }
   };
 
   if (favorites.length === 0) {

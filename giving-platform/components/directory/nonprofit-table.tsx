@@ -6,6 +6,7 @@ import { Globe, Eye, Heart, HandHeart, Check, Plus, ChevronDown } from "lucide-r
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
+import { useToast } from "@/components/ui/toast";
 import type { Nonprofit } from "@/types/database";
 
 interface NonprofitTableProps {
@@ -105,7 +106,8 @@ function NonprofitRow({
   isExpanded: boolean;
   onToggleExpand: () => void;
 }) {
-  const { addToCart, isInCart, toggleFavorite, isFavorite } = useCartFavorites();
+  const { addToCart, isInCart, toggleFavorite, isFavorite, openCartSidebar } = useCartFavorites();
+  const { addToast } = useToast();
 
   const inCart = isInCart(nonprofit.id);
   const favorited = isFavorite(nonprofit.id);
@@ -114,7 +116,7 @@ function NonprofitRow({
     e.preventDefault();
     e.stopPropagation();
     if (!inCart) {
-      await addToCart({
+      const result = await addToCart({
         nonprofitId: nonprofit.id,
         nonprofit: {
           id: nonprofit.id,
@@ -123,7 +125,15 @@ function NonprofitRow({
           mission: nonprofit.mission || undefined,
         },
       });
-      // Don't open sidebar - let the header icon animation indicate the item was added
+
+      if (!result.success) {
+        if (result.reason === "blocked_by_draft") {
+          addToast("You have an active donation in progress. Continue or clear it first.", "warning", 5000);
+          openCartSidebar();
+        } else if (result.reason === "cart_full") {
+          addToast("Your giving list is full (max 10 items).", "warning");
+        }
+      }
     }
   };
 
