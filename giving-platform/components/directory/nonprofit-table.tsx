@@ -94,9 +94,18 @@ function ActionButtons({
   );
 }
 
-function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuickView?: (nonprofit: Nonprofit) => void }) {
+function NonprofitRow({
+  nonprofit,
+  onQuickView,
+  isExpanded,
+  onToggleExpand,
+}: {
+  nonprofit: Nonprofit;
+  onQuickView?: (nonprofit: Nonprofit) => void;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+}) {
   const { addToCart, isInCart, toggleFavorite, isFavorite } = useCartFavorites();
-  const [expanded, setExpanded] = React.useState(false);
 
   const inCart = isInCart(nonprofit.id);
   const favorited = isFavorite(nonprofit.id);
@@ -197,16 +206,16 @@ function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuic
         {/* Mobile expand button */}
         <td className="py-3 sm:hidden">
           <button
-            onClick={() => setExpanded(!expanded)}
+            onClick={onToggleExpand}
             className="h-8 w-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-            aria-label={expanded ? "Hide actions" : "Show actions"}
+            aria-label={isExpanded ? "Hide actions" : "Show actions"}
           >
-            <ChevronDown className={`h-5 w-5 transition-transform ${expanded ? "rotate-180" : ""}`} />
+            <ChevronDown className={`h-5 w-5 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
           </button>
         </td>
       </tr>
       {/* Mobile expanded actions row */}
-      {expanded && (
+      {isExpanded && (
         <tr className="sm:hidden bg-slate-50">
           <td colSpan={2} className="py-3 px-4">
             <ActionButtons
@@ -226,6 +235,8 @@ function NonprofitRow({ nonprofit, onQuickView }: { nonprofit: Nonprofit; onQuic
 }
 
 export function NonprofitTable({ nonprofits, onQuickView }: NonprofitTableProps) {
+  const [expandedId, setExpandedId] = React.useState<string | null>(null);
+
   if (nonprofits.length === 0) {
     return (
       <div className="text-center py-12 text-slate-500">
@@ -233,6 +244,10 @@ export function NonprofitTable({ nonprofits, onQuickView }: NonprofitTableProps)
       </div>
     );
   }
+
+  const handleToggleExpand = (nonprofitId: string) => {
+    setExpandedId(expandedId === nonprofitId ? null : nonprofitId);
+  };
 
   return (
     <div className="sm:overflow-x-auto">
@@ -248,7 +263,13 @@ export function NonprofitTable({ nonprofits, onQuickView }: NonprofitTableProps)
         </thead>
         <tbody className="divide-y divide-slate-100">
           {nonprofits.map((nonprofit) => (
-            <NonprofitRow key={nonprofit.id} nonprofit={nonprofit} onQuickView={onQuickView} />
+            <NonprofitRow
+              key={nonprofit.id}
+              nonprofit={nonprofit}
+              onQuickView={onQuickView}
+              isExpanded={expandedId === nonprofit.id}
+              onToggleExpand={() => handleToggleExpand(nonprofit.id)}
+            />
           ))}
         </tbody>
       </table>
