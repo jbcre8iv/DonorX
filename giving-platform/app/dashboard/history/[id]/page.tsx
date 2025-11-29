@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { CompleteButton } from "./complete-button";
 
 interface DonationDetailPageProps {
   params: Promise<{ id: string }>;
@@ -266,9 +267,13 @@ export default async function DonationDetailPage({ params }: DonationDetailPageP
           {/* Actions */}
           <Card>
             <CardContent className="p-4 space-y-2">
+              {/* Mark as Complete button for pending simulated donations */}
+              {donation.status === "pending" && donation.is_simulated && (
+                <CompleteButton donationId={donation.id} />
+              )}
               {donation.status === "completed" && (
                 <Button variant="outline" fullWidth asChild>
-                  <Link href={`/dashboard/receipts?donation=${donation.id}`}>
+                  <Link href={`/dashboard/receipts/${donation.id}`}>
                     <Download className="mr-2 h-4 w-4" />
                     Download Receipt
                   </Link>
