@@ -221,14 +221,14 @@ export function AllocationAdvisor({
         <div className="space-y-3">
           {/* Synced donation amount display */}
           {hasExternalAmount && (
-            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+            <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-600">Donation Amount</span>
-                <span className="text-lg font-semibold text-slate-900">
+                <span className="text-sm text-emerald-700">Donation Amount</span>
+                <span className="text-lg font-semibold text-emerald-900">
                   {formatCurrency(currentAmount * 100)}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-emerald-600 mt-1">
                 Synced from above
               </p>
             </div>
@@ -242,7 +242,7 @@ export function AllocationAdvisor({
               onChange={(e) => setGoals(e.target.value)}
               placeholder="e.g., I want to focus on education and support local organizations"
               rows={2}
-              className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
           <Button
