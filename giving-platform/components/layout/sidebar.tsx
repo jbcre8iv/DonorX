@@ -19,6 +19,8 @@ import {
   FileBarChart,
   Sparkles,
   Heart,
+  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -58,36 +60,113 @@ interface SidebarProps {
 export function Sidebar({ variant }: SidebarProps) {
   const pathname = usePathname();
   const links = variant === "admin" ? adminLinks : donorLinks;
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+
+  // Close mobile sidebar when route changes
+  React.useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  // Get current page title for mobile header
+  const currentPage = links.find(
+    (link) =>
+      pathname === link.href ||
+      (link.href !== "/dashboard" &&
+        link.href !== "/admin" &&
+        pathname.startsWith(link.href))
+  );
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-slate-200 bg-white no-print">
-      <div className="flex-1 overflow-y-auto py-6">
-        <nav className="space-y-1 px-3">
-          {links.map((link) => {
-            const isActive =
-              pathname === link.href ||
-              (link.href !== "/dashboard" &&
-                link.href !== "/admin" &&
-                pathname.startsWith(link.href));
-
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-blue-50 text-blue-700"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                )}
-              >
-                <link.icon className="h-5 w-5" />
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
+    <>
+      {/* Mobile header bar with menu toggle */}
+      <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white sticky top-16 z-40">
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="flex items-center gap-2 text-slate-600 hover:text-slate-900"
+        >
+          {mobileOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
+          <span className="font-medium">{currentPage?.label || "Menu"}</span>
+        </button>
       </div>
-    </aside>
+
+      {/* Mobile sidebar overlay */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 top-[calc(4rem+49px)] bg-black/50 z-30"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile sidebar drawer */}
+      <aside
+        className={cn(
+          "md:hidden fixed left-0 top-[calc(4rem+49px)] bottom-0 w-64 bg-white border-r border-slate-200 z-40 transform transition-transform duration-200 ease-in-out no-print",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="flex-1 overflow-y-auto py-4">
+          <nav className="space-y-1 px-3">
+            {links.map((link) => {
+              const isActive =
+                pathname === link.href ||
+                (link.href !== "/dashboard" &&
+                  link.href !== "/admin" &&
+                  pathname.startsWith(link.href));
+
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-blue-50 text-blue-700"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  )}
+                >
+                  <link.icon className="h-5 w-5" />
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </aside>
+
+      {/* Desktop sidebar - always visible */}
+      <aside className="hidden md:flex h-full w-64 flex-col border-r border-slate-200 bg-white no-print">
+        <div className="flex-1 overflow-y-auto py-6">
+          <nav className="space-y-1 px-3">
+            {links.map((link) => {
+              const isActive =
+                pathname === link.href ||
+                (link.href !== "/dashboard" &&
+                  link.href !== "/admin" &&
+                  pathname.startsWith(link.href));
+
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-blue-50 text-blue-700"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  )}
+                >
+                  <link.icon className="h-5 w-5" />
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </aside>
+    </>
   );
 }
