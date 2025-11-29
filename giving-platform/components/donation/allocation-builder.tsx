@@ -502,14 +502,14 @@ export function AllocationBuilder({
 
           {/* AI Rebalance Suggestion (Removing) */}
           {removalSuggestion && (
-            <div className="p-4 rounded-lg border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 space-y-4">
+            <div className="p-4 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-4">
               <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-blue-100">
-                  <Sparkles className="h-4 w-4 text-blue-600" />
+                <div className="p-2 rounded-lg bg-emerald-100">
+                  <Sparkles className="h-4 w-4 text-emerald-600" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-medium text-blue-900">Redistribute {removalSuggestion.removedPercentage}%?</h4>
-                  <p className="text-sm text-blue-700 mt-1">
+                  <h4 className="font-medium text-emerald-900">Redistribute {removalSuggestion.removedPercentage}%?</h4>
+                  <p className="text-sm text-emerald-700 mt-1">
                     Removing <span className="font-medium">{removalSuggestion.removedItemName}</span> frees up {removalSuggestion.removedPercentage}%.
                     Here&apos;s a suggested redistribution:
                   </p>
@@ -546,7 +546,7 @@ export function AllocationBuilder({
                 <Button
                   onClick={handleAcceptRemovalRebalance}
                   size="sm"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  className="flex-1"
                 >
                   <Check className="h-4 w-4 mr-1" />
                   Apply Redistribution
