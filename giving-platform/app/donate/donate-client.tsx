@@ -123,6 +123,17 @@ export function DonateClient({
 
     setDraftLoaded(true);
   }, [preselectedNonprofitId, nonprofits, searchParams, donationDraft, draftLoaded]);
+
+  // Reset the page when draft is cleared externally (e.g., from "Clear & Start Over" in sidebar)
+  React.useEffect(() => {
+    if (draftLoaded && donationDraft === null && allocations.length > 0) {
+      // Draft was cleared externally - reset the page
+      setAmount(100000);
+      setFrequency("one-time");
+      setAllocations([]);
+    }
+  }, [donationDraft, draftLoaded, allocations.length]);
+
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
