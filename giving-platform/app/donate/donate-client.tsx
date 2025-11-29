@@ -156,15 +156,9 @@ export function DonateClient({
   React.useEffect(() => {
     // Don't save until initial load is complete
     if (!draftLoaded) return;
-    // Don't save if there are no allocations
-    if (allocations.length === 0) {
-      // If there's an existing draft but allocations are now empty, clear it
-      if (donationDraft) {
-        clearDonationDraft();
-      }
-      return;
-    }
 
+    // Save draft with current state (even if no allocations yet)
+    // This preserves amount/frequency if user navigates away
     const draft: DonationDraft = {
       amountCents: amount * 100,
       frequency,
@@ -176,7 +170,7 @@ export function DonateClient({
       })),
     };
     saveDonationDraft(draft);
-  }, [amount, frequency, allocations, draftLoaded, saveDonationDraft, clearDonationDraft, donationDraft]);
+  }, [amount, frequency, allocations, draftLoaded, saveDonationDraft]);
 
   const handleSaveTemplate = async () => {
     if (!templateName.trim()) {

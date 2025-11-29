@@ -552,7 +552,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       category?: CartItem["category"];
     }) => {
       // Block adding items when there's an active donation draft
-      if (donationDraft && donationDraft.allocations.length > 0) {
+      if (donationDraft) {
         console.warn("Cannot add to cart while a donation is in progress. Clear the draft first.");
         return;
       }
@@ -831,8 +831,8 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     }
   }, [userId, supabase]);
 
-  // Helper to check if there's an active draft with allocations
-  const hasDraft = donationDraft !== null && donationDraft.allocations.length > 0;
+  // Helper to check if there's an active draft (even without allocations)
+  const hasDraft = donationDraft !== null;
 
   const value: CartFavoritesContextType = {
     cartItems,
