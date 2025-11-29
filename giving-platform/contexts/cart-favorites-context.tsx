@@ -444,16 +444,28 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           if (syncedData) {
             setCartItems(syncedData.cart);
             setFavorites(syncedData.favorites);
-            // Only set draft from DB if we don't already have a local draft
-            setDonationDraft((currentDraft) => currentDraft ?? syncedData.draft);
+            // Only set draft from DB if we don't already have a local draft with allocations
+            setDonationDraft((currentDraft) => {
+              if (currentDraft && currentDraft.allocations.length > 0) {
+                return currentDraft;
+              }
+              return syncedData.draft;
+            });
             saveToLocalStorage(syncedData.cart, syncedData.favorites);
           }
         } else {
           setCartItems(mergedCart);
           setFavorites(mergedFavorites);
-          // Only set draft from DB if we don't already have a local draft
+          // Only set draft from DB if we don't already have a local draft with allocations
           // This prevents overwriting a draft that was just created on this page load
-          setDonationDraft((currentDraft) => currentDraft ?? dbData.draft);
+          setDonationDraft((currentDraft) => {
+            // If we have a local draft with allocations, keep it
+            if (currentDraft && currentDraft.allocations.length > 0) {
+              return currentDraft;
+            }
+            // Otherwise use DB draft (or null if no DB draft)
+            return dbData.draft;
+          });
           saveToLocalStorage(mergedCart, mergedFavorites);
         }
 
