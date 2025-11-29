@@ -69,8 +69,16 @@ export function DownloadAnnualStatementButton({ statementData }: DownloadAnnualS
 }
 
 export function PrintButton() {
+  const handlePrint = () => {
+    // Use setTimeout to ensure the click event is fully processed
+    // before triggering print (helps with Safari compatibility)
+    setTimeout(() => {
+      window.print();
+    }, 100);
+  };
+
   return (
-    <Button variant="outline" onClick={() => window.print()}>
+    <Button variant="outline" onClick={handlePrint}>
       <Printer className="mr-2 h-4 w-4" />
       Print
     </Button>
