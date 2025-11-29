@@ -290,7 +290,7 @@ export function DonateClient({
 
       if (result.success && result.url) {
         // Redirect to Stripe Checkout
-        window.location.href = result.url;
+        window.location.assign(result.url);
       } else {
         setError(result.error || "Something went wrong. Please try again.");
         setIsLoading(false);

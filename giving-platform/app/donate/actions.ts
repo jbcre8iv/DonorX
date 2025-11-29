@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+// redirect import removed - not currently used
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getStripeServer } from "@/lib/stripe/client";
 import { config } from "@/lib/config";
@@ -197,20 +197,20 @@ export async function loadTemplates(): Promise<LoadTemplatesResult> {
       return { success: false, error: "Failed to load templates" };
     }
 
-    const formattedTemplates: DonationTemplate[] = (templates || []).map((t: any) => ({
-      id: t.id,
-      name: t.name,
-      description: t.description,
-      amountCents: t.amount_cents,
-      frequency: t.frequency,
-      items: (t.donation_template_items || []).map((item: any) => ({
-        type: item.type,
-        targetId: item.target_id,
-        targetName: item.target_name,
-        percentage: item.percentage,
+    const formattedTemplates: DonationTemplate[] = (templates || []).map((t: Record<string, unknown>) => ({
+      id: t.id as string,
+      name: t.name as string,
+      description: t.description as string | undefined,
+      amountCents: t.amount_cents as number | undefined,
+      frequency: t.frequency as DonationFrequency | undefined,
+      items: ((t.donation_template_items as Array<Record<string, unknown>>) || []).map((item) => ({
+        type: item.type as "nonprofit" | "category",
+        targetId: item.target_id as string,
+        targetName: item.target_name as string,
+        percentage: item.percentage as number,
       })),
-      createdAt: t.created_at,
-      updatedAt: t.updated_at,
+      createdAt: t.created_at as string,
+      updatedAt: t.updated_at as string,
     }));
 
     return { success: true, templates: formattedTemplates };
