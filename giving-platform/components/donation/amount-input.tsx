@@ -181,10 +181,10 @@ export function AmountInput({
 
       {/* Current Selection Display */}
       {(value > 0) && (
-        <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4">
+        <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-emerald-800">Selected Amount</span>
-            <span className="text-lg font-bold text-emerald-700">
+            <span className="text-sm font-medium text-blue-800">Selected Amount</span>
+            <span className="text-lg font-bold text-blue-700">
               ${value.toLocaleString()}
             </span>
           </div>
