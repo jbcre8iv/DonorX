@@ -172,8 +172,8 @@ export function DirectoryClient({
           </div>
 
           {/* Category Filter - Dropdown */}
-          <div className="flex justify-center">
-            <div className="relative w-full max-w-xs">
+          <div className="flex justify-center max-w-xl mx-auto">
+            <div className="relative w-full">
               <select
                 value={selectedCategory || ""}
                 onChange={(e) => setSelectedCategory(e.target.value || null)}
