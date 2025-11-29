@@ -17,6 +17,7 @@ export function CartTab() {
     setSidebarOpen,
     donationDraft,
     hasDraft,
+    saveDonationDraft,
     clearDonationDraft,
   } = useCartFavorites();
 
@@ -34,6 +35,26 @@ export function CartTab() {
       category: item.category,
     }));
     sessionStorage.setItem("donorx_cart_checkout", JSON.stringify(cartData));
+
+    // Create a draft immediately so the giving list shows "active donation"
+    // Distribute percentages evenly across all items
+    const itemCount = cartItems.length;
+    const evenPercentage = Math.floor(100 / itemCount);
+    const remainder = 100 - evenPercentage * itemCount;
+
+    const draftAllocations = cartItems.map((item, index) => ({
+      type: (item.nonprofitId ? "nonprofit" : "category") as "nonprofit" | "category",
+      targetId: (item.nonprofitId || item.categoryId)!,
+      targetName: item.nonprofit?.name || item.category?.name || "Unknown",
+      percentage: index === 0 ? evenPercentage + remainder : evenPercentage,
+    }));
+
+    // Save draft with default amount (will be updated on donate page)
+    saveDonationDraft({
+      amountCents: 10000000, // $100,000 default
+      frequency: "one-time",
+      allocations: draftAllocations,
+    }).catch(error => console.error("Error saving draft:", error));
 
     // Close sidebar first, then navigate
     setSidebarOpen(false);
