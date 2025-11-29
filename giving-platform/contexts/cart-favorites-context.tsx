@@ -444,13 +444,16 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           if (syncedData) {
             setCartItems(syncedData.cart);
             setFavorites(syncedData.favorites);
-            setDonationDraft(syncedData.draft);
+            // Only set draft from DB if we don't already have a local draft
+            setDonationDraft((currentDraft) => currentDraft ?? syncedData.draft);
             saveToLocalStorage(syncedData.cart, syncedData.favorites);
           }
         } else {
           setCartItems(mergedCart);
           setFavorites(mergedFavorites);
-          setDonationDraft(dbData.draft);
+          // Only set draft from DB if we don't already have a local draft
+          // This prevents overwriting a draft that was just created on this page load
+          setDonationDraft((currentDraft) => currentDraft ?? dbData.draft);
           saveToLocalStorage(mergedCart, mergedFavorites);
         }
 
