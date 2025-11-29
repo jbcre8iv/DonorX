@@ -42,6 +42,8 @@ export function DonateClient({
   const [draftLoaded, setDraftLoaded] = React.useState(false);
   // Track if allocations were loaded from a draft (vs preselected nonprofit or cart)
   const [loadedFromDraft, setLoadedFromDraft] = React.useState(false);
+  // Track the last draft we saved to avoid syncing our own changes back
+  const lastSavedDraftRef = React.useRef<string | null>(null);
 
   const [amount, setAmount] = React.useState(100000); // Start with first preset of middle range
   const [frequency, setFrequency] = React.useState<DonationFrequency>("one-time");
@@ -139,6 +141,42 @@ export function DonateClient({
     }
   }, [donationDraft, draftLoaded, loadedFromDraft, allocations.length]);
 
+  // Sync incoming draft changes from other devices (realtime)
+  React.useEffect(() => {
+    // Don't sync until initial load is complete
+    if (!draftLoaded) return;
+    // Skip if no draft
+    if (!donationDraft) return;
+
+    // Create fingerprint of incoming draft (excluding IDs, just content)
+    const incomingFingerprint = JSON.stringify({
+      a: donationDraft.amountCents,
+      f: donationDraft.frequency,
+      allocs: donationDraft.allocations.map(a => `${a.type}:${a.targetId}:${a.percentage}`).sort(),
+    });
+
+    // If this matches what we last saved, it's our own change echoing back - skip
+    if (lastSavedDraftRef.current === incomingFingerprint) {
+      return;
+    }
+
+    // This is a change from another device - sync it
+    console.log('[Donate] Syncing draft from another device');
+    setAmount(donationDraft.amountCents / 100);
+    setFrequency(donationDraft.frequency);
+    setAllocations(
+      donationDraft.allocations.map((a) => ({
+        id: crypto.randomUUID(),
+        type: a.type,
+        targetId: a.targetId,
+        targetName: a.targetName,
+        percentage: a.percentage,
+      }))
+    );
+    // Update the ref so we don't echo this back
+    lastSavedDraftRef.current = incomingFingerprint;
+  }, [donationDraft, draftLoaded]);
+
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -185,6 +223,14 @@ export function DonateClient({
         percentage: a.percentage,
       })),
     };
+
+    // Track what we're saving so we don't sync our own changes back
+    lastSavedDraftRef.current = JSON.stringify({
+      a: draft.amountCents,
+      f: draft.frequency,
+      allocs: draft.allocations.map(a => `${a.type}:${a.targetId}:${a.percentage}`).sort(),
+    });
+
     saveDonationDraft(draft);
   }, [amount, frequency, allocations, draftLoaded, saveDonationDraft]);
 
