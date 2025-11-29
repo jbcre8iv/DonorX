@@ -56,6 +56,9 @@ export function AllocationBuilder({
   const [rebalanceSuggestion, setRebalanceSuggestion] = React.useState<RebalanceSuggestion | null>(null);
   const [removalSuggestion, setRemovalSuggestion] = React.useState<RemovalRebalanceSuggestion | null>(null);
 
+  // Track which allocations were manually adjusted by the user
+  const [manuallyAdjustedIds, setManuallyAdjustedIds] = React.useState<Set<string>>(new Set());
+
   const addSuggestionRef = React.useRef<HTMLDivElement>(null);
   const removalSuggestionRef = React.useRef<HTMLDivElement>(null);
 
@@ -92,6 +95,10 @@ export function AllocationBuilder({
 
   const handlePercentageChange = (id: string, percentage: number) => {
     const clampedPercentage = Math.max(0, Math.min(percentage, 100));
+
+    // Mark this allocation as manually adjusted
+    setManuallyAdjustedIds((prev) => new Set(prev).add(id));
+
     onAllocationsChange(
       allocations.map((item) =>
         item.id === id ? { ...item, percentage: clampedPercentage } : item
@@ -102,6 +109,13 @@ export function AllocationBuilder({
   const handleRemove = (id: string) => {
     const itemToRemove = allocations.find((item) => item.id === id);
     if (!itemToRemove) return;
+
+    // Remove from manually adjusted tracking
+    setManuallyAdjustedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
 
     const remainingAllocations = allocations.filter((item) => item.id !== id);
 
@@ -172,6 +186,8 @@ export function AllocationBuilder({
     if (removalSuggestion) {
       onAllocationsChange(removalSuggestion.allocations);
       setRemovalSuggestion(null);
+      // Clear manual tracking since AI suggested these values
+      setManuallyAdjustedIds(new Set());
     }
   };
 
@@ -187,6 +203,7 @@ export function AllocationBuilder({
   };
 
   // AI Auto-balance: Intelligently adjust percentages to reach exactly 100%
+  // Respects manually adjusted items by only changing non-manual items first
   const handleAiAutoBalance = () => {
     if (allocations.length === 0) return;
 
@@ -195,28 +212,64 @@ export function AllocationBuilder({
 
     if (difference === 0) return;
 
-    // Strategy: Preserve relative proportions while hitting 100%
-    // If under-allocated: Scale up proportionally, giving more to larger allocations
-    // If over-allocated: Scale down proportionally
+    // Separate manually adjusted items from auto items
+    const manualItems = allocations.filter((a) => manuallyAdjustedIds.has(a.id));
+    const autoItems = allocations.filter((a) => !manuallyAdjustedIds.has(a.id));
+
+    // Calculate totals
+    const manualTotal = manualItems.reduce((sum, a) => sum + a.percentage, 0);
+    const autoTotal = autoItems.reduce((sum, a) => sum + a.percentage, 0);
+    const targetAutoTotal = 100 - manualTotal;
 
     let newAllocations: AllocationItem[];
 
-    if (currentTotal === 0) {
-      // Edge case: all items are at 0%, distribute equally
-      const equalPercentage = Math.floor(100 / allocations.length);
-      const remainder = 100 - (equalPercentage * allocations.length);
-      newAllocations = allocations.map((alloc, index) => ({
-        ...alloc,
-        percentage: equalPercentage + (index === 0 ? remainder : 0),
-      }));
-    } else {
-      // Scale proportionally to reach 100%
+    // If there are non-manual items, adjust only those
+    if (autoItems.length > 0 && targetAutoTotal > 0) {
+      // Calculate how to distribute the target among auto items
+      let autoRunningTotal = 0;
+
+      const adjustedAutoItems = autoItems.map((alloc, index) => {
+        if (index === autoItems.length - 1) {
+          // Last auto item gets the remainder
+          return {
+            ...alloc,
+            percentage: Math.max(0, targetAutoTotal - autoRunningTotal),
+          };
+        }
+
+        let newPercentage: number;
+        if (autoTotal === 0) {
+          // If all auto items are at 0%, distribute equally
+          const equalPercentage = Math.floor(targetAutoTotal / autoItems.length);
+          newPercentage = equalPercentage;
+        } else {
+          // Scale proportionally
+          const proportion = alloc.percentage / autoTotal;
+          newPercentage = Math.round(targetAutoTotal * proportion);
+        }
+
+        autoRunningTotal += newPercentage;
+        return {
+          ...alloc,
+          percentage: newPercentage,
+        };
+      });
+
+      // Combine manual items (unchanged) with adjusted auto items
+      newAllocations = allocations.map((alloc) => {
+        if (manuallyAdjustedIds.has(alloc.id)) {
+          return alloc; // Keep manual items unchanged
+        }
+        return adjustedAutoItems.find((a) => a.id === alloc.id) || alloc;
+      });
+    } else if (autoItems.length === 0 && manualItems.length > 0) {
+      // All items are manually adjusted - we need to scale them
+      // This is a fallback when user has touched all items
       const scale = 100 / currentTotal;
       let runningTotal = 0;
 
       newAllocations = allocations.map((alloc, index) => {
         if (index === allocations.length - 1) {
-          // Last item gets the remainder to ensure exactly 100%
           return {
             ...alloc,
             percentage: 100 - runningTotal,
@@ -231,6 +284,17 @@ export function AllocationBuilder({
           percentage: newPercentage,
         };
       });
+
+      // Clear manual tracking since we had to adjust everything
+      setManuallyAdjustedIds(new Set());
+    } else {
+      // Edge case: all items are at 0% and none are manual
+      const equalPercentage = Math.floor(100 / allocations.length);
+      const remainder = 100 - (equalPercentage * allocations.length);
+      newAllocations = allocations.map((alloc, index) => ({
+        ...alloc,
+        percentage: equalPercentage + (index === 0 ? remainder : 0),
+      }));
     }
 
     onAllocationsChange(newAllocations);
@@ -294,6 +358,8 @@ export function AllocationBuilder({
     if (rebalanceSuggestion) {
       onAllocationsChange(rebalanceSuggestion.allocations);
       setRebalanceSuggestion(null);
+      // Clear manual tracking since AI suggested these values
+      setManuallyAdjustedIds(new Set());
     }
   };
 
