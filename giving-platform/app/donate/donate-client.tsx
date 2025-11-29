@@ -45,9 +45,8 @@ export function DonateClient({
   const [loadedFromDraft, setLoadedFromDraft] = React.useState(false);
   // Track the previous draft state to detect when cleared from another device
   const hadDraftRef = React.useRef(false);
-  // Track if we're the source of draft changes (to avoid syncing our own updates back)
+  // Track if we're currently syncing from another device (to avoid echo saves)
   const isLocalChangeRef = React.useRef(false);
-  const lastSyncedDraftRef = React.useRef<string | null>(null);
 
   const [amount, setAmount] = React.useState(100000); // Start with first preset of middle range
   const [frequency, setFrequency] = React.useState<DonationFrequency>("one-time");
@@ -128,13 +127,6 @@ export function DonateClient({
         }))
       );
       setLoadedFromDraft(true);
-
-      // Set the initial fingerprint so we don't immediately re-sync
-      lastSyncedDraftRef.current = JSON.stringify({
-        amount: donationDraft.amountCents,
-        frequency: donationDraft.frequency,
-        allocations: donationDraft.allocations,
-      });
     }
 
     setDraftLoaded(true);
@@ -148,32 +140,47 @@ export function DonateClient({
   }, [donationDraft]);
 
   // Sync incoming draft changes from other devices (realtime updates)
+  // This effect only runs when donationDraft changes from the context (via realtime)
   React.useEffect(() => {
     // Don't sync until initial load is complete
     if (!draftLoaded) return;
 
-    // Skip if this is our own local change
-    if (isLocalChangeRef.current) {
-      isLocalChangeRef.current = false;
-      return;
-    }
-
     // Skip if draft is null (handled by the redirect effect)
     if (!donationDraft) return;
 
-    // Create a fingerprint of the draft to detect actual changes
-    const draftFingerprint = JSON.stringify({
+    // Create a fingerprint of the incoming draft
+    const incomingFingerprint = JSON.stringify({
       amount: donationDraft.amountCents,
       frequency: donationDraft.frequency,
-      allocations: donationDraft.allocations,
+      allocations: donationDraft.allocations.map(a => ({
+        type: a.type,
+        targetId: a.targetId,
+        percentage: a.percentage,
+      })),
     });
 
-    // Skip if this is the same draft we already synced
-    if (lastSyncedDraftRef.current === draftFingerprint) return;
-    lastSyncedDraftRef.current = draftFingerprint;
+    // Create fingerprint of current local state
+    const localFingerprint = JSON.stringify({
+      amount: amount * 100,
+      frequency: frequency,
+      allocations: allocations.map(a => ({
+        type: a.type,
+        targetId: a.targetId,
+        percentage: a.percentage,
+      })),
+    });
 
-    // Sync the incoming draft to local state
+    // Only sync if the incoming draft is actually different from local state
+    if (incomingFingerprint === localFingerprint) {
+      console.log('[Donate] Draft matches local state, skipping sync');
+      return;
+    }
+
     console.log('[Donate] Syncing incoming draft from another device');
+
+    // Temporarily disable auto-save to prevent echo
+    isLocalChangeRef.current = true;
+
     setAmount(donationDraft.amountCents / 100);
     setFrequency(donationDraft.frequency);
     setAllocations(
@@ -185,7 +192,12 @@ export function DonateClient({
         percentage: a.percentage,
       }))
     );
-  }, [donationDraft, draftLoaded]);
+
+    // Reset after a short delay to allow state to settle
+    setTimeout(() => {
+      isLocalChangeRef.current = false;
+    }, 100);
+  }, [donationDraft, draftLoaded, amount, frequency, allocations]);
 
   // Handle when draft is cleared (from this device's sidebar or another device via realtime)
   // Redirect to directory when cleared
@@ -235,10 +247,9 @@ export function DonateClient({
     // Don't save until initial load is complete
     if (!draftLoaded) return;
 
-    // Mark that we're making a local change so the sync effect ignores this update
-    isLocalChangeRef.current = true;
+    // Skip auto-save if we're currently syncing from another device
+    if (isLocalChangeRef.current) return;
 
-    // Update the fingerprint so we don't re-sync our own changes
     const draft: DonationDraft = {
       amountCents: amount * 100,
       frequency,
@@ -249,12 +260,6 @@ export function DonateClient({
         percentage: a.percentage,
       })),
     };
-
-    lastSyncedDraftRef.current = JSON.stringify({
-      amount: draft.amountCents,
-      frequency: draft.frequency,
-      allocations: draft.allocations,
-    });
 
     saveDonationDraft(draft);
   }, [amount, frequency, allocations, draftLoaded, saveDonationDraft]);
