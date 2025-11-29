@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, AlertCircle, RefreshCw } from "lucide-react";
 import { useCartFavorites, type CartItem } from "@/contexts/cart-favorites-context";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { formatCurrency } from "@/lib/utils";
 
 export function CartTab() {
   const router = useRouter();
+  const pathname = usePathname();
   const {
     cartItems,
     removeFromCart,
@@ -86,6 +87,12 @@ export function CartTab() {
     setIsClearingDraft(true);
     try {
       await clearDonationDraft();
+      // If user is on the donate page, redirect to directory to start fresh
+      // Otherwise, just close the sidebar and stay on current page
+      if (pathname === "/donate") {
+        setSidebarOpen(false);
+        router.push("/directory");
+      }
     } catch (error) {
       console.error("Error clearing draft:", error);
     } finally {
