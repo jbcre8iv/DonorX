@@ -85,12 +85,13 @@ export function CartTab() {
 
   const handleClearDraftAndStartOver = async () => {
     setIsClearingDraft(true);
+    const shouldRedirect = pathname === "/donate";
     try {
+      // Close sidebar first to trigger re-render with cleared state
+      setSidebarOpen(false);
       await clearDonationDraft();
       // If user is on the donate page, redirect to directory to start fresh
-      // Otherwise, just close the sidebar and stay on current page
-      if (pathname === "/donate") {
-        setSidebarOpen(false);
+      if (shouldRedirect) {
         router.push("/directory");
       }
     } catch (error) {
