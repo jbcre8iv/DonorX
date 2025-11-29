@@ -496,6 +496,34 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
             console.log('[Realtime] Favorites subscription status:', status);
           });
         channels.push(favoritesChannel);
+
+        // Real-time subscription for donation drafts (cross-device sync)
+        const draftsChannel = supabase
+          .channel(`drafts_sync_${user.id}_${Date.now()}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'donation_drafts',
+              filter: `user_id=eq.${user.id}`,
+            },
+            async (payload) => {
+              console.log('[Realtime] Draft change detected:', payload.eventType);
+              if (payload.eventType === 'DELETE') {
+                // Draft was deleted on another device
+                setDonationDraft(null);
+              } else {
+                // Draft was created or updated on another device
+                const freshData = await fetchFromDatabase(user.id);
+                setDonationDraft(freshData.draft);
+              }
+            }
+          )
+          .subscribe((status) => {
+            console.log('[Realtime] Drafts subscription status:', status);
+          });
+        channels.push(draftsChannel);
       } else {
         setUserId(null);
       }
