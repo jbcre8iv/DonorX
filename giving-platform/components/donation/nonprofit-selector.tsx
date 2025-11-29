@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Search, Building2, Tag, X, Globe, Check, Plus, Heart } from "lucide-react";
+import { Search, Building2, Tag, X, Globe, Plus, LayoutGrid, List } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ export function NonprofitSelector({
 }: NonprofitSelectorProps) {
   const [search, setSearch] = React.useState("");
   const [activeTab, setActiveTab] = React.useState<"nonprofits" | "categories">("nonprofits");
+  const [viewMode, setViewMode] = React.useState<"grid" | "table">("grid");
 
   // Reset search when modal closes
   React.useEffect(() => {
@@ -108,32 +109,61 @@ export function NonprofitSelector({
               />
             </div>
 
-            {/* Tabs */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setActiveTab("nonprofits")}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                  activeTab === "nonprofits"
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                )}
-              >
-                <Building2 className="h-4 w-4" />
-                Nonprofits ({filteredNonprofits.length})
-              </button>
-              <button
-                onClick={() => setActiveTab("categories")}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                  activeTab === "categories"
-                    ? "bg-purple-100 text-purple-700"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                )}
-              >
-                <Tag className="h-4 w-4" />
-                Categories ({filteredCategories.length})
-              </button>
+            {/* Tabs and View Toggle */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setActiveTab("nonprofits")}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                    activeTab === "nonprofits"
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  )}
+                >
+                  <Building2 className="h-4 w-4" />
+                  Nonprofits ({filteredNonprofits.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab("categories")}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                    activeTab === "categories"
+                      ? "bg-purple-100 text-purple-700"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  )}
+                >
+                  <Tag className="h-4 w-4" />
+                  Categories ({filteredCategories.length})
+                </button>
+              </div>
+              {/* View Toggle */}
+              <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={cn(
+                    "p-1.5 rounded-md transition-colors",
+                    viewMode === "grid"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  )}
+                  title="Grid view"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("table")}
+                  className={cn(
+                    "p-1.5 rounded-md transition-colors",
+                    viewMode === "table"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  )}
+                  title="List view"
+                >
+                  <List className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -147,7 +177,7 @@ export function NonprofitSelector({
                 <p className="font-medium">No nonprofits found</p>
                 <p className="text-sm mt-1">Try adjusting your search terms</p>
               </div>
-            ) : (
+            ) : viewMode === "grid" ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 {filteredNonprofits.map((nonprofit) => (
                   <Card
@@ -225,6 +255,74 @@ export function NonprofitSelector({
                   </Card>
                 ))}
               </div>
+            ) : (
+              /* Table/List view for nonprofits */
+              <div className="divide-y divide-slate-100">
+                {filteredNonprofits.map((nonprofit) => (
+                  <div
+                    key={nonprofit.id}
+                    className="group flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                    onClick={() => handleSelect("nonprofit", nonprofit.id, nonprofit.name)}
+                  >
+                    {nonprofit.logo_url ? (
+                      <img
+                        src={nonprofit.logo_url}
+                        alt={`${nonprofit.name} logo`}
+                        className="h-10 w-10 rounded-lg object-contain flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600 font-semibold flex-shrink-0">
+                        {nonprofit.name.charAt(0)}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-slate-900 truncate group-hover:text-blue-700 transition-colors">
+                          {nonprofit.name}
+                        </h3>
+                        {nonprofit.featured && (
+                          <Badge variant="success" className="text-xs flex-shrink-0">Featured</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                        {nonprofit.category && (
+                          <span className="flex items-center gap-1">
+                            {nonprofit.category.icon && <span>{nonprofit.category.icon}</span>}
+                            {nonprofit.category.name}
+                          </span>
+                        )}
+                        {nonprofit.ein && (
+                          <>
+                            <span className="text-slate-300">•</span>
+                            <span>EIN: {nonprofit.ein}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {nonprofit.website && (
+                        <a
+                          href={nonprofit.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors"
+                          title="Visit website"
+                        >
+                          <Globe className="h-4 w-4" />
+                        </a>
+                      )}
+                      <Button
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-600 hover:bg-emerald-700"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )
           ) : filteredCategories.length === 0 ? (
             <div className="text-center py-12 text-slate-500">
@@ -232,7 +330,7 @@ export function NonprofitSelector({
               <p className="font-medium">No categories found</p>
               <p className="text-sm mt-1">Try adjusting your search terms</p>
             </div>
-          ) : (
+          ) : viewMode === "grid" ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filteredCategories.map((category) => (
                 <Card
@@ -267,6 +365,38 @@ export function NonprofitSelector({
                     </div>
                   </CardContent>
                 </Card>
+              ))}
+            </div>
+          ) : (
+            /* Table/List view for categories */
+            <div className="divide-y divide-slate-100">
+              {filteredCategories.map((category) => (
+                <div
+                  key={category.id}
+                  className="group flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                  onClick={() => handleSelect("category", category.id, category.name)}
+                >
+                  <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center text-xl flex-shrink-0">
+                    {category.icon || "📁"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-medium text-slate-900 group-hover:text-purple-700 transition-colors">
+                      {category.name}
+                    </h3>
+                    {category.description && (
+                      <p className="text-sm text-slate-500 truncate">
+                        {category.description}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    size="sm"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-purple-600 hover:bg-purple-700 flex-shrink-0"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
               ))}
             </div>
           )}
