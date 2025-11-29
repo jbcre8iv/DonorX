@@ -57,29 +57,6 @@ function GivingListButton() {
   );
 }
 
-// Mobile giving list button for the mobile menu
-function MobileGivingListButton({ onClose }: { onClose: () => void }) {
-  const { cartItems, setSidebarOpen } = useCartFavorites();
-
-  return (
-    <Button
-      variant="outline"
-      fullWidth
-      onClick={() => {
-        onClose();
-        setSidebarOpen(true);
-      }}
-    >
-      <HandHeart className="h-4 w-4 mr-2" />
-      Giving List
-      {cartItems.length > 0 && (
-        <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
-          {cartItems.length}
-        </span>
-      )}
-    </Button>
-  );
-}
 
 interface HeaderProps {
   initialUser?: { email: string; firstName: string | null; lastName: string | null; role: string | null } | null;
@@ -337,7 +314,6 @@ export function Header({ initialUser = null }: HeaderProps) {
                       <p className="text-sm text-slate-500 truncate">{user.email}</p>
                     </div>
                   </div>
-                  <MobileGivingListButton onClose={() => setMobileMenuOpen(false)} />
                   <Button variant="outline" asChild fullWidth>
                     <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
                       Dashboard
