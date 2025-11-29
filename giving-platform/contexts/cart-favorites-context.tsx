@@ -270,6 +270,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
   // Initialize - check auth and load data
   useEffect(() => {
+    let cartSubscription: ReturnType<typeof supabase.channel> | null = null;
+    let favoritesSubscription: ReturnType<typeof supabase.channel> | null = null;
+
     const initialize = async () => {
       setIsLoading(true);
 
@@ -347,6 +350,51 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           setFavorites(mergedFavorites);
           saveToLocalStorage(mergedCart, mergedFavorites);
         }
+
+        // Set up real-time subscriptions for cross-device sync
+        cartSubscription = supabase
+          .channel(`cart_items_${user.id}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'cart_items',
+              filter: `user_id=eq.${user.id}`,
+            },
+            async () => {
+              // Re-fetch all data when changes occur from another device
+              const freshData = await fetchFromDatabase(user.id);
+              setCartItems(freshData.cart);
+              setFavorites(prev => {
+                saveToLocalStorage(freshData.cart, prev);
+                return prev;
+              });
+            }
+          )
+          .subscribe();
+
+        favoritesSubscription = supabase
+          .channel(`user_favorites_${user.id}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'user_favorites',
+              filter: `user_id=eq.${user.id}`,
+            },
+            async () => {
+              // Re-fetch all data when changes occur from another device
+              const freshData = await fetchFromDatabase(user.id);
+              setFavorites(freshData.favorites);
+              setCartItems(prev => {
+                saveToLocalStorage(prev, freshData.favorites);
+                return prev;
+              });
+            }
+          )
+          .subscribe();
       } else {
         setUserId(null);
       }
@@ -366,12 +414,28 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         initialize();
       } else if (event === "SIGNED_OUT") {
         setUserId(null);
+        // Clean up subscriptions
+        if (cartSubscription) {
+          supabase.removeChannel(cartSubscription);
+        }
+        if (favoritesSubscription) {
+          supabase.removeChannel(favoritesSubscription);
+        }
         // Keep localStorage data, just mark as not synced
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [supabase, loadFromLocalStorage, fetchFromDatabase, syncToDatabase, saveToLocalStorage]);
+    return () => {
+      subscription.unsubscribe();
+      if (cartSubscription) {
+        supabase.removeChannel(cartSubscription);
+      }
+      if (favoritesSubscription) {
+        supabase.removeChannel(favoritesSubscription);
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Cart total percentage
   const cartTotal = cartItems.reduce((sum, item) => sum + item.percentage, 0);
