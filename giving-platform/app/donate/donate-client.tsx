@@ -40,6 +40,8 @@ export function DonateClient({
 
   const { donationDraft, saveDonationDraft, clearDonationDraft } = useCartFavorites();
   const [draftLoaded, setDraftLoaded] = React.useState(false);
+  // Track if allocations were loaded from a draft (vs preselected nonprofit or cart)
+  const [loadedFromDraft, setLoadedFromDraft] = React.useState(false);
 
   const [amount, setAmount] = React.useState(100000); // Start with first preset of middle range
   const [frequency, setFrequency] = React.useState<DonationFrequency>("one-time");
@@ -119,20 +121,23 @@ export function DonateClient({
           percentage: a.percentage,
         }))
       );
+      setLoadedFromDraft(true);
     }
 
     setDraftLoaded(true);
   }, [preselectedNonprofitId, nonprofits, searchParams, donationDraft, draftLoaded]);
 
   // Reset the page when draft is cleared externally (e.g., from "Clear & Start Over" in sidebar)
+  // Only reset if the allocations were originally loaded from a draft
   React.useEffect(() => {
-    if (draftLoaded && donationDraft === null && allocations.length > 0) {
+    if (draftLoaded && loadedFromDraft && donationDraft === null && allocations.length > 0) {
       // Draft was cleared externally - reset the page
       setAmount(100000);
       setFrequency("one-time");
       setAllocations([]);
+      setLoadedFromDraft(false);
     }
-  }, [donationDraft, draftLoaded, allocations.length]);
+  }, [donationDraft, draftLoaded, loadedFromDraft, allocations.length]);
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
