@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Lock, AlertCircle, RefreshCw, Save, FolderOpen, Trash2, X } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
@@ -36,17 +36,12 @@ export function DonateClient({
   preselectedNonprofitId,
 }: DonateClientProps) {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const canceled = searchParams.get("canceled") === "true";
 
   const { donationDraft, saveDonationDraft, clearDonationDraft } = useCartFavorites();
   const [draftLoaded, setDraftLoaded] = React.useState(false);
   // Track if allocations were loaded from a draft (vs preselected nonprofit or cart)
   const [loadedFromDraft, setLoadedFromDraft] = React.useState(false);
-  // Track the previous draft state to detect when cleared from another device
-  const hadDraftRef = React.useRef(false);
-  // Track if we're currently syncing from another device (to avoid echo saves)
-  const isLocalChangeRef = React.useRef(false);
 
   const [amount, setAmount] = React.useState(100000); // Start with first preset of middle range
   const [frequency, setFrequency] = React.useState<DonationFrequency>("one-time");
@@ -132,86 +127,17 @@ export function DonateClient({
     setDraftLoaded(true);
   }, [preselectedNonprofitId, nonprofits, searchParams, donationDraft, draftLoaded]);
 
-  // Track when we have a draft so we can detect when it's cleared
+  // Reset the page when draft is cleared externally (e.g., from "Clear & Start Over" in sidebar)
+  // Only reset if the allocations were originally loaded from a draft
   React.useEffect(() => {
-    if (donationDraft !== null) {
-      hadDraftRef.current = true;
+    if (draftLoaded && loadedFromDraft && donationDraft === null && allocations.length > 0) {
+      // Draft was cleared externally - reset the page
+      setAmount(100000);
+      setFrequency("one-time");
+      setAllocations([]);
+      setLoadedFromDraft(false);
     }
-  }, [donationDraft]);
-
-  // Sync incoming draft changes from other devices (realtime updates)
-  // This effect only runs when donationDraft changes from the context (via realtime)
-  React.useEffect(() => {
-    // Don't sync until initial load is complete
-    if (!draftLoaded) return;
-
-    // Skip if draft is null (handled by the redirect effect)
-    if (!donationDraft) return;
-
-    // Create a fingerprint of the incoming draft
-    const incomingFingerprint = JSON.stringify({
-      amount: donationDraft.amountCents,
-      frequency: donationDraft.frequency,
-      allocations: donationDraft.allocations.map(a => ({
-        type: a.type,
-        targetId: a.targetId,
-        percentage: a.percentage,
-      })),
-    });
-
-    // Create fingerprint of current local state
-    const localFingerprint = JSON.stringify({
-      amount: amount * 100,
-      frequency: frequency,
-      allocations: allocations.map(a => ({
-        type: a.type,
-        targetId: a.targetId,
-        percentage: a.percentage,
-      })),
-    });
-
-    // Only sync if the incoming draft is actually different from local state
-    if (incomingFingerprint === localFingerprint) {
-      console.log('[Donate] Draft matches local state, skipping sync');
-      return;
-    }
-
-    console.log('[Donate] Syncing incoming draft from another device');
-
-    // Temporarily disable auto-save to prevent echo
-    isLocalChangeRef.current = true;
-
-    setAmount(donationDraft.amountCents / 100);
-    setFrequency(donationDraft.frequency);
-    setAllocations(
-      donationDraft.allocations.map((a) => ({
-        id: crypto.randomUUID(),
-        type: a.type,
-        targetId: a.targetId,
-        targetName: a.targetName,
-        percentage: a.percentage,
-      }))
-    );
-
-    // Reset after a short delay to allow state to settle
-    setTimeout(() => {
-      isLocalChangeRef.current = false;
-    }, 100);
-  }, [donationDraft, draftLoaded, amount, frequency, allocations]);
-
-  // Handle when draft is cleared (from this device's sidebar or another device via realtime)
-  // Redirect to directory when cleared
-  React.useEffect(() => {
-    // Only act if:
-    // 1. Initial load is complete
-    // 2. We previously had a draft (tracked in ref)
-    // 3. Now we don't have a draft
-    // 4. We have allocations displayed (meaning we're actively working on a donation)
-    if (draftLoaded && hadDraftRef.current && donationDraft === null && allocations.length > 0) {
-      // Draft was cleared - redirect to directory
-      router.push("/directory");
-    }
-  }, [donationDraft, draftLoaded, allocations.length, router]);
+  }, [donationDraft, draftLoaded, loadedFromDraft, allocations.length]);
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -247,9 +173,8 @@ export function DonateClient({
     // Don't save until initial load is complete
     if (!draftLoaded) return;
 
-    // Skip auto-save if we're currently syncing from another device
-    if (isLocalChangeRef.current) return;
-
+    // Save draft with current state (even if no allocations yet)
+    // This preserves amount/frequency if user navigates away
     const draft: DonationDraft = {
       amountCents: amount * 100,
       frequency,
@@ -260,7 +185,6 @@ export function DonateClient({
         percentage: a.percentage,
       })),
     };
-
     saveDonationDraft(draft);
   }, [amount, frequency, allocations, draftLoaded, saveDonationDraft]);
 

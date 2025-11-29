@@ -6,7 +6,6 @@ import {
   useState,
   useEffect,
   useCallback,
-  useRef,
   ReactNode,
 } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -147,9 +146,6 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   const [activeTab, setActiveTab] = useState<"cart" | "favorites">("cart");
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
-
-  // Track when we're doing a local draft operation to ignore our own realtime updates
-  const isLocalDraftOperation = useRef(false);
 
   const supabase = createClient();
 
@@ -513,12 +509,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
               filter: `user_id=eq.${user.id}`,
             },
             async (payload) => {
-              // Ignore realtime updates triggered by our own local operations
-              if (isLocalDraftOperation.current) {
-                console.log('[Realtime] Ignoring own draft change');
-                return;
-              }
-              console.log('[Realtime] Draft change detected from another device:', payload.eventType);
+              console.log('[Realtime] Draft change detected:', payload.eventType);
               if (payload.eventType === 'DELETE') {
                 // Draft was deleted on another device
                 setDonationDraft(null);
@@ -853,8 +844,6 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     // If logged in, save to database
     if (userId) {
       try {
-        // Mark that we're doing a local operation so realtime ignores our own update
-        isLocalDraftOperation.current = true;
         await supabase
           .from("donation_drafts")
           .upsert(
@@ -866,13 +855,8 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
             },
             { onConflict: "user_id" }
           );
-        // Reset flag after a short delay to ensure realtime event has been processed
-        setTimeout(() => {
-          isLocalDraftOperation.current = false;
-        }, 500);
       } catch (error) {
         console.error("Error saving draft:", error);
-        isLocalDraftOperation.current = false;
       }
     }
   }, [userId, supabase]);
@@ -883,19 +867,12 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
     if (userId) {
       try {
-        // Mark that we're doing a local operation so realtime ignores our own update
-        isLocalDraftOperation.current = true;
         await supabase
           .from("donation_drafts")
           .delete()
           .eq("user_id", userId);
-        // Reset flag after a short delay to ensure realtime event has been processed
-        setTimeout(() => {
-          isLocalDraftOperation.current = false;
-        }, 500);
       } catch (error) {
         console.error("Error clearing draft:", error);
-        isLocalDraftOperation.current = false;
       }
     }
   }, [userId, supabase]);
