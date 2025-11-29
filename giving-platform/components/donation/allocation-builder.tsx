@@ -56,6 +56,26 @@ export function AllocationBuilder({
   const [rebalanceSuggestion, setRebalanceSuggestion] = React.useState<RebalanceSuggestion | null>(null);
   const [removalSuggestion, setRemovalSuggestion] = React.useState<RemovalRebalanceSuggestion | null>(null);
 
+  const addSuggestionRef = React.useRef<HTMLDivElement>(null);
+  const removalSuggestionRef = React.useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to suggestion when it appears
+  React.useEffect(() => {
+    if (rebalanceSuggestion && addSuggestionRef.current) {
+      setTimeout(() => {
+        addSuggestionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
+    }
+  }, [rebalanceSuggestion]);
+
+  React.useEffect(() => {
+    if (removalSuggestion && removalSuggestionRef.current) {
+      setTimeout(() => {
+        removalSuggestionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
+    }
+  }, [removalSuggestion]);
+
   // Get the full nonprofit or category details for the details modal
   const getItemDetails = (item: AllocationItem) => {
     if (item.type === "nonprofit") {
@@ -437,7 +457,7 @@ export function AllocationBuilder({
 
           {/* AI Rebalance Suggestion (Adding) */}
           {rebalanceSuggestion && (
-            <div className="p-4 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-4">
+            <div ref={addSuggestionRef} className="p-4 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-4">
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-emerald-100">
                   <Sparkles className="h-4 w-4 text-emerald-600" />
@@ -502,7 +522,7 @@ export function AllocationBuilder({
 
           {/* AI Rebalance Suggestion (Removing) */}
           {removalSuggestion && (
-            <div className="p-4 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-4">
+            <div ref={removalSuggestionRef} className="p-4 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-4">
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-emerald-100">
                   <Sparkles className="h-4 w-4 text-emerald-600" />
