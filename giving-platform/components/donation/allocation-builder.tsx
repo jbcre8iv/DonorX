@@ -186,6 +186,56 @@ export function AllocationBuilder({
     }
   };
 
+  // AI Auto-balance: Intelligently adjust percentages to reach exactly 100%
+  const handleAiAutoBalance = () => {
+    if (allocations.length === 0) return;
+
+    const currentTotal = totalPercentage;
+    const difference = 100 - currentTotal;
+
+    if (difference === 0) return;
+
+    // Strategy: Preserve relative proportions while hitting 100%
+    // If under-allocated: Scale up proportionally, giving more to larger allocations
+    // If over-allocated: Scale down proportionally
+
+    let newAllocations: AllocationItem[];
+
+    if (currentTotal === 0) {
+      // Edge case: all items are at 0%, distribute equally
+      const equalPercentage = Math.floor(100 / allocations.length);
+      const remainder = 100 - (equalPercentage * allocations.length);
+      newAllocations = allocations.map((alloc, index) => ({
+        ...alloc,
+        percentage: equalPercentage + (index === 0 ? remainder : 0),
+      }));
+    } else {
+      // Scale proportionally to reach 100%
+      const scale = 100 / currentTotal;
+      let runningTotal = 0;
+
+      newAllocations = allocations.map((alloc, index) => {
+        if (index === allocations.length - 1) {
+          // Last item gets the remainder to ensure exactly 100%
+          return {
+            ...alloc,
+            percentage: 100 - runningTotal,
+          };
+        }
+
+        const newPercentage = Math.round(alloc.percentage * scale);
+        runningTotal += newPercentage;
+
+        return {
+          ...alloc,
+          percentage: newPercentage,
+        };
+      });
+    }
+
+    onAllocationsChange(newAllocations);
+  };
+
   // Generate a smart rebalance suggestion when adding to existing allocations
   const generateRebalanceSuggestion = (
     currentAllocations: AllocationItem[],
@@ -443,16 +493,32 @@ export function AllocationBuilder({
                 style={{ width: `${Math.min(totalPercentage, 100)}%` }}
               />
             </div>
-            {remainingPercentage > 0 && (
-              <p className="text-xs text-slate-500">
-                {formatPercentage(remainingPercentage)} remaining to allocate
-              </p>
-            )}
-            {totalPercentage > 100 && (
-              <p className="text-xs text-red-600">
-                Over-allocated by {formatPercentage(totalPercentage - 100)}
-              </p>
-            )}
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                {remainingPercentage > 0 && (
+                  <p className="text-xs text-slate-500">
+                    {formatPercentage(remainingPercentage)} remaining to allocate
+                  </p>
+                )}
+                {totalPercentage > 100 && (
+                  <p className="text-xs text-red-600">
+                    Over-allocated by {formatPercentage(totalPercentage - 100)}
+                  </p>
+                )}
+              </div>
+              {/* AI Auto-balance button - shown when not at 100% */}
+              {allocations.length > 0 && totalPercentage !== 100 && !rebalanceSuggestion && !removalSuggestion && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleAiAutoBalance}
+                  className="text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 gap-1.5"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Auto-balance
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* AI Rebalance Suggestion (Adding) */}
