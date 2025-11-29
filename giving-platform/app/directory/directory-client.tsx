@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, LayoutGrid, List, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, LayoutGrid, List, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
@@ -10,139 +10,11 @@ import { NonprofitCard } from "@/components/directory/nonprofit-card";
 import { NonprofitTable } from "@/components/directory/nonprofit-table";
 import { NonprofitModal } from "@/components/directory/nonprofit-modal";
 import { usePreferences } from "@/hooks/use-preferences";
-import { cn } from "@/lib/utils";
 import { smartFilterNonprofit } from "@/lib/smart-search";
 import type { Nonprofit, Category } from "@/types/database";
 
 const ITEMS_PER_PAGE_GRID = 9;
 const ITEMS_PER_PAGE_TABLE = 25;
-
-// Horizontal scrollable category filter
-function CategoryScroller({
-  categories,
-  selectedCategory,
-  onSelectCategory,
-}: {
-  categories: Category[];
-  selectedCategory: string | null;
-  onSelectCategory: (id: string | null) => void;
-}) {
-  const scrollRef = React.useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = React.useState(false);
-  const [canScrollRight, setCanScrollRight] = React.useState(false);
-
-  const checkScroll = React.useCallback(() => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    checkScroll();
-    window.addEventListener("resize", checkScroll);
-    return () => window.removeEventListener("resize", checkScroll);
-  }, [checkScroll]);
-
-  const scroll = (direction: "left" | "right") => {
-    if (scrollRef.current) {
-      const scrollAmount = 200;
-      scrollRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      });
-      setTimeout(checkScroll, 300);
-    }
-  };
-
-  // Find the selected category object
-  const selectedCategoryObj = selectedCategory
-    ? categories.find(c => c.id === selectedCategory)
-    : null;
-
-  // Categories to show in scroller (exclude selected one since it's shown as sticky)
-  const scrollableCategories = selectedCategory
-    ? categories.filter(c => c.id !== selectedCategory)
-    : categories;
-
-  return (
-    <div className="relative flex items-center gap-2 max-w-4xl mx-auto">
-      {/* Fixed "All" Button */}
-      <button
-        onClick={() => onSelectCategory(null)}
-        className={cn(
-          "flex-shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
-          selectedCategory === null
-            ? "bg-blue-700 text-white"
-            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-        )}
-      >
-        All
-      </button>
-
-      {/* Selected Category - Sticky (only shown when a category is selected) */}
-      {selectedCategoryObj && (
-        <>
-          <button
-            onClick={() => onSelectCategory(null)}
-            className="flex-shrink-0 rounded-full px-3 py-1.5 text-sm font-medium bg-blue-700 text-white flex items-center gap-1 whitespace-nowrap"
-          >
-            {selectedCategoryObj.icon && <span>{selectedCategoryObj.icon}</span>}
-            {selectedCategoryObj.name}
-            <span className="ml-1 text-blue-200 hover:text-white">×</span>
-          </button>
-        </>
-      )}
-
-      {/* Divider */}
-      <div className="h-6 w-px bg-slate-200 flex-shrink-0" />
-
-      {/* Left Arrow */}
-      <button
-        onClick={() => scroll("left")}
-        className={cn(
-          "flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm transition-opacity",
-          canScrollLeft ? "opacity-100 hover:bg-slate-50" : "opacity-0 pointer-events-none"
-        )}
-        aria-label="Scroll left"
-      >
-        <ChevronLeft className="h-4 w-4 text-slate-600" />
-      </button>
-
-      {/* Scrollable Container */}
-      <div
-        ref={scrollRef}
-        onScroll={checkScroll}
-        className="flex-1 overflow-x-auto scrollbar-hide flex gap-2 py-1"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        {scrollableCategories.map((category) => (
-          <button
-            key={category.id}
-            onClick={() => onSelectCategory(category.id)}
-            className="flex-shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-1 bg-slate-100 text-slate-600 hover:bg-slate-200"
-          >
-            {category.icon && <span>{category.icon}</span>}
-            {category.name}
-          </button>
-        ))}
-      </div>
-
-      {/* Right Arrow */}
-      <button
-        onClick={() => scroll("right")}
-        className={cn(
-          "flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm transition-opacity",
-          canScrollRight ? "opacity-100 hover:bg-slate-50" : "opacity-0 pointer-events-none"
-        )}
-        aria-label="Scroll right"
-      >
-        <ChevronRight className="h-4 w-4 text-slate-600" />
-      </button>
-    </div>
-  );
-}
 
 interface DirectoryClientProps {
   initialNonprofits: Nonprofit[];
@@ -299,12 +171,24 @@ export function DirectoryClient({
             </div>
           </div>
 
-          {/* Category Filter - Horizontal Scrollable */}
-          <CategoryScroller
-            categories={filteredCategories}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-          />
+          {/* Category Filter - Dropdown */}
+          <div className="flex justify-center">
+            <div className="relative w-full max-w-xs">
+              <select
+                value={selectedCategory || ""}
+                onChange={(e) => setSelectedCategory(e.target.value || null)}
+                className="flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 py-2 pr-10 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-0"
+              >
+                <option value="">All Categories</option>
+                {filteredCategories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.icon ? `${category.icon} ` : ""}{category.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            </div>
+          </div>
 
           {/* Results count */}
           <p className="text-center text-sm text-slate-500">
