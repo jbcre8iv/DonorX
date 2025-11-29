@@ -13,7 +13,7 @@ import { AllocationBuilder, type AllocationItem } from "@/components/donation/al
 import { FrequencySelector, type DonationFrequency } from "@/components/donation/frequency-selector";
 import { type Allocation as AIAllocation } from "@/components/ai/allocation-advisor";
 import { formatCurrency } from "@/lib/utils";
-import { createCheckoutSession, saveTemplate, loadTemplates, deleteTemplate, type AllocationInput, type DonationTemplate, type TemplateItem } from "./actions";
+import { createCheckoutSession, saveTemplate, updateTemplate, loadTemplates, deleteTemplate, type AllocationInput, type DonationTemplate, type TemplateItem, type SaveTemplateResult } from "./actions";
 import type { Nonprofit, Category } from "@/types/database";
 
 interface CartCheckoutItem {
@@ -110,6 +110,7 @@ export function DonateClient({
   const [saveIncludeFrequency, setSaveIncludeFrequency] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [templateError, setTemplateError] = React.useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = React.useState<string>("new"); // "new" or existing template ID
 
   // Load templates on mount
   React.useEffect(() => {
@@ -140,26 +141,69 @@ export function DonateClient({
       percentage: a.percentage,
     }));
 
-    const result = await saveTemplate(
-      templateName,
-      items,
-      templateDescription || undefined,
-      saveIncludeAmount ? amountCents : undefined,
-      saveIncludeFrequency ? frequency : undefined
-    );
+    let result: SaveTemplateResult;
+    if (selectedTemplateId === "new") {
+      // Create new template
+      result = await saveTemplate(
+        templateName,
+        items,
+        templateDescription || undefined,
+        saveIncludeAmount ? amountCents : undefined,
+        saveIncludeFrequency ? frequency : undefined
+      );
 
-    if (result.success && result.template) {
-      setTemplates((prev) => [result.template!, ...prev]);
+      if (result.success && result.template) {
+        setTemplates((prev) => [result.template!, ...prev]);
+      }
+    } else {
+      // Update existing template
+      result = await updateTemplate(
+        selectedTemplateId,
+        templateName,
+        items,
+        templateDescription || undefined,
+        saveIncludeAmount ? amountCents : undefined,
+        saveIncludeFrequency ? frequency : undefined
+      );
+
+      if (result.success && result.template) {
+        setTemplates((prev) =>
+          prev.map((t) => (t.id === selectedTemplateId ? result.template! : t))
+        );
+      }
+    }
+
+    if (result.success) {
       setShowSaveModal(false);
       setTemplateName("");
       setTemplateDescription("");
       setSaveIncludeAmount(false);
       setSaveIncludeFrequency(false);
+      setSelectedTemplateId("new");
     } else {
       setTemplateError(result.error || "Failed to save template");
     }
 
     setIsSaving(false);
+  };
+
+  // When selecting an existing template to overwrite, populate the form
+  const handleTemplateSelect = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    if (templateId !== "new") {
+      const template = templates.find((t) => t.id === templateId);
+      if (template) {
+        setTemplateName(template.name);
+        setTemplateDescription(template.description || "");
+        setSaveIncludeAmount(!!template.amountCents);
+        setSaveIncludeFrequency(!!template.frequency);
+      }
+    } else {
+      setTemplateName("");
+      setTemplateDescription("");
+      setSaveIncludeAmount(false);
+      setSaveIncludeFrequency(false);
+    }
   };
 
   const handleLoadTemplate = (template: DonationTemplate) => {
@@ -578,6 +622,29 @@ export function DonateClient({
                 </div>
               )}
 
+              {/* Template selector - create new or overwrite existing */}
+              {templates.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Save to
+                  </label>
+                  <select
+                    value={selectedTemplateId}
+                    onChange={(e) => handleTemplateSelect(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="new">Create new template</option>
+                    <optgroup label="Overwrite existing">
+                      {templates.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Template Name *
@@ -632,13 +699,20 @@ export function DonateClient({
 
               <div className="pt-2 border-t border-slate-200">
                 <p className="text-xs text-slate-500 mb-3">
-                  This template will save your current allocation: {allocations.length} item{allocations.length !== 1 ? "s" : ""}
+                  {selectedTemplateId === "new"
+                    ? `This will create a new template with your current allocation: ${allocations.length} item${allocations.length !== 1 ? "s" : ""}`
+                    : `This will overwrite "${templates.find((t) => t.id === selectedTemplateId)?.name}" with your current allocation`}
                 </p>
                 <div className="flex gap-3">
                   <Button
                     variant="outline"
                     className="flex-1"
-                    onClick={() => setShowSaveModal(false)}
+                    onClick={() => {
+                      setShowSaveModal(false);
+                      setSelectedTemplateId("new");
+                      setTemplateName("");
+                      setTemplateDescription("");
+                    }}
                   >
                     Cancel
                   </Button>
@@ -648,7 +722,11 @@ export function DonateClient({
                     disabled={isSaving || !templateName.trim()}
                     loading={isSaving}
                   >
-                    {isSaving ? "Saving..." : "Save Template"}
+                    {isSaving
+                      ? "Saving..."
+                      : selectedTemplateId === "new"
+                        ? "Save Template"
+                        : "Update Template"}
                   </Button>
                 </div>
               </div>

@@ -220,6 +220,116 @@ export async function loadTemplates(): Promise<LoadTemplatesResult> {
   }
 }
 
+export async function updateTemplate(
+  templateId: string,
+  name: string,
+  items: TemplateItem[],
+  description?: string,
+  amountCents?: number,
+  frequency?: DonationFrequency
+): Promise<SaveTemplateResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "You must be logged in to update templates" };
+  }
+
+  if (!name.trim()) {
+    return { success: false, error: "Template name is required" };
+  }
+
+  if (items.length === 0) {
+    return { success: false, error: "At least one allocation is required" };
+  }
+
+  const totalPercentage = items.reduce((sum, item) => sum + item.percentage, 0);
+  if (totalPercentage !== 100) {
+    return { success: false, error: "Allocations must total 100%" };
+  }
+
+  try {
+    // Verify user owns the template
+    const { data: existingTemplate, error: fetchError } = await supabase
+      .from("donation_templates")
+      .select("id")
+      .eq("id", templateId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (fetchError || !existingTemplate) {
+      return { success: false, error: "Template not found or access denied" };
+    }
+
+    // Update the template
+    const { data: template, error: templateError } = await supabase
+      .from("donation_templates")
+      .update({
+        name: name.trim(),
+        description: description?.trim() || null,
+        amount_cents: amountCents || null,
+        frequency: frequency || null,
+      })
+      .eq("id", templateId)
+      .select()
+      .single();
+
+    if (templateError || !template) {
+      console.error("Failed to update template:", templateError);
+      return { success: false, error: "Failed to update template" };
+    }
+
+    // Delete existing items
+    const { error: deleteError } = await supabase
+      .from("donation_template_items")
+      .delete()
+      .eq("template_id", templateId);
+
+    if (deleteError) {
+      console.error("Failed to delete old template items:", deleteError);
+      return { success: false, error: "Failed to update template items" };
+    }
+
+    // Insert new items
+    const templateItems = items.map((item) => ({
+      template_id: template.id,
+      type: item.type,
+      target_id: item.targetId,
+      target_name: item.targetName,
+      percentage: item.percentage,
+    }));
+
+    const { error: itemsError } = await supabase
+      .from("donation_template_items")
+      .insert(templateItems);
+
+    if (itemsError) {
+      console.error("Failed to create template items:", itemsError);
+      return { success: false, error: "Failed to update template items" };
+    }
+
+    return {
+      success: true,
+      template: {
+        id: template.id,
+        name: template.name,
+        description: template.description,
+        amountCents: template.amount_cents,
+        frequency: template.frequency,
+        items,
+        createdAt: template.created_at,
+        updatedAt: template.updated_at,
+      },
+    };
+  } catch (error) {
+    console.error("Update template error:", error);
+    return { success: false, error: "Failed to update template" };
+  }
+}
+
 export async function deleteTemplate(templateId: string): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
 
