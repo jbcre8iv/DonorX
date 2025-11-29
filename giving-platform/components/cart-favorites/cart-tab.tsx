@@ -85,6 +85,7 @@ export function CartTab() {
 
   const handleClearDraftAndStartOver = async () => {
     setIsClearingDraft(true);
+    // Check if on donate page (usePathname returns path without query params)
     const shouldRedirect = pathname === "/donate";
     try {
       // Close sidebar first to trigger re-render with cleared state
