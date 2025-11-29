@@ -19,7 +19,7 @@ export function CartTab() {
   const [isClearing, setIsClearing] = useState(false);
   const [quickViewItem, setQuickViewItem] = useState<CartItem | null>(null);
 
-  const handleProceedToDonate = () => {
+  const handleProceedToDonate = async () => {
     // Store cart items in sessionStorage for the donate page to pick up
     // The donate page will handle the percentage allocation
     const cartData = cartItems.map(item => ({
@@ -29,6 +29,10 @@ export function CartTab() {
       category: item.category,
     }));
     sessionStorage.setItem("donorx_cart_checkout", JSON.stringify(cartData));
+
+    // Clear the giving list after transferring to donation page
+    await clearCart();
+
     setSidebarOpen(false);
     router.push("/donate?from=cart");
   };

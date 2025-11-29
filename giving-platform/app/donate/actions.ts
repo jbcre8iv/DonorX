@@ -40,6 +40,217 @@ export interface CreateCheckoutResult {
 
 export type DonationFrequency = "one-time" | RecurringInterval;
 
+// Template types
+export interface TemplateItem {
+  type: "nonprofit" | "category";
+  targetId: string;
+  targetName: string;
+  percentage: number;
+}
+
+export interface DonationTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  amountCents?: number;
+  frequency?: DonationFrequency;
+  items: TemplateItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SaveTemplateResult {
+  success: boolean;
+  template?: DonationTemplate;
+  error?: string;
+}
+
+export interface LoadTemplatesResult {
+  success: boolean;
+  templates?: DonationTemplate[];
+  error?: string;
+}
+
+export async function saveTemplate(
+  name: string,
+  items: TemplateItem[],
+  description?: string,
+  amountCents?: number,
+  frequency?: DonationFrequency
+): Promise<SaveTemplateResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "You must be logged in to save templates" };
+  }
+
+  if (!name.trim()) {
+    return { success: false, error: "Template name is required" };
+  }
+
+  if (items.length === 0) {
+    return { success: false, error: "At least one allocation is required" };
+  }
+
+  const totalPercentage = items.reduce((sum, item) => sum + item.percentage, 0);
+  if (totalPercentage !== 100) {
+    return { success: false, error: "Allocations must total 100%" };
+  }
+
+  try {
+    // Create the template
+    const { data: template, error: templateError } = await supabase
+      .from("donation_templates")
+      .insert({
+        user_id: user.id,
+        name: name.trim(),
+        description: description?.trim() || null,
+        amount_cents: amountCents || null,
+        frequency: frequency || null,
+      })
+      .select()
+      .single();
+
+    if (templateError || !template) {
+      console.error("Failed to create template:", templateError);
+      return { success: false, error: "Failed to save template" };
+    }
+
+    // Create the template items
+    const templateItems = items.map((item) => ({
+      template_id: template.id,
+      type: item.type,
+      target_id: item.targetId,
+      target_name: item.targetName,
+      percentage: item.percentage,
+    }));
+
+    const { error: itemsError } = await supabase
+      .from("donation_template_items")
+      .insert(templateItems);
+
+    if (itemsError) {
+      console.error("Failed to create template items:", itemsError);
+      // Clean up the template
+      await supabase.from("donation_templates").delete().eq("id", template.id);
+      return { success: false, error: "Failed to save template items" };
+    }
+
+    return {
+      success: true,
+      template: {
+        id: template.id,
+        name: template.name,
+        description: template.description,
+        amountCents: template.amount_cents,
+        frequency: template.frequency,
+        items,
+        createdAt: template.created_at,
+        updatedAt: template.updated_at,
+      },
+    };
+  } catch (error) {
+    console.error("Save template error:", error);
+    return { success: false, error: "Failed to save template" };
+  }
+}
+
+export async function loadTemplates(): Promise<LoadTemplatesResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "You must be logged in to view templates" };
+  }
+
+  try {
+    // Fetch templates with their items
+    const { data: templates, error: templatesError } = await supabase
+      .from("donation_templates")
+      .select(`
+        id,
+        name,
+        description,
+        amount_cents,
+        frequency,
+        created_at,
+        updated_at,
+        donation_template_items (
+          type,
+          target_id,
+          target_name,
+          percentage
+        )
+      `)
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false });
+
+    if (templatesError) {
+      console.error("Failed to load templates:", templatesError);
+      return { success: false, error: "Failed to load templates" };
+    }
+
+    const formattedTemplates: DonationTemplate[] = (templates || []).map((t: any) => ({
+      id: t.id,
+      name: t.name,
+      description: t.description,
+      amountCents: t.amount_cents,
+      frequency: t.frequency,
+      items: (t.donation_template_items || []).map((item: any) => ({
+        type: item.type,
+        targetId: item.target_id,
+        targetName: item.target_name,
+        percentage: item.percentage,
+      })),
+      createdAt: t.created_at,
+      updatedAt: t.updated_at,
+    }));
+
+    return { success: true, templates: formattedTemplates };
+  } catch (error) {
+    console.error("Load templates error:", error);
+    return { success: false, error: "Failed to load templates" };
+  }
+}
+
+export async function deleteTemplate(templateId: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "You must be logged in to delete templates" };
+  }
+
+  try {
+    // Delete will cascade to template items due to foreign key
+    const { error } = await supabase
+      .from("donation_templates")
+      .delete()
+      .eq("id", templateId)
+      .eq("user_id", user.id); // Ensure user owns the template
+
+    if (error) {
+      console.error("Failed to delete template:", error);
+      return { success: false, error: "Failed to delete template" };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Delete template error:", error);
+    return { success: false, error: "Failed to delete template" };
+  }
+}
+
 export async function createCheckoutSession(
   amountCents: number,
   allocations: AllocationInput[],

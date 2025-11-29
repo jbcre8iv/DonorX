@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Lock, AlertCircle, RefreshCw } from "lucide-react";
+import { ArrowLeft, Lock, AlertCircle, RefreshCw, Save, FolderOpen, Trash2, X } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,7 @@ import { AllocationBuilder, type AllocationItem } from "@/components/donation/al
 import { FrequencySelector, type DonationFrequency } from "@/components/donation/frequency-selector";
 import { type Allocation as AIAllocation } from "@/components/ai/allocation-advisor";
 import { formatCurrency } from "@/lib/utils";
-import { createCheckoutSession, type AllocationInput } from "./actions";
+import { createCheckoutSession, saveTemplate, loadTemplates, deleteTemplate, type AllocationInput, type DonationTemplate, type TemplateItem } from "./actions";
 import type { Nonprofit, Category } from "@/types/database";
 
 interface CartCheckoutItem {
@@ -98,6 +98,99 @@ export function DonateClient({
   }, [preselectedNonprofitId, nonprofits, searchParams]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  // Template state
+  const [templates, setTemplates] = React.useState<DonationTemplate[]>([]);
+  const [isLoadingTemplates, setIsLoadingTemplates] = React.useState(false);
+  const [showSaveModal, setShowSaveModal] = React.useState(false);
+  const [showTemplatesModal, setShowTemplatesModal] = React.useState(false);
+  const [templateName, setTemplateName] = React.useState("");
+  const [templateDescription, setTemplateDescription] = React.useState("");
+  const [saveIncludeAmount, setSaveIncludeAmount] = React.useState(false);
+  const [saveIncludeFrequency, setSaveIncludeFrequency] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [templateError, setTemplateError] = React.useState<string | null>(null);
+
+  // Load templates on mount
+  React.useEffect(() => {
+    const fetchTemplates = async () => {
+      setIsLoadingTemplates(true);
+      const result = await loadTemplates();
+      if (result.success && result.templates) {
+        setTemplates(result.templates);
+      }
+      setIsLoadingTemplates(false);
+    };
+    fetchTemplates();
+  }, []);
+
+  const handleSaveTemplate = async () => {
+    if (!templateName.trim()) {
+      setTemplateError("Please enter a template name");
+      return;
+    }
+
+    setIsSaving(true);
+    setTemplateError(null);
+
+    const items: TemplateItem[] = allocations.map((a) => ({
+      type: a.type,
+      targetId: a.targetId,
+      targetName: a.targetName,
+      percentage: a.percentage,
+    }));
+
+    const result = await saveTemplate(
+      templateName,
+      items,
+      templateDescription || undefined,
+      saveIncludeAmount ? amountCents : undefined,
+      saveIncludeFrequency ? frequency : undefined
+    );
+
+    if (result.success && result.template) {
+      setTemplates((prev) => [result.template!, ...prev]);
+      setShowSaveModal(false);
+      setTemplateName("");
+      setTemplateDescription("");
+      setSaveIncludeAmount(false);
+      setSaveIncludeFrequency(false);
+    } else {
+      setTemplateError(result.error || "Failed to save template");
+    }
+
+    setIsSaving(false);
+  };
+
+  const handleLoadTemplate = (template: DonationTemplate) => {
+    // Convert template items to allocation items
+    const newAllocations: AllocationItem[] = template.items.map((item) => ({
+      id: crypto.randomUUID(),
+      type: item.type,
+      targetId: item.targetId,
+      targetName: item.targetName,
+      percentage: item.percentage,
+    }));
+
+    setAllocations(newAllocations);
+
+    // Optionally load amount and frequency if saved
+    if (template.amountCents) {
+      setAmount(template.amountCents / 100);
+    }
+    if (template.frequency) {
+      setFrequency(template.frequency);
+    }
+
+    setShowTemplatesModal(false);
+  };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    const result = await deleteTemplate(templateId);
+    if (result.success) {
+      setTemplates((prev) => prev.filter((t) => t.id !== templateId));
+    }
+  };
 
   const isRecurring = frequency !== "one-time";
 
@@ -231,6 +324,30 @@ export function DonateClient({
           <p className="mt-2 text-slate-600">
             Allocate your contribution across multiple organizations
           </p>
+
+          {/* Template Actions - Header */}
+          <div className="flex items-center justify-center gap-3 mt-4">
+            {templates.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowTemplatesModal(true)}
+              >
+                <FolderOpen className="h-4 w-4 mr-2" />
+                Load Template
+              </Button>
+            )}
+            {allocations.length > 0 && isValidAllocation && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSaveModal(true)}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save as Template
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Canceled Notice */}
@@ -301,6 +418,32 @@ export function DonateClient({
               donationAmount={amount}
               onApplyAiAllocation={handleApplyAiAllocation}
             />
+
+            {/* Template Actions - Near Allocation List */}
+            {allocations.length > 0 && (
+              <div className="flex items-center justify-end gap-3 mt-4">
+                {templates.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowTemplatesModal(true)}
+                  >
+                    <FolderOpen className="h-4 w-4 mr-2" />
+                    Load Template
+                  </Button>
+                )}
+                {isValidAllocation && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowSaveModal(true)}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Save as Template
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Summary Sidebar */}
@@ -407,6 +550,213 @@ export function DonateClient({
           </div>
         </div>
       </div>
+
+      {/* Save Template Modal */}
+      {showSaveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowSaveModal(false)}
+          />
+          <div className="relative w-full max-w-md rounded-xl bg-white shadow-xl">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-900">
+                Save as Template
+              </h3>
+              <button
+                onClick={() => setShowSaveModal(false)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              {templateError && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-800">
+                  {templateError}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Template Name *
+                </label>
+                <input
+                  type="text"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  placeholder="e.g., Monthly Giving, Holiday Donations"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Description (optional)
+                </label>
+                <textarea
+                  value={templateDescription}
+                  onChange={(e) => setTemplateDescription(e.target.value)}
+                  placeholder="Add notes about this template..."
+                  rows={2}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={saveIncludeAmount}
+                    onChange={(e) => setSaveIncludeAmount(e.target.checked)}
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-slate-700">
+                    Save donation amount ({formatCurrency(amountCents)})
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={saveIncludeFrequency}
+                    onChange={(e) => setSaveIncludeFrequency(e.target.checked)}
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-slate-700">
+                    Save frequency ({frequency === "one-time" ? "One-time" : frequency})
+                  </span>
+                </label>
+              </div>
+
+              <div className="pt-2 border-t border-slate-200">
+                <p className="text-xs text-slate-500 mb-3">
+                  This template will save your current allocation: {allocations.length} item{allocations.length !== 1 ? "s" : ""}
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowSaveModal(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={handleSaveTemplate}
+                    disabled={isSaving || !templateName.trim()}
+                    loading={isSaving}
+                  >
+                    {isSaving ? "Saving..." : "Save Template"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Load Templates Modal */}
+      {showTemplatesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowTemplatesModal(false)}
+          />
+          <div className="relative w-full max-w-lg rounded-xl bg-white shadow-xl max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-900">
+                Your Saved Templates
+              </h3>
+              <button
+                onClick={() => setShowTemplatesModal(false)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              {isLoadingTemplates ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" />
+                </div>
+              ) : templates.length === 0 ? (
+                <div className="text-center py-8">
+                  <FolderOpen className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-500">No saved templates yet</p>
+                  <p className="text-sm text-slate-400 mt-1">
+                    Save your current allocation to create a template
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {templates.map((template) => (
+                    <div
+                      key={template.id}
+                      className="rounded-lg border border-slate-200 p-4 hover:border-slate-300 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-slate-900">
+                            {template.name}
+                          </h4>
+                          {template.description && (
+                            <p className="text-sm text-slate-500 mt-1">
+                              {template.description}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+                              {template.items.length} item{template.items.length !== 1 ? "s" : ""}
+                            </span>
+                            {template.amountCents && (
+                              <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">
+                                {formatCurrency(template.amountCents)}
+                              </span>
+                            )}
+                            {template.frequency && (
+                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded capitalize">
+                                {template.frequency === "one-time" ? "One-time" : template.frequency}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            onClick={() => handleLoadTemplate(template)}
+                          >
+                            Load
+                          </Button>
+                          <button
+                            onClick={() => handleDeleteTemplate(template.id)}
+                            className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                            title="Delete template"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-slate-200 bg-slate-50 rounded-b-xl">
+              <Button
+                variant="outline"
+                fullWidth
+                onClick={() => setShowTemplatesModal(false)}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
