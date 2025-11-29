@@ -511,32 +511,6 @@ export function DonateClient({
               donationAmount={amount}
               onApplyAiAllocation={handleApplyAiAllocation}
             />
-
-            {/* Template Actions - Near Allocation List */}
-            {allocations.length > 0 && (
-              <div className="flex items-center justify-end gap-3 mt-4">
-                {templates.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowTemplatesModal(true)}
-                  >
-                    <FolderOpen className="h-4 w-4 mr-2" />
-                    Load Template
-                  </Button>
-                )}
-                {isValidAllocation && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowSaveModal(true)}
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    Save as Template
-                  </Button>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Summary Sidebar */}
