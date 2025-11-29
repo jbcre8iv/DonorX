@@ -25,6 +25,12 @@ interface RebalanceSuggestion {
   newItemName: string;
 }
 
+interface RemovalRebalanceSuggestion {
+  allocations: AllocationItem[];
+  removedItemName: string;
+  removedPercentage: number;
+}
+
 interface AllocationBuilderProps {
   allocations: AllocationItem[];
   onAllocationsChange: (allocations: AllocationItem[]) => void;
@@ -48,6 +54,7 @@ export function AllocationBuilder({
   const [detailsItem, setDetailsItem] = React.useState<AllocationItem | null>(null);
   const [aiExpanded, setAiExpanded] = React.useState(false);
   const [rebalanceSuggestion, setRebalanceSuggestion] = React.useState<RebalanceSuggestion | null>(null);
+  const [removalSuggestion, setRemovalSuggestion] = React.useState<RemovalRebalanceSuggestion | null>(null);
 
   // Get the full nonprofit or category details for the details modal
   const getItemDetails = (item: AllocationItem) => {
@@ -73,7 +80,90 @@ export function AllocationBuilder({
   };
 
   const handleRemove = (id: string) => {
-    onAllocationsChange(allocations.filter((item) => item.id !== id));
+    const itemToRemove = allocations.find((item) => item.id === id);
+    if (!itemToRemove) return;
+
+    const remainingAllocations = allocations.filter((item) => item.id !== id);
+
+    // If only one item left or removed item had 0%, just remove directly
+    if (remainingAllocations.length === 0 || itemToRemove.percentage === 0) {
+      onAllocationsChange(remainingAllocations);
+      return;
+    }
+
+    // Generate smart rebalance suggestion for remaining items
+    const suggestedAllocations = generateRemovalRebalanceSuggestion(
+      remainingAllocations,
+      itemToRemove.percentage
+    );
+
+    setRemovalSuggestion({
+      allocations: suggestedAllocations,
+      removedItemName: itemToRemove.targetName,
+      removedPercentage: itemToRemove.percentage,
+    });
+  };
+
+  // Generate a smart rebalance suggestion when removing an allocation
+  const generateRemovalRebalanceSuggestion = (
+    remainingAllocations: AllocationItem[],
+    freedPercentage: number
+  ): AllocationItem[] => {
+    // Calculate current total of remaining items
+    const currentTotal = remainingAllocations.reduce((sum, item) => sum + item.percentage, 0);
+
+    if (currentTotal === 0) {
+      // If all remaining items have 0%, distribute equally
+      const equalPercentage = Math.floor(100 / remainingAllocations.length);
+      const remainder = 100 - (equalPercentage * remainingAllocations.length);
+      return remainingAllocations.map((alloc, index) => ({
+        ...alloc,
+        percentage: equalPercentage + (index === 0 ? remainder : 0),
+      }));
+    }
+
+    // Distribute the freed percentage proportionally based on current allocations
+    return remainingAllocations.map((alloc, index) => {
+      const proportion = alloc.percentage / currentTotal;
+      const additionalPercentage = Math.round(freedPercentage * proportion);
+
+      // For the last item, ensure we hit exactly 100%
+      if (index === remainingAllocations.length - 1) {
+        const othersTotal = remainingAllocations
+          .slice(0, -1)
+          .reduce((sum, a, i) => {
+            const prop = a.percentage / currentTotal;
+            return sum + a.percentage + Math.round(freedPercentage * prop);
+          }, 0);
+        return {
+          ...alloc,
+          percentage: 100 - othersTotal,
+        };
+      }
+
+      return {
+        ...alloc,
+        percentage: alloc.percentage + additionalPercentage,
+      };
+    });
+  };
+
+  const handleAcceptRemovalRebalance = () => {
+    if (removalSuggestion) {
+      onAllocationsChange(removalSuggestion.allocations);
+      setRemovalSuggestion(null);
+    }
+  };
+
+  const handleDeclineRemovalRebalance = () => {
+    if (removalSuggestion) {
+      // Just remove the item without rebalancing - keep original percentages
+      const originalRemaining = allocations.filter(
+        (a) => removalSuggestion.allocations.some((s) => s.id === a.id)
+      );
+      onAllocationsChange(originalRemaining);
+      setRemovalSuggestion(null);
+    }
   };
 
   // Generate a smart rebalance suggestion when adding to existing allocations
@@ -345,7 +435,7 @@ export function AllocationBuilder({
             )}
           </div>
 
-          {/* AI Rebalance Suggestion */}
+          {/* AI Rebalance Suggestion (Adding) */}
           {rebalanceSuggestion && (
             <div className="p-4 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-4">
               <div className="flex items-start gap-3">
@@ -410,8 +500,72 @@ export function AllocationBuilder({
             </div>
           )}
 
+          {/* AI Rebalance Suggestion (Removing) */}
+          {removalSuggestion && (
+            <div className="p-4 rounded-lg border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-blue-100">
+                  <Sparkles className="h-4 w-4 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium text-blue-900">Redistribute {removalSuggestion.removedPercentage}%?</h4>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Removing <span className="font-medium">{removalSuggestion.removedItemName}</span> frees up {removalSuggestion.removedPercentage}%.
+                    Here&apos;s a suggested redistribution:
+                  </p>
+                </div>
+              </div>
+
+              {/* Suggested allocation preview */}
+              <div className="space-y-2 pl-11">
+                {removalSuggestion.allocations.map((alloc) => {
+                  // Find the original allocation to show the change
+                  const original = allocations.find((a) => a.id === alloc.id);
+                  const change = original ? alloc.percentage - original.percentage : 0;
+                  return (
+                    <div
+                      key={alloc.id}
+                      className="flex items-center justify-between text-sm py-1.5 px-3 rounded bg-white/60"
+                    >
+                      <span className="truncate mr-2 text-slate-700">
+                        {alloc.targetName}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {change > 0 && (
+                          <span className="text-xs text-emerald-600 font-medium">+{change}%</span>
+                        )}
+                        <span className="font-medium text-slate-900">{alloc.percentage}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Accept/Decline buttons */}
+              <div className="flex gap-3 pl-11">
+                <Button
+                  onClick={handleAcceptRemovalRebalance}
+                  size="sm"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  <Check className="h-4 w-4 mr-1" />
+                  Apply Redistribution
+                </Button>
+                <Button
+                  onClick={handleDeclineRemovalRebalance}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Just Remove
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Add Button */}
-          {allocations.length < config.features.maxAllocationItems && !rebalanceSuggestion && (
+          {allocations.length < config.features.maxAllocationItems && !rebalanceSuggestion && !removalSuggestion && (
             <Button
               variant="outline"
               fullWidth
