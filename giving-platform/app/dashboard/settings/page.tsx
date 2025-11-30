@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { User, Building2, Bell, Shield, LogOut, Globe, ExternalLink } from "lucide-react";
+import { User, Building2, Bell, Shield, LogOut, Globe, ExternalLink, Users, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -110,6 +110,22 @@ export default async function SettingsPage() {
                 {profile.organization.type?.replace("_", " ") || "Organization"}
               </Badge>
             </div>
+            {/* Team Management Link */}
+            <Link
+              href="/dashboard/settings/team"
+              className="flex items-center justify-between rounded-lg border border-slate-200 p-4 hover:bg-slate-50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <Users className="h-5 w-5 text-slate-600" />
+                <div>
+                  <p className="font-medium text-slate-900">Team Management</p>
+                  <p className="text-sm text-slate-600">
+                    Invite members and manage roles
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-slate-400" />
+            </Link>
           </CardContent>
         </Card>
       )}
