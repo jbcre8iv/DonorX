@@ -109,8 +109,8 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Categories</h1>
-          <p className="text-slate-600">
+          <h1 className="text-2xl font-semibold text-purple-900">Categories</h1>
+          <p className="text-purple-700/70">
             Manage nonprofit categories ({categories.length} total)
           </p>
         </div>

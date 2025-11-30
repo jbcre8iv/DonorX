@@ -71,8 +71,8 @@ export default async function AdminDonationsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Donations</h1>
-          <p className="text-slate-600">View and manage all donations</p>
+          <h1 className="text-2xl font-semibold text-purple-900">Donations</h1>
+          <p className="text-purple-700/70">View and manage all donations</p>
         </div>
         <Button variant="outline" disabled>
           <Download className="mr-2 h-4 w-4" />

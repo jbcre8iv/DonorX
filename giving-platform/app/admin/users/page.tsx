@@ -89,8 +89,8 @@ export default async function AdminUsersPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Team</h1>
-        <p className="text-slate-600">Manage platform team members and roles</p>
+        <h1 className="text-2xl font-semibold text-purple-900">Team</h1>
+        <p className="text-purple-700/70">Manage platform team members and roles</p>
       </div>
 
       {/* Stats */}

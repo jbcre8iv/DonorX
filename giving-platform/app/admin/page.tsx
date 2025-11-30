@@ -106,8 +106,8 @@ export default async function AdminDashboardPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Admin Dashboard</h1>
-        <p className="text-slate-600">Platform overview and management</p>
+        <h1 className="text-2xl font-semibold text-purple-900">Admin Dashboard</h1>
+        <p className="text-purple-700/70">Platform overview and management</p>
       </div>
 
       {/* Stats Grid */}

@@ -141,8 +141,8 @@ export function NonprofitsClient({ nonprofits, categories }: NonprofitsClientPro
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Nonprofits</h1>
-          <p className="text-slate-600">
+          <h1 className="text-2xl font-semibold text-purple-900">Nonprofits</h1>
+          <p className="text-purple-700/70">
             {approvedCount} approved, {pendingCount} pending
             {missingEinCount > 0 && (
               <span className="text-amber-600"> ({missingEinCount} missing EIN)</span>
