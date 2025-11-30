@@ -239,7 +239,7 @@ export function Header({ initialUser = null }: HeaderProps) {
                   {(user.role === "owner" || user.role === "admin") && (
                     <Link
                       href="/admin"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-purple-700 hover:bg-purple-50"
                       onClick={() => setUserMenuOpen(false)}
                     >
                       <Shield className="h-4 w-4" />
