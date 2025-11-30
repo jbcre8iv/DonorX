@@ -1,4 +1,4 @@
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle, XCircle, Clock, Building2 } from "lucide-react";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
@@ -10,7 +10,7 @@ interface InvitePageProps {
   params: Promise<{ token: string }>;
 }
 
-export async function generateMetadata({ params }: InvitePageProps) {
+export async function generateMetadata() {
   return { title: "Team Invitation - DonorX" };
 }
 
@@ -144,7 +144,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
               <div>
                 <h3 className="font-semibold text-slate-900">Already a Member</h3>
                 <p className="text-slate-600 mt-1">
-                  You're already a member of {invitation.organization?.name}.
+                  You&apos;re already a member of {invitation.organization?.name}.
                 </p>
               </div>
               <Button asChild className="w-full">
@@ -182,7 +182,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
                   <div className="space-y-4">
                     <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
                       <p className="text-sm text-amber-800">
-                        This invitation was sent to <strong>{invitation.email}</strong>, but you're logged in as <strong>{user.email}</strong>.
+                        This invitation was sent to <strong>{invitation.email}</strong>, but you&apos;re logged in as <strong>{user.email}</strong>.
                       </p>
                     </div>
                     <p className="text-sm text-slate-600 text-center">
