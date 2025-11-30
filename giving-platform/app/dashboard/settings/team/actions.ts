@@ -2,6 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { sendEmail } from "@/lib/email/resend";
+import { getTeamInvitationEmail } from "@/lib/email/templates/team-invitation";
+
+// Rate limiting: max invitations per organization per hour
+const RATE_LIMIT_MAX = 20;
+const RATE_LIMIT_WINDOW_HOURS = 1;
 
 export async function inviteTeamMember(formData: FormData) {
   const supabase = await createClient();
@@ -16,9 +22,9 @@ export async function inviteTeamMember(formData: FormData) {
   }
 
   // Get current user's profile and verify they're an admin/owner
-  const { data: profile } = await supabase
+  const { data: profile } = await adminClient
     .from("users")
-    .select("organization_id, role")
+    .select("organization_id, role, first_name, last_name, email")
     .eq("id", user.id)
     .single();
 
@@ -35,6 +41,29 @@ export async function inviteTeamMember(formData: FormData) {
 
   if (!email || !role) {
     return { error: "Email and role are required" };
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return { error: "Invalid email format" };
+  }
+
+  // Validate role
+  if (!["admin", "member", "viewer"].includes(role)) {
+    return { error: "Invalid role" };
+  }
+
+  // Rate limiting check
+  const oneHourAgo = new Date(Date.now() - RATE_LIMIT_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
+  const { count: recentInvites } = await adminClient
+    .from("team_invitations")
+    .select("id", { count: "exact" })
+    .eq("organization_id", profile.organization_id)
+    .gte("created_at", oneHourAgo);
+
+  if (recentInvites && recentInvites >= RATE_LIMIT_MAX) {
+    return { error: `Rate limit exceeded. Maximum ${RATE_LIMIT_MAX} invitations per hour.` };
   }
 
   // Check if user already exists in the organization
@@ -62,23 +91,68 @@ export async function inviteTeamMember(formData: FormData) {
     return { error: "An invitation has already been sent to this email" };
   }
 
+  // Get organization name
+  const { data: org } = await adminClient
+    .from("organizations")
+    .select("name")
+    .eq("id", profile.organization_id)
+    .single();
+
   // Create the invitation
-  const { error: inviteError } = await adminClient
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+  const { data: invitation, error: inviteError } = await adminClient
     .from("team_invitations")
     .insert({
       organization_id: profile.organization_id,
       email,
       role,
       invited_by: user.id,
-    });
+      expires_at: expiresAt.toISOString(),
+    })
+    .select("token")
+    .single();
 
-  if (inviteError) {
+  if (inviteError || !invitation) {
     console.error("Error creating invitation:", inviteError);
     return { error: "Failed to create invitation" };
   }
 
-  // TODO: Send invitation email via your email service
-  // For now, we'll just create the invitation record
+  // Build secure invitation link
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://donor-x.vercel.app";
+  const inviteLink = `${baseUrl}/invite/${invitation.token}`;
+
+  // Send invitation email
+  const inviterName = profile.first_name && profile.last_name
+    ? `${profile.first_name} ${profile.last_name}`
+    : profile.email;
+
+  const emailContent = getTeamInvitationEmail({
+    inviteeName: "", // We don't know their name yet
+    organizationName: org?.name || "the organization",
+    inviterName,
+    role,
+    inviteLink,
+    expiresAt,
+  });
+
+  // Only send email if Resend API key is configured
+  if (process.env.RESEND_API_KEY) {
+    const emailResult = await sendEmail({
+      to: email,
+      subject: emailContent.subject,
+      html: emailContent.html,
+      text: emailContent.text,
+    });
+
+    if (!emailResult.success) {
+      console.error("Failed to send invitation email:", emailResult.error);
+      // Don't fail the invitation, just log the error
+      // The invitation is still valid and can be shared manually
+    }
+  } else {
+    console.log("RESEND_API_KEY not configured. Invitation created but email not sent.");
+    console.log("Invitation link:", inviteLink);
+  }
 
   revalidatePath("/dashboard/settings/team");
   return { success: true };
