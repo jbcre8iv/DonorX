@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Users } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { TeamClient } from "./team-client";
 
 export const metadata = {
@@ -19,8 +19,11 @@ export default async function TeamPage() {
     redirect("/login");
   }
 
+  // Use admin client to bypass RLS for fetching profile and team data
+  const adminClient = createAdminClient();
+
   // Get current user's profile with organization
-  const { data: profile } = await supabase
+  const { data: profile } = await adminClient
     .from("users")
     .select(`
       *,
@@ -34,7 +37,7 @@ export default async function TeamPage() {
   }
 
   // Get all team members in the organization
-  const { data: members } = await supabase
+  const { data: members } = await adminClient
     .from("users")
     .select("id, email, first_name, last_name, avatar_url, role, created_at")
     .eq("organization_id", profile.organization.id)
@@ -51,7 +54,7 @@ export default async function TeamPage() {
   }> = [];
 
   if (["owner", "admin"].includes(profile.role)) {
-    const { data: inviteData } = await supabase
+    const { data: inviteData } = await adminClient
       .from("team_invitations")
       .select("id, email, role, status, created_at, expires_at")
       .eq("organization_id", profile.organization.id)

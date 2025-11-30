@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { User, Building2, Bell, Shield, LogOut, Globe, ExternalLink, Users, ChevronRight } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,8 +24,9 @@ export default async function SettingsPage() {
     redirect("/login");
   }
 
-  // Get user profile
-  const { data: profile } = await supabase
+  // Get user profile using admin client to bypass RLS issues
+  const adminClient = createAdminClient();
+  const { data: profile } = await adminClient
     .from("users")
     .select(`
       *,
