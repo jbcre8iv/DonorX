@@ -335,6 +335,14 @@ export function Header({ initialUser = null }: HeaderProps) {
                       Account Settings
                     </Link>
                   </Button>
+                  {(user.role === "owner" || user.role === "admin") && (
+                    <Button variant="outline" asChild fullWidth className="text-purple-700 border-purple-200 hover:bg-purple-50">
+                      <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
+                        <Shield className="h-4 w-4 mr-2" />
+                        Admin Panel
+                      </Link>
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     fullWidth
