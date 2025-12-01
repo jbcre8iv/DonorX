@@ -224,8 +224,13 @@ export function GivingConcierge() {
 
       {!isMinimized && (
         <>
-          {/* Login Required Message */}
-          {!isAuthenticated ? (
+          {/* Loading State */}
+          {isAuthenticated === null ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-6">
+              <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+            </div>
+          ) : /* Login Required Message */
+          !isAuthenticated ? (
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 mb-4">
                 <LogIn className="h-8 w-8 text-emerald-600" />
