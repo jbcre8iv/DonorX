@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, Lock, AlertCircle, RefreshCw, Save, FolderOpen, Trash2, X } from "lucide-react";
+import { ArrowLeft, Lock, AlertCircle, RefreshCw, Save, FolderOpen, Trash2, X, LogIn } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,12 +28,14 @@ interface DonateClientProps {
   nonprofits: Nonprofit[];
   categories: Category[];
   preselectedNonprofitId?: string;
+  isAuthenticated?: boolean;
 }
 
 export function DonateClient({
   nonprofits,
   categories,
   preselectedNonprofitId,
+  isAuthenticated = false,
 }: DonateClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -179,6 +181,26 @@ export function DonateClient({
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  // Helper function to save donation state and redirect to login
+  const saveStateAndRedirectToLogin = React.useCallback((action: "checkout" | "save-template") => {
+    // Store current donation state in sessionStorage for recovery after login
+    const donationState = {
+      amount,
+      frequency,
+      allocations: allocations.map((a) => ({
+        type: a.type,
+        targetId: a.targetId,
+        targetName: a.targetName,
+        percentage: a.percentage,
+      })),
+      action, // Track what user was trying to do
+    };
+    sessionStorage.setItem("donorx_pending_donation", JSON.stringify(donationState));
+
+    // Redirect to login with return URL
+    router.push(`/login?redirect=/donate&action=${action}`);
+  }, [amount, frequency, allocations, router]);
+
   // Template state
   const [templates, setTemplates] = React.useState<DonationTemplate[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = React.useState(false);
@@ -204,6 +226,43 @@ export function DonateClient({
     };
     fetchTemplates();
   }, []);
+
+  // Restore donation state after login redirect
+  React.useEffect(() => {
+    if (!isAuthenticated) return;
+
+    try {
+      const pendingDonation = sessionStorage.getItem("donorx_pending_donation");
+      if (pendingDonation) {
+        const state = JSON.parse(pendingDonation);
+        setAmount(state.amount);
+        setFrequency(state.frequency);
+        if (state.allocations && state.allocations.length > 0) {
+          setAllocations(
+            state.allocations.map((a: { type: "nonprofit" | "category"; targetId: string; targetName: string; percentage: number }) => ({
+              id: crypto.randomUUID(),
+              type: a.type,
+              targetId: a.targetId,
+              targetName: a.targetName,
+              percentage: a.percentage,
+            }))
+          );
+        }
+        // Clear the stored state
+        sessionStorage.removeItem("donorx_pending_donation");
+
+        // If user was trying to save a template, open the modal
+        if (state.action === "save-template") {
+          // Small delay to ensure state is updated
+          setTimeout(() => setShowSaveModal(true), 100);
+        }
+        // For checkout, user can click button again now that they're logged in
+      }
+    } catch (error) {
+      console.error("Error restoring donation state:", error);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   // Auto-save draft when donation state changes
   React.useEffect(() => {
@@ -427,6 +486,12 @@ export function DonateClient({
   const handleProceedToPayment = async () => {
     if (!isValidAllocation || !isValidAmount) return;
 
+    // If not authenticated, save state and redirect to login
+    if (!isAuthenticated) {
+      saveStateAndRedirectToLogin("checkout");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -495,7 +560,13 @@ export function DonateClient({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowSaveModal(true)}
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    saveStateAndRedirectToLogin("save-template");
+                  } else {
+                    setShowSaveModal(true);
+                  }
+                }}
               >
                 <Save className="h-4 w-4 mr-2" />
                 Save as Template
@@ -638,16 +709,20 @@ export function DonateClient({
                     onClick={handleProceedToPayment}
                     loading={isLoading}
                   >
-                    {isRecurring ? (
+                    {!isAuthenticated ? (
+                      <LogIn className="mr-2 h-4 w-4" />
+                    ) : isRecurring ? (
                       <RefreshCw className="mr-2 h-4 w-4" />
                     ) : (
                       <Lock className="mr-2 h-4 w-4" />
                     )}
                     {isLoading
                       ? "Processing..."
-                      : isRecurring
-                        ? "Set Up Recurring Donation"
-                        : "Proceed to Payment"}
+                      : !isAuthenticated
+                        ? "Sign in to Donate"
+                        : isRecurring
+                          ? "Set Up Recurring Donation"
+                          : "Proceed to Payment"}
                   </Button>
 
                   {!isValidAllocation && allocations.length > 0 && (

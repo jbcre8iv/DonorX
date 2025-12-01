@@ -14,6 +14,9 @@ export default async function DonatePage({ searchParams }: DonatePageProps) {
   const { nonprofit: preselectedNonprofitId } = await searchParams;
   const supabase = await createClient();
 
+  // Check if user is logged in
+  const { data: { user } } = await supabase.auth.getUser();
+
   // Fetch approved nonprofits
   const { data: nonprofits } = await supabase
     .from("nonprofits")
@@ -36,6 +39,7 @@ export default async function DonatePage({ searchParams }: DonatePageProps) {
       nonprofits={(nonprofits as Nonprofit[]) || []}
       categories={(categories as Category[]) || []}
       preselectedNonprofitId={preselectedNonprofitId}
+      isAuthenticated={!!user}
     />
   );
 }

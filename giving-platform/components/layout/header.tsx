@@ -209,7 +209,7 @@ export function Header({ initialUser = null }: HeaderProps) {
         </nav>
 
         {/* Desktop Auth Buttons / User Menu */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-4">
           {user ? (
             <>
               <GivingListButton />
