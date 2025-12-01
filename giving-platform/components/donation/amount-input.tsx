@@ -139,6 +139,18 @@ export function AmountInput({
           </span>
         </div>
         <div className="relative pt-1">
+          {/* Tick marks for tier thresholds */}
+          <div className="absolute top-1 left-0 right-0 flex justify-between pointer-events-none" style={{ paddingLeft: '0px', paddingRight: '0px' }}>
+            {[0, 1, 2, 3, 4, 5, 6].map((tick) => (
+              <div
+                key={tick}
+                className={cn(
+                  "w-0.5 h-4 rounded-full transition-colors",
+                  tick <= tierIndex ? "bg-blue-400" : "bg-slate-300"
+                )}
+              />
+            ))}
+          </div>
           <input
             type="range"
             min="0"
@@ -146,13 +158,19 @@ export function AmountInput({
             step="1"
             value={tierIndex}
             onChange={handleRangeChange}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb"
+            className="relative z-10 w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer slider-thumb"
             style={{
               background: `linear-gradient(to right, #1d4ed8 0%, #1d4ed8 ${(tierIndex / 6) * 100}%, #e2e8f0 ${(tierIndex / 6) * 100}%, #e2e8f0 100%)`,
             }}
           />
-          <div className="flex justify-between mt-2 text-xs text-slate-500">
+          {/* Tier labels */}
+          <div className="flex justify-between mt-3 text-xs text-slate-500">
             <span>$0</span>
+            <span>$1K</span>
+            <span>$15K</span>
+            <span>$150K</span>
+            <span>$750K</span>
+            <span>$2.5M</span>
             <span>$50M</span>
           </div>
         </div>
