@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, ReactNode } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, ReactNode } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { MessageCircle, X, Send, Sparkles, Loader2, Minimize2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -50,6 +51,7 @@ function renderMessageContent(content: string): ReactNode[] {
 }
 
 export function GivingConcierge() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -62,17 +64,27 @@ export function GivingConcierge() {
   // Create a stable Supabase client instance
   const supabase = useMemo(() => createClient(), []);
 
-  // Check authentication status
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session?.user);
-    };
+  // Check auth function
+  const checkAuth = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    setIsAuthenticated(!!session?.user);
+  }, [supabase]);
 
+  // Re-check auth when pathname changes (handles login redirects)
+  useEffect(() => {
+    checkAuth();
+  }, [pathname, checkAuth]);
+
+  // Check authentication status on mount and listen for auth changes
+  useEffect(() => {
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session?.user);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        setIsAuthenticated(false);
+      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+        setIsAuthenticated(!!session?.user);
+      }
     });
 
     // Re-check auth when window gains focus (handles login in another flow)
@@ -81,11 +93,20 @@ export function GivingConcierge() {
     };
     window.addEventListener("focus", handleFocus);
 
+    // Re-check auth when page becomes visible (handles navigation back)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkAuth();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       subscription.unsubscribe();
       window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [supabase]);
+  }, [supabase, checkAuth]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
