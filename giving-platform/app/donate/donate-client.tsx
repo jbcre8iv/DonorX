@@ -15,6 +15,7 @@ import { type Allocation as AIAllocation } from "@/components/ai/allocation-advi
 import { formatCurrency } from "@/lib/utils";
 import { createCheckoutSession, saveTemplate, updateTemplate, loadTemplates, deleteTemplate, clearDraft, type AllocationInput, type DonationTemplate, type TemplateItem, type SaveTemplateResult } from "./actions";
 import { useCartFavorites, type DraftAllocation, type DonationDraft } from "@/contexts/cart-favorites-context";
+import { useToast } from "@/components/ui/toast";
 import type { Nonprofit, Category } from "@/types/database";
 
 interface CartCheckoutItem {
@@ -42,6 +43,7 @@ export function DonateClient({
   const canceled = searchParams.get("canceled") === "true";
 
   const { donationDraft, saveDonationDraft, clearDonationDraft } = useCartFavorites();
+  const { addToast } = useToast();
   const [draftLoaded, setDraftLoaded] = React.useState(false);
   // Track if allocations were loaded from a draft (vs preselected nonprofit or cart)
   const [loadedFromDraft, setLoadedFromDraft] = React.useState(false);
@@ -562,7 +564,7 @@ export function DonateClient({
                 size="sm"
                 onClick={() => {
                   if (!isAuthenticated) {
-                    saveStateAndRedirectToLogin("save-template");
+                    addToast("Please sign in to save templates", "info", 3000);
                   } else {
                     setShowSaveModal(true);
                   }
