@@ -589,7 +589,14 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         setUserId(null);
         // Clean up subscriptions
         channels.forEach(channel => supabase.removeChannel(channel));
-        // Keep localStorage data, just mark as not synced
+        // Clear all user data on logout
+        setCartItems([]);
+        setFavorites([]);
+        setDonationDraft(null);
+        // Clear localStorage as well
+        localStorage.removeItem(CART_STORAGE_KEY);
+        localStorage.removeItem(FAVORITES_STORAGE_KEY);
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
       }
     });
 
