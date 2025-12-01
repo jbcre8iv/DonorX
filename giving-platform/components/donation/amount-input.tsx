@@ -6,6 +6,17 @@ import { Input } from "@/components/ui/input";
 
 const MAX_AMOUNT = 50_000_000; // $50 million
 
+// Get the tier index that best contains a given amount
+function getTierForAmount(amount: number): number {
+  if (amount <= 1000) return 0;
+  if (amount <= 15000) return 1;
+  if (amount <= 150000) return 2;
+  if (amount <= 750000) return 3;
+  if (amount <= 2500000) return 4;
+  if (amount <= 15000000) return 5;
+  return 6;
+}
+
 // Map tier index to preset amounts
 function getPresetsForTier(tierIndex: number): number[] {
   switch (tierIndex) {
@@ -66,7 +77,25 @@ export function AmountInput({
 }: AmountInputProps) {
   const [customAmount, setCustomAmount] = React.useState("");
   const [isCustom, setIsCustom] = React.useState(false);
-  const [tierIndex, setTierIndex] = React.useState(3); // Start at middle tier ($100K-$750K)
+  const [tierIndex, setTierIndex] = React.useState(() => getTierForAmount(value));
+
+  // Sync tier when value changes externally (e.g., loading a template)
+  React.useEffect(() => {
+    const appropriateTier = getTierForAmount(value);
+    if (appropriateTier !== tierIndex) {
+      setTierIndex(appropriateTier);
+    }
+    // Also check if value matches a preset - if so, clear custom mode
+    const presets = getPresetsForTier(appropriateTier);
+    if (presets.includes(value)) {
+      setIsCustom(false);
+      setCustomAmount("");
+    } else if (value > 0) {
+      // If it's a custom value, show it in the custom field
+      setIsCustom(true);
+      setCustomAmount(value.toString());
+    }
+  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const presetAmounts = getPresetsForTier(tierIndex);
 
