@@ -143,27 +143,7 @@ export function AmountInput({
             {getRangeLabelForTier(tierIndex)}
           </span>
         </div>
-        <div className="relative pt-1">
-          {/* Clickable tick marks for tier thresholds */}
-          <div className="absolute top-0 left-0 right-0 flex justify-between" style={{ paddingLeft: '0px', paddingRight: '0px' }}>
-            {[0, 1, 2, 3, 4, 5, 6].map((tick) => (
-              <button
-                key={tick}
-                type="button"
-                onClick={() => handleTierChange(tick)}
-                className="relative z-20 p-1 -mx-1 group"
-                aria-label={`Select tier ${tick}`}
-              >
-                <div
-                  className={cn(
-                    "w-1 h-4 rounded-full transition-colors",
-                    tick <= tierIndex ? "bg-blue-500" : "bg-slate-300",
-                    "group-hover:bg-blue-400"
-                  )}
-                />
-              </button>
-            ))}
-          </div>
+        <div className="relative">
           <input
             type="range"
             min="0"
@@ -171,20 +151,20 @@ export function AmountInput({
             step="1"
             value={tierIndex}
             onChange={handleRangeChange}
-            className="relative z-10 w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer slider-thumb mt-1"
+            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb"
             style={{
               background: `linear-gradient(to right, #1d4ed8 0%, #1d4ed8 ${(tierIndex / 6) * 100}%, #e2e8f0 ${(tierIndex / 6) * 100}%, #e2e8f0 100%)`,
             }}
           />
-          {/* Clickable tier labels */}
-          <div className="flex justify-between mt-3 text-xs text-slate-500">
+          {/* Tier labels - clickable */}
+          <div className="flex justify-between mt-2 text-xs text-slate-500">
             {["$0", "$1K", "$15K", "$150K", "$750K", "$2.5M", "$50M"].map((label, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => handleTierChange(idx)}
                 className={cn(
-                  "hover:text-blue-600 transition-colors cursor-pointer",
+                  "hover:text-blue-600 transition-colors",
                   idx === tierIndex && "text-blue-600 font-medium"
                 )}
               >
