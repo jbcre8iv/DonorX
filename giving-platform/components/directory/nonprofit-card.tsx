@@ -62,7 +62,7 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    await toggleFavorite({
+    const result = await toggleFavorite({
       nonprofitId: nonprofit.id,
       nonprofit: {
         id: nonprofit.id,
@@ -71,6 +71,10 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
         mission: nonprofit.mission || undefined,
       },
     });
+
+    if (!result.success && result.requiresAuth) {
+      addToast("Please sign in to save favorites", "info", 3000);
+    }
   };
 
   return (

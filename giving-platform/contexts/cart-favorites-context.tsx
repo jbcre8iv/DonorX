@@ -100,7 +100,7 @@ interface CartFavoritesContextType {
     categoryId?: string;
     nonprofit?: FavoriteItem["nonprofit"];
     category?: FavoriteItem["category"];
-  }) => Promise<void>;
+  }) => Promise<{ success: boolean; requiresAuth?: boolean }>;
   isFavorite: (nonprofitId?: string, categoryId?: string) => boolean;
 
   // Donation Draft
@@ -849,7 +849,12 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       categoryId?: string;
       nonprofit?: FavoriteItem["nonprofit"];
       category?: FavoriteItem["category"];
-    }) => {
+    }): Promise<{ success: boolean; requiresAuth?: boolean }> => {
+      // Require login to use favorites
+      if (!userId) {
+        return { success: false, requiresAuth: true };
+      }
+
       const existingFavorite = favorites.find(
         (fav) =>
           (item.nonprofitId && fav.nonprofitId === item.nonprofitId) ||
@@ -861,8 +866,10 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       } else {
         await addToFavorites(item);
       }
+
+      return { success: true };
     },
-    [favorites, addToFavorites, removeFromFavorites]
+    [favorites, addToFavorites, removeFromFavorites, userId]
   );
 
   // Manual refresh from database

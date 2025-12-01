@@ -210,9 +210,9 @@ export function Header({ initialUser = null }: HeaderProps) {
 
         {/* Desktop Auth Buttons / User Menu */}
         <div className="hidden md:flex items-center gap-4">
+          <GivingListButton />
           {user ? (
             <>
-              <GivingListButton />
               <Button asChild>
                 <Link href="/dashboard">
                   <LayoutDashboard className="h-4 w-4 mr-2" />
@@ -288,7 +288,7 @@ export function Header({ initialUser = null }: HeaderProps) {
 
         {/* Mobile: Giving List + Menu Button */}
         <div className="md:hidden flex items-center gap-1">
-          {user && <GivingListButton />}
+          <GivingListButton />
           <button
             type="button"
             className="p-2 text-slate-600"

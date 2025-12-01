@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Heart, Trash2, Tag, Building2, Plus, Eye, X, Globe } from "lucide-react";
+import { Heart, Trash2, Tag, Building2, Plus, Eye, X, Globe, LogIn } from "lucide-react";
 import { useCartFavorites, type FavoriteItem } from "@/contexts/cart-favorites-context";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ export function FavoritesTab() {
     isInCart,
     setSidebarOpen,
     setActiveTab,
+    userId,
   } = useCartFavorites();
   const { addToast } = useToast();
 
@@ -37,6 +38,34 @@ export function FavoritesTab() {
       }
     }
   };
+
+  // Show login prompt for non-authenticated users
+  if (!userId) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+        <div className="mb-4 rounded-full bg-pink-50 p-4">
+          <Heart className="h-8 w-8 text-pink-300" />
+        </div>
+        <h3 className="mb-2 text-lg font-medium text-slate-900">
+          Sign in to save favorites
+        </h3>
+        <p className="mb-6 text-sm text-slate-500">
+          Create an account or sign in to save your favorite nonprofits and access them from any device.
+        </p>
+        <div className="flex flex-col gap-3 w-full max-w-[200px]">
+          <Link href="/login" onClick={() => setSidebarOpen(false)}>
+            <Button className="w-full">
+              <LogIn className="h-4 w-4 mr-2" />
+              Sign In
+            </Button>
+          </Link>
+          <Link href="/register" onClick={() => setSidebarOpen(false)}>
+            <Button variant="outline" className="w-full">Create Account</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (favorites.length === 0) {
     return (
