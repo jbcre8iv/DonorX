@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, ReactNode } from "react";
+import { useState, useRef, useEffect, useMemo, ReactNode } from "react";
 import Link from "next/link";
 import { MessageCircle, X, Send, Sparkles, Loader2, Minimize2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -59,32 +59,52 @@ export function GivingConcierge() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Create a stable Supabase client instance
+  const supabase = useMemo(() => createClient(), []);
+
   // Check authentication status
   useEffect(() => {
-    const supabase = createClient();
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session?.user);
-    });
+    };
+
+    checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session?.user);
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    // Re-check auth when window gains focus (handles login in another flow)
+    const handleFocus = () => {
+      checkAuth();
+    };
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [supabase]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Focus input when chat opens
+  // Re-check auth and focus input when chat opens
   useEffect(() => {
-    if (isOpen && !isMinimized && isAuthenticated) {
-      inputRef.current?.focus();
+    if (isOpen) {
+      // Re-check auth status when chatbot is opened
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setIsAuthenticated(!!session?.user);
+      });
+
+      if (!isMinimized && isAuthenticated) {
+        inputRef.current?.focus();
+      }
     }
-  }, [isOpen, isMinimized, isAuthenticated]);
+  }, [isOpen, isMinimized, isAuthenticated, supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
