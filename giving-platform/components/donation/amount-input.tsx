@@ -118,12 +118,17 @@ export function AmountInput({
 
   const handleRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTierIndex = parseInt(e.target.value, 10);
+    handleTierChange(newTierIndex);
+  };
+
+  // Handle tier change from slider or tick mark click
+  const handleTierChange = (newTierIndex: number) => {
     setTierIndex(newTierIndex);
-    // When tier changes, select the first preset of the new tier
+    // Always select the first (smallest) preset of the new tier
     const newPresets = getPresetsForTier(newTierIndex);
-    if (!isCustom) {
-      onChange(newPresets[0]);
-    }
+    setIsCustom(false);
+    setCustomAmount("");
+    onChange(newPresets[0]);
   };
 
   return (
@@ -139,16 +144,24 @@ export function AmountInput({
           </span>
         </div>
         <div className="relative pt-1">
-          {/* Tick marks for tier thresholds */}
-          <div className="absolute top-1 left-0 right-0 flex justify-between pointer-events-none" style={{ paddingLeft: '0px', paddingRight: '0px' }}>
+          {/* Clickable tick marks for tier thresholds */}
+          <div className="absolute top-0 left-0 right-0 flex justify-between" style={{ paddingLeft: '0px', paddingRight: '0px' }}>
             {[0, 1, 2, 3, 4, 5, 6].map((tick) => (
-              <div
+              <button
                 key={tick}
-                className={cn(
-                  "w-0.5 h-4 rounded-full transition-colors",
-                  tick <= tierIndex ? "bg-blue-400" : "bg-slate-300"
-                )}
-              />
+                type="button"
+                onClick={() => handleTierChange(tick)}
+                className="relative z-20 p-1 -mx-1 group"
+                aria-label={`Select tier ${tick}`}
+              >
+                <div
+                  className={cn(
+                    "w-1 h-4 rounded-full transition-colors",
+                    tick <= tierIndex ? "bg-blue-500" : "bg-slate-300",
+                    "group-hover:bg-blue-400"
+                  )}
+                />
+              </button>
             ))}
           </div>
           <input
@@ -158,20 +171,26 @@ export function AmountInput({
             step="1"
             value={tierIndex}
             onChange={handleRangeChange}
-            className="relative z-10 w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer slider-thumb"
+            className="relative z-10 w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer slider-thumb mt-1"
             style={{
               background: `linear-gradient(to right, #1d4ed8 0%, #1d4ed8 ${(tierIndex / 6) * 100}%, #e2e8f0 ${(tierIndex / 6) * 100}%, #e2e8f0 100%)`,
             }}
           />
-          {/* Tier labels */}
+          {/* Clickable tier labels */}
           <div className="flex justify-between mt-3 text-xs text-slate-500">
-            <span>$0</span>
-            <span>$1K</span>
-            <span>$15K</span>
-            <span>$150K</span>
-            <span>$750K</span>
-            <span>$2.5M</span>
-            <span>$50M</span>
+            {["$0", "$1K", "$15K", "$150K", "$750K", "$2.5M", "$50M"].map((label, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleTierChange(idx)}
+                className={cn(
+                  "hover:text-blue-600 transition-colors cursor-pointer",
+                  idx === tierIndex && "text-blue-600 font-medium"
+                )}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
