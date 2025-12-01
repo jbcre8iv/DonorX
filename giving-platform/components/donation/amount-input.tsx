@@ -118,13 +118,18 @@ export function AmountInput({
 
   const handleRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTierIndex = parseInt(e.target.value, 10);
-    handleTierChange(newTierIndex);
+    // Only update if tier actually changed
+    if (newTierIndex !== tierIndex) {
+      handleTierChange(newTierIndex);
+    }
   };
 
-  // Handle tier change from slider or tick mark click
+  // Handle tier change from slider or label click
   const handleTierChange = (newTierIndex: number) => {
+    if (newTierIndex === tierIndex) return; // No change needed
+
     setTierIndex(newTierIndex);
-    // Always select the first (smallest) preset of the new tier
+    // Select the first (smallest) preset of the new tier
     const newPresets = getPresetsForTier(newTierIndex);
     setIsCustom(false);
     setCustomAmount("");
@@ -151,7 +156,8 @@ export function AmountInput({
             step="1"
             value={tierIndex}
             onChange={handleRangeChange}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb"
+            onInput={handleRangeChange}
+            className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb"
             style={{
               background: `linear-gradient(to right, #1d4ed8 0%, #1d4ed8 ${(tierIndex / 6) * 100}%, #e2e8f0 ${(tierIndex / 6) * 100}%, #e2e8f0 100%)`,
             }}
