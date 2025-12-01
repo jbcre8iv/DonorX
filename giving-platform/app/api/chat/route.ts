@@ -32,6 +32,8 @@ export async function POST(request: Request) {
         id,
         name,
         mission,
+        city,
+        state,
         category:categories(name)
       `)
       .eq("status", "approved")
@@ -44,7 +46,10 @@ export async function POST(request: Request) {
         const category = Array.isArray(cat)
           ? cat[0]?.name
           : cat?.name;
-        return `- ID: ${np.id} | Name: ${np.name} | Category: ${category || "General"} | Mission: ${np.mission || "No mission provided"}`;
+        const location = np.city && np.state
+          ? `${np.city}, ${np.state}`
+          : np.city || np.state || "National";
+        return `- ID: ${np.id} | Name: ${np.name} | Category: ${category || "General"} | Location: ${location} | Mission: ${np.mission || "No mission provided"}`;
       })
       .join("\n");
 
