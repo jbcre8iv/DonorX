@@ -28,7 +28,7 @@ export async function HeaderWrapper() {
     data: { user: authUser },
   } = await supabase.auth.getUser();
 
-  let userData: { email: string; firstName: string | null; lastName: string | null; role: string | null } | null = null;
+  let userData: { email: string; firstName: string | null; lastName: string | null; role: string | null; avatarUrl: string | null } | null = null;
 
   if (authUser) {
     let profile = null;
@@ -38,7 +38,7 @@ export async function HeaderWrapper() {
       const adminClient = createAdminClient();
       const { data, error } = await adminClient
         .from("users")
-        .select("first_name, last_name, role")
+        .select("first_name, last_name, role, avatar_url")
         .eq("id", authUser.id)
         .single();
       if (error) {
@@ -50,7 +50,7 @@ export async function HeaderWrapper() {
       // Admin client not available, try regular client
       const { data } = await supabase
         .from("users")
-        .select("first_name, last_name, role")
+        .select("first_name, last_name, role, avatar_url")
         .eq("id", authUser.id)
         .single();
       profile = data;
@@ -61,6 +61,7 @@ export async function HeaderWrapper() {
       firstName: profile?.first_name || null,
       lastName: profile?.last_name || null,
       role: profile?.role || null,
+      avatarUrl: profile?.avatar_url || null,
     };
   }
 

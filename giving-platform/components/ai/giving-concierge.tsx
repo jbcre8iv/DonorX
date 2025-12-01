@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo, useCallback, ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { MessageCircle, X, Send, Sparkles, Loader2, Minimize2, LogIn, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -58,16 +59,28 @@ export function GivingConcierge() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Create a stable Supabase client instance
   const supabase = useMemo(() => createClient(), []);
 
-  // Check auth function
+  // Check auth function and fetch avatar
   const checkAuth = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
     setIsAuthenticated(!!session?.user);
+
+    if (session?.user) {
+      const { data: profile } = await supabase
+        .from("users")
+        .select("avatar_url")
+        .eq("id", session.user.id)
+        .single();
+      setUserAvatarUrl(profile?.avatar_url || null);
+    } else {
+      setUserAvatarUrl(null);
+    }
   }, [supabase]);
 
   // Re-check auth when pathname changes (handles login redirects)
@@ -369,8 +382,19 @@ export function GivingConcierge() {
 
                       {/* User Avatar */}
                       {message.role === "user" && (
-                        <div className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 shadow-sm">
-                          <User className="h-3.5 w-3.5 text-slate-600" />
+                        <div className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 shadow-sm overflow-hidden">
+                          {userAvatarUrl ? (
+                            <Image
+                              src={userAvatarUrl}
+                              alt="You"
+                              width={28}
+                              height={28}
+                              className="h-full w-full object-cover"
+                              unoptimized
+                            />
+                          ) : (
+                            <User className="h-3.5 w-3.5 text-slate-600" />
+                          )}
                         </div>
                       )}
                     </div>
