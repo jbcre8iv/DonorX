@@ -79,6 +79,7 @@ export function Header({ initialUser = null }: HeaderProps) {
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [user, setUser] = React.useState<{ email: string; firstName: string | null; lastName: string | null; role: string | null } | null>(initialUser);
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
+  const userMenuRef = React.useRef<HTMLDivElement>(null);
 
   // Helper to get full name from first and last name
   const getFullName = (firstName: string | null, lastName: string | null) => {
@@ -106,6 +107,20 @@ export function Header({ initialUser = null }: HeaderProps) {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    if (userMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [userMenuOpen]);
 
   React.useEffect(() => {
     const supabase = createClient();
@@ -204,7 +219,7 @@ export function Header({ initialUser = null }: HeaderProps) {
                   Dashboard
                 </Link>
               </Button>
-              <div className="relative">
+              <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
