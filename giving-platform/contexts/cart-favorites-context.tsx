@@ -625,21 +625,29 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     const checkAuthAndClear = async () => {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // If we had a userId but now there's no user, clear everything
+      // If no user is logged in, clear everything
       // This handles server-side logout where SIGNED_OUT event may not fire
-      if (userId && !user) {
-        setUserId(null);
-        setCartItems([]);
-        setFavorites([]);
-        setDonationDraft(null);
-        localStorage.removeItem(CART_STORAGE_KEY);
-        localStorage.removeItem(FAVORITES_STORAGE_KEY);
-        localStorage.removeItem(DRAFT_STORAGE_KEY);
+      if (!user) {
+        // Only clear if there's actually data to clear (state or localStorage)
+        const hasStateData = userId || cartItems.length > 0 || favorites.length > 0 || donationDraft;
+        const hasLocalData = localStorage.getItem(CART_STORAGE_KEY) ||
+                            localStorage.getItem(FAVORITES_STORAGE_KEY) ||
+                            localStorage.getItem(DRAFT_STORAGE_KEY);
+
+        if (hasStateData || hasLocalData) {
+          setUserId(null);
+          setCartItems([]);
+          setFavorites([]);
+          setDonationDraft(null);
+          localStorage.removeItem(CART_STORAGE_KEY);
+          localStorage.removeItem(FAVORITES_STORAGE_KEY);
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+        }
       }
     };
 
     checkAuthAndClear();
-  }, [pathname, userId, supabase]);
+  }, [pathname, userId, cartItems.length, favorites.length, donationDraft, supabase]);
 
   // Cart total percentage
   const cartTotal = cartItems.reduce((sum, item) => sum + item.percentage, 0);
