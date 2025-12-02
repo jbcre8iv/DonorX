@@ -9,6 +9,7 @@ import {
   useRef,
   ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 // Types
@@ -140,6 +141,7 @@ const MAX_CART_ITEMS = 10;
 const generateTempId = () => `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 export function CartFavoritesProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [donationDraft, setDonationDraft] = useState<DonationDraft | null>(null);
@@ -377,200 +379,211 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     const initialize = async () => {
       setIsLoading(true);
 
-      // Load from localStorage first
-      loadFromLocalStorage();
-
-      // Check if user is logged in
+      // Check if user is logged in FIRST before loading localStorage
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (user) {
-        setUserId(user.id);
+      // If no user, clear any stale data that may have been left behind
+      // This handles the case where server-side logout happens and SIGNED_OUT event doesn't fire
+      if (!user) {
+        setUserId(null);
+        setCartItems([]);
+        setFavorites([]);
+        setDonationDraft(null);
+        localStorage.removeItem(CART_STORAGE_KEY);
+        localStorage.removeItem(FAVORITES_STORAGE_KEY);
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        setIsLoading(false);
+        return;
+      }
 
-        // Get current localStorage data
-        const storedCart = localStorage.getItem(CART_STORAGE_KEY);
-        const storedFavorites = localStorage.getItem(FAVORITES_STORAGE_KEY);
-        const localCart: CartItem[] = storedCart ? JSON.parse(storedCart) : [];
-        const localFavorites: FavoriteItem[] = storedFavorites
-          ? JSON.parse(storedFavorites)
-          : [];
+      // Load from localStorage for logged-in users
+      loadFromLocalStorage();
 
-        // Fetch from database
-        const dbData = await fetchFromDatabase(user.id);
+      // User is logged in at this point
+      setUserId(user.id);
 
-        // Merge: database items take precedence, add any local-only items
-        const mergedCart = [...dbData.cart];
-        const mergedFavorites = [...dbData.favorites];
+      // Get current localStorage data
+      const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+      const storedFavorites = localStorage.getItem(FAVORITES_STORAGE_KEY);
+      const localCart: CartItem[] = storedCart ? JSON.parse(storedCart) : [];
+      const localFavorites: FavoriteItem[] = storedFavorites
+        ? JSON.parse(storedFavorites)
+        : [];
 
-        // Add local items that don't exist in database
-        for (const localItem of localCart) {
-          const exists = mergedCart.some(
-            (dbItem) =>
-              (localItem.nonprofitId &&
-                dbItem.nonprofitId === localItem.nonprofitId) ||
-              (localItem.categoryId &&
-                dbItem.categoryId === localItem.categoryId)
-          );
-          if (!exists && mergedCart.length < MAX_CART_ITEMS) {
-            mergedCart.push(localItem);
-          }
+      // Fetch from database
+      const dbData = await fetchFromDatabase(user.id);
+
+      // Merge: database items take precedence, add any local-only items
+      const mergedCart = [...dbData.cart];
+      const mergedFavorites = [...dbData.favorites];
+
+      // Add local items that don't exist in database
+      for (const localItem of localCart) {
+        const exists = mergedCart.some(
+          (dbItem) =>
+            (localItem.nonprofitId &&
+              dbItem.nonprofitId === localItem.nonprofitId) ||
+            (localItem.categoryId &&
+              dbItem.categoryId === localItem.categoryId)
+        );
+        if (!exists && mergedCart.length < MAX_CART_ITEMS) {
+          mergedCart.push(localItem);
         }
+      }
 
-        for (const localItem of localFavorites) {
-          const exists = mergedFavorites.some(
-            (dbItem) =>
-              (localItem.nonprofitId &&
-                dbItem.nonprofitId === localItem.nonprofitId) ||
-              (localItem.categoryId &&
-                dbItem.categoryId === localItem.categoryId)
-          );
-          if (!exists) {
-            mergedFavorites.push(localItem);
-          }
+      for (const localItem of localFavorites) {
+        const exists = mergedFavorites.some(
+          (dbItem) =>
+            (localItem.nonprofitId &&
+              dbItem.nonprofitId === localItem.nonprofitId) ||
+            (localItem.categoryId &&
+              dbItem.categoryId === localItem.categoryId)
+        );
+        if (!exists) {
+          mergedFavorites.push(localItem);
         }
+      }
 
-        // Sync any local-only items to database
-        const hasLocalOnlyItems =
-          mergedCart.some((item) => item.id.startsWith("temp_")) ||
-          mergedFavorites.some((item) => item.id.startsWith("temp_"));
+      // Sync any local-only items to database
+      const hasLocalOnlyItems =
+        mergedCart.some((item) => item.id.startsWith("temp_")) ||
+        mergedFavorites.some((item) => item.id.startsWith("temp_"));
 
-        if (hasLocalOnlyItems) {
-          const syncedData = await syncToDatabase(
-            user.id,
-            mergedCart,
-            mergedFavorites
-          );
-          if (syncedData) {
-            setCartItems(syncedData.cart);
-            setFavorites(syncedData.favorites);
-            setDonationDraft(syncedData.draft);
-            saveToLocalStorage(syncedData.cart, syncedData.favorites);
-          }
-        } else {
-          setCartItems(mergedCart);
-          setFavorites(mergedFavorites);
-          setDonationDraft(dbData.draft);
-          saveToLocalStorage(mergedCart, mergedFavorites);
+      if (hasLocalOnlyItems) {
+        const syncedData = await syncToDatabase(
+          user.id,
+          mergedCart,
+          mergedFavorites
+        );
+        if (syncedData) {
+          setCartItems(syncedData.cart);
+          setFavorites(syncedData.favorites);
+          setDonationDraft(syncedData.draft);
+          saveToLocalStorage(syncedData.cart, syncedData.favorites);
         }
+      } else {
+        setCartItems(mergedCart);
+        setFavorites(mergedFavorites);
+        setDonationDraft(dbData.draft);
+        saveToLocalStorage(mergedCart, mergedFavorites);
+      }
 
-        // Helper to create subscription with auto-reconnect
-        const createChannelWithReconnect = (
-          channelName: string,
-          table: string,
-          onPayload: (payload: any) => Promise<void>,
-          onReconnect: () => Promise<void>
-        ) => {
-          let reconnectTimeout: NodeJS.Timeout | null = null;
+      // Helper to create subscription with auto-reconnect
+      const createChannelWithReconnect = (
+        channelName: string,
+        table: string,
+        onPayload: (payload: any) => Promise<void>,
+        onReconnect: () => Promise<void>
+      ) => {
+        let reconnectTimeout: NodeJS.Timeout | null = null;
 
-          const channel = supabase
-            .channel(channelName)
-            .on(
-              'postgres_changes',
-              {
-                event: '*',
-                schema: 'public',
-                table,
-                filter: `user_id=eq.${user.id}`,
-              },
-              onPayload
-            )
-            .subscribe((status, err) => {
-              console.log(`[Realtime] ${table} subscription status:`, status);
+        const channel = supabase
+          .channel(channelName)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table,
+              filter: `user_id=eq.${user.id}`,
+            },
+            onPayload
+          )
+          .subscribe((status, err) => {
+            console.log(`[Realtime] ${table} subscription status:`, status);
 
-              if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                console.log(`[Realtime] ${table} channel error/timeout, scheduling reconnect...`);
-                // Clear any existing reconnect timeout
-                if (reconnectTimeout) clearTimeout(reconnectTimeout);
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              console.log(`[Realtime] ${table} channel error/timeout, scheduling reconnect...`);
+              // Clear any existing reconnect timeout
+              if (reconnectTimeout) clearTimeout(reconnectTimeout);
 
-                // Try to reconnect after a short delay
-                reconnectTimeout = setTimeout(async () => {
-                  console.log(`[Realtime] Attempting to reconnect ${table}...`);
-                  try {
-                    await channel.unsubscribe();
-                    await channel.subscribe();
-                    // Fetch fresh data after reconnect
-                    await onReconnect();
-                  } catch (e) {
-                    console.error(`[Realtime] Reconnect failed for ${table}:`, e);
-                  }
-                }, 2000);
-              }
-
-              if (status === 'SUBSCRIBED') {
-                // Clear reconnect timeout on successful subscription
-                if (reconnectTimeout) {
-                  clearTimeout(reconnectTimeout);
-                  reconnectTimeout = null;
+              // Try to reconnect after a short delay
+              reconnectTimeout = setTimeout(async () => {
+                console.log(`[Realtime] Attempting to reconnect ${table}...`);
+                try {
+                  await channel.unsubscribe();
+                  await channel.subscribe();
+                  // Fetch fresh data after reconnect
+                  await onReconnect();
+                } catch (e) {
+                  console.error(`[Realtime] Reconnect failed for ${table}:`, e);
                 }
+              }, 2000);
+            }
+
+            if (status === 'SUBSCRIBED') {
+              // Clear reconnect timeout on successful subscription
+              if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+                reconnectTimeout = null;
               }
-            });
-
-          return channel;
-        };
-
-        // Set up real-time subscriptions for cross-device sync with auto-reconnect
-        const cartChannel = createChannelWithReconnect(
-          `cart_sync_${user.id}_${Date.now()}`,
-          'cart_items',
-          async (payload) => {
-            console.log('[Realtime] Cart change detected:', payload.eventType);
-            const freshData = await fetchFromDatabase(user.id);
-            setCartItems(freshData.cart);
-            saveToLocalStorage(freshData.cart, freshData.favorites);
-          },
-          async () => {
-            const freshData = await fetchFromDatabase(user.id);
-            setCartItems(freshData.cart);
-            saveToLocalStorage(freshData.cart, freshData.favorites);
-          }
-        );
-        channels.push(cartChannel);
-
-        const favoritesChannel = createChannelWithReconnect(
-          `favorites_sync_${user.id}_${Date.now()}`,
-          'user_favorites',
-          async (payload) => {
-            console.log('[Realtime] Favorites change detected:', payload.eventType);
-            const freshData = await fetchFromDatabase(user.id);
-            setFavorites(freshData.favorites);
-            saveToLocalStorage(freshData.cart, freshData.favorites);
-          },
-          async () => {
-            const freshData = await fetchFromDatabase(user.id);
-            setFavorites(freshData.favorites);
-            saveToLocalStorage(freshData.cart, freshData.favorites);
-          }
-        );
-        channels.push(favoritesChannel);
-
-        // Real-time subscription for donation drafts (cross-device sync)
-        const draftsChannel = createChannelWithReconnect(
-          `drafts_sync_${user.id}_${Date.now()}`,
-          'donation_drafts',
-          async (payload) => {
-            // Ignore realtime updates triggered by our own local operations
-            if (isLocalDraftOperation.current) {
-              console.log('[Realtime] Ignoring own draft change');
-              return;
             }
-            console.log('[Realtime] Draft change detected from another device:', payload.eventType);
-            if (payload.eventType === 'DELETE') {
-              setDonationDraft(null);
-            } else {
-              const freshData = await fetchFromDatabase(user.id);
-              setDonationDraft(freshData.draft);
-            }
-          },
-          async () => {
+          });
+
+        return channel;
+      };
+
+      // Set up real-time subscriptions for cross-device sync with auto-reconnect
+      const cartChannel = createChannelWithReconnect(
+        `cart_sync_${user.id}_${Date.now()}`,
+        'cart_items',
+        async (payload) => {
+          console.log('[Realtime] Cart change detected:', payload.eventType);
+          const freshData = await fetchFromDatabase(user.id);
+          setCartItems(freshData.cart);
+          saveToLocalStorage(freshData.cart, freshData.favorites);
+        },
+        async () => {
+          const freshData = await fetchFromDatabase(user.id);
+          setCartItems(freshData.cart);
+          saveToLocalStorage(freshData.cart, freshData.favorites);
+        }
+      );
+      channels.push(cartChannel);
+
+      const favoritesChannel = createChannelWithReconnect(
+        `favorites_sync_${user.id}_${Date.now()}`,
+        'user_favorites',
+        async (payload) => {
+          console.log('[Realtime] Favorites change detected:', payload.eventType);
+          const freshData = await fetchFromDatabase(user.id);
+          setFavorites(freshData.favorites);
+          saveToLocalStorage(freshData.cart, freshData.favorites);
+        },
+        async () => {
+          const freshData = await fetchFromDatabase(user.id);
+          setFavorites(freshData.favorites);
+          saveToLocalStorage(freshData.cart, freshData.favorites);
+        }
+      );
+      channels.push(favoritesChannel);
+
+      // Real-time subscription for donation drafts (cross-device sync)
+      const draftsChannel = createChannelWithReconnect(
+        `drafts_sync_${user.id}_${Date.now()}`,
+        'donation_drafts',
+        async (payload) => {
+          // Ignore realtime updates triggered by our own local operations
+          if (isLocalDraftOperation.current) {
+            console.log('[Realtime] Ignoring own draft change');
+            return;
+          }
+          console.log('[Realtime] Draft change detected from another device:', payload.eventType);
+          if (payload.eventType === 'DELETE') {
+            setDonationDraft(null);
+          } else {
             const freshData = await fetchFromDatabase(user.id);
             setDonationDraft(freshData.draft);
           }
-        );
-        channels.push(draftsChannel);
-      } else {
-        setUserId(null);
-      }
+        },
+        async () => {
+          const freshData = await fetchFromDatabase(user.id);
+          setDonationDraft(freshData.draft);
+        }
+      );
+      channels.push(draftsChannel);
 
       setIsLoading(false);
     };
@@ -606,6 +619,27 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Re-check auth status when pathname changes (catches logout redirect)
+  useEffect(() => {
+    const checkAuthAndClear = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // If we had a userId but now there's no user, clear everything
+      // This handles server-side logout where SIGNED_OUT event may not fire
+      if (userId && !user) {
+        setUserId(null);
+        setCartItems([]);
+        setFavorites([]);
+        setDonationDraft(null);
+        localStorage.removeItem(CART_STORAGE_KEY);
+        localStorage.removeItem(FAVORITES_STORAGE_KEY);
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+      }
+    };
+
+    checkAuthAndClear();
+  }, [pathname, userId, supabase]);
 
   // Cart total percentage
   const cartTotal = cartItems.reduce((sum, item) => sum + item.percentage, 0);
