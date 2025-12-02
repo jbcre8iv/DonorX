@@ -885,8 +885,18 @@ export function DonateClient({
                   value={templateName}
                   onChange={(e) => setTemplateName(e.target.value)}
                   placeholder="e.g., Monthly Giving, Holiday Donations"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  disabled={selectedTemplateId !== "new"}
+                  className={`w-full rounded-lg border px-3 py-2 text-sm ${
+                    selectedTemplateId !== "new"
+                      ? "border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed"
+                      : "border-slate-300 bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  }`}
                 />
+                {selectedTemplateId !== "new" && (
+                  <p className="mt-1 text-xs text-slate-500">
+                    Name is locked when updating an existing template
+                  </p>
+                )}
               </div>
 
               <div>
