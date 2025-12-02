@@ -441,7 +441,7 @@ export function AllocationAdvisor({
                 className="w-full"
               >
                 <ArrowRight className="mr-2 h-4 w-4" />
-                Apply All Allocations
+                Apply This Allocation
               </Button>
             )}
           </div>
