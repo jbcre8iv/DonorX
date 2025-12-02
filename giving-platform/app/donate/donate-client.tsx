@@ -546,8 +546,8 @@ export function DonateClient({
       if (result.success && result.url) {
         // Mark that we're proceeding to payment to prevent redirect on draft clear
         proceedingToPaymentRef.current = true;
-        // Clear the draft since user is proceeding to payment
-        await clearDonationDraft();
+        // Clear the draft in background (don't await - let redirect happen immediately)
+        clearDonationDraft().catch(console.error);
         // Redirect to Stripe Checkout (or success page for simulation mode)
         window.location.assign(result.url);
       } else {
