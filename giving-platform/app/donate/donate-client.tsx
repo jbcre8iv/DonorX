@@ -819,23 +819,60 @@ export function DonateClient({
               {/* Template selector - create new or overwrite existing */}
               {templates.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
                     Save to
                   </label>
-                  <select
-                    value={selectedTemplateId}
-                    onChange={(e) => handleTemplateSelect(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    <option value="new">Create new template</option>
-                    <optgroup label="Overwrite existing">
-                      {templates.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  </select>
+                  <div className="space-y-2">
+                    {/* Create new option */}
+                    <label
+                      className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                        selectedTemplateId === "new"
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-slate-200 hover:border-slate-300 bg-white"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="template-select"
+                        value="new"
+                        checked={selectedTemplateId === "new"}
+                        onChange={(e) => handleTemplateSelect(e.target.value)}
+                        className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500"
+                      />
+                      <div>
+                        <span className="font-medium text-slate-900">Create new template</span>
+                      </div>
+                    </label>
+
+                    {/* Existing templates */}
+                    <div className="pt-2">
+                      <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                        Or update existing
+                      </span>
+                      <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+                        {templates.map((t) => (
+                          <label
+                            key={t.id}
+                            className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                              selectedTemplateId === t.id
+                                ? "border-blue-500 bg-blue-50"
+                                : "border-slate-200 hover:border-slate-300 bg-white"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="template-select"
+                              value={t.id}
+                              checked={selectedTemplateId === t.id}
+                              onChange={(e) => handleTemplateSelect(e.target.value)}
+                              className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500"
+                            />
+                            <span className="text-slate-900">{t.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
