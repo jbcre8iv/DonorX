@@ -91,9 +91,9 @@ export function AmountInput({
       setIsCustom(false);
       setCustomAmount("");
     } else if (value > 0) {
-      // If it's a custom value, show it in the custom field
+      // If it's a custom value, show it in the custom field with formatting
       setIsCustom(true);
-      setCustomAmount(value.toString());
+      setCustomAmount(value.toLocaleString());
     }
   }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -106,14 +106,20 @@ export function AmountInput({
   };
 
   const handleCustomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value.replace(/[^0-9]/g, "");
-    setCustomAmount(inputValue);
-    setIsCustom(true);
-    if (inputValue) {
-      const parsedAmount = parseInt(inputValue, 10);
+    // Remove all non-digits
+    const rawValue = e.target.value.replace(/[^0-9]/g, "");
+
+    if (rawValue) {
+      const parsedAmount = parseInt(rawValue, 10);
       // Cap at max amount
-      onChange(Math.min(parsedAmount, MAX_AMOUNT));
+      const cappedAmount = Math.min(parsedAmount, MAX_AMOUNT);
+      // Format with commas for display
+      setCustomAmount(cappedAmount.toLocaleString());
+      onChange(cappedAmount);
+    } else {
+      setCustomAmount("");
     }
+    setIsCustom(true);
   };
 
   const handleRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
