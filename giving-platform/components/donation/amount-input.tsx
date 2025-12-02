@@ -161,22 +161,24 @@ export function AmountInput({
               background: `linear-gradient(to right, #1d4ed8 0%, #1d4ed8 ${(tierIndex / 6) * 100}%, #e2e8f0 ${(tierIndex / 6) * 100}%, #e2e8f0 100%)`,
             }}
           />
-          {/* Subtle tick marks */}
-          <div className="flex justify-between mt-2 px-0.5">
-            {[0, 1, 2, 3, 4, 5, 6].map((tick) => (
-              <div
-                key={tick}
-                className={cn(
-                  "w-px h-2 rounded-full",
-                  tick <= tierIndex ? "bg-blue-300" : "bg-slate-300"
-                )}
-              />
-            ))}
+          {/* Subtle tick marks - positioned to align with thumb center (11px = half of 22px thumb) */}
+          <div className="relative mt-2 h-2" style={{ marginLeft: '11px', marginRight: '11px' }}>
+            <div className="absolute inset-0 flex justify-between">
+              {[0, 1, 2, 3, 4, 5, 6].map((tick) => (
+                <div
+                  key={tick}
+                  className={cn(
+                    "w-px h-2 rounded-full",
+                    tick <= tierIndex ? "bg-blue-300" : "bg-slate-300"
+                  )}
+                />
+              ))}
+            </div>
           </div>
-          {/* Min/Max labels only */}
-          <div className="flex justify-between mt-1 text-xs text-slate-400">
-            <span>$0</span>
-            <span>$50M</span>
+          {/* Min/Max labels only - aligned with tick marks */}
+          <div className="flex justify-between mt-1 text-xs text-slate-400" style={{ marginLeft: '11px', marginRight: '11px' }}>
+            <span className="-ml-2">$0</span>
+            <span className="-mr-2">$50M</span>
           </div>
         </div>
       </div>
