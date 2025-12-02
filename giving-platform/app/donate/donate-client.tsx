@@ -50,7 +50,7 @@ export function DonateClient({
   // Track the last draft we saved to avoid syncing our own changes back
   const lastSavedDraftRef = React.useRef<string | null>(null);
 
-  const [amount, setAmount] = React.useState(100000); // Start with first preset of middle range
+  const [amount, setAmount] = React.useState(75000); // Start with $75K (first preset of tier 3)
   const [frequency, setFrequency] = React.useState<DonationFrequency>("one-time");
   const [allocations, setAllocations] = React.useState<AllocationItem[]>([]);
 
