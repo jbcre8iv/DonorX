@@ -383,6 +383,43 @@ export async function deleteTemplate(templateId: string): Promise<{ success: boo
   }
 }
 
+export async function renameTemplate(
+  templateId: string,
+  newName: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "You must be logged in to rename templates" };
+  }
+
+  if (!newName.trim()) {
+    return { success: false, error: "Template name is required" };
+  }
+
+  try {
+    const { error } = await supabase
+      .from("donation_templates")
+      .update({ name: newName.trim() })
+      .eq("id", templateId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("Failed to rename template:", error);
+      return { success: false, error: "Failed to rename template" };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Rename template error:", error);
+    return { success: false, error: "Failed to rename template" };
+  }
+}
+
 // Draft functions for cross-device donation progress
 export async function saveDraft(
   amountCents: number,

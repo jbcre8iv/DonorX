@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, Lock, AlertCircle, RefreshCw, Save, FolderOpen, Trash2, X, LogIn } from "lucide-react";
+import { ArrowLeft, Lock, AlertCircle, RefreshCw, Save, FolderOpen, Trash2, X, LogIn, Pencil, Check } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,7 @@ import { AllocationBuilder, type AllocationItem } from "@/components/donation/al
 import { FrequencySelector, type DonationFrequency } from "@/components/donation/frequency-selector";
 import { type Allocation as AIAllocation } from "@/components/ai/allocation-advisor";
 import { formatCurrency } from "@/lib/utils";
-import { createCheckoutSession, saveTemplate, updateTemplate, loadTemplates, deleteTemplate, clearDraft, type AllocationInput, type DonationTemplate, type TemplateItem, type SaveTemplateResult } from "./actions";
+import { createCheckoutSession, saveTemplate, updateTemplate, loadTemplates, deleteTemplate, renameTemplate, clearDraft, type AllocationInput, type DonationTemplate, type TemplateItem, type SaveTemplateResult } from "./actions";
 import { useCartFavorites, type DraftAllocation, type DonationDraft } from "@/contexts/cart-favorites-context";
 import { useToast } from "@/components/ui/toast";
 import type { Nonprofit, Category } from "@/types/database";
@@ -215,6 +215,9 @@ export function DonateClient({
   const [isSaving, setIsSaving] = React.useState(false);
   const [templateError, setTemplateError] = React.useState<string | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = React.useState<string>("new"); // "new" or existing template ID
+  const [editingTemplateId, setEditingTemplateId] = React.useState<string | null>(null);
+  const [editingTemplateName, setEditingTemplateName] = React.useState("");
+  const [isRenaming, setIsRenaming] = React.useState(false);
 
   // Load templates on mount
   React.useEffect(() => {
@@ -403,6 +406,36 @@ export function DonateClient({
     if (result.success) {
       setTemplates((prev) => prev.filter((t) => t.id !== templateId));
     }
+  };
+
+  const handleStartRename = (template: DonationTemplate) => {
+    setEditingTemplateId(template.id);
+    setEditingTemplateName(template.name);
+  };
+
+  const handleCancelRename = () => {
+    setEditingTemplateId(null);
+    setEditingTemplateName("");
+  };
+
+  const handleSaveRename = async () => {
+    if (!editingTemplateId || !editingTemplateName.trim()) return;
+
+    setIsRenaming(true);
+    const result = await renameTemplate(editingTemplateId, editingTemplateName.trim());
+
+    if (result.success) {
+      setTemplates((prev) =>
+        prev.map((t) =>
+          t.id === editingTemplateId ? { ...t, name: editingTemplateName.trim() } : t
+        )
+      );
+      setEditingTemplateId(null);
+      setEditingTemplateName("");
+    } else {
+      addToast(result.error || "Failed to rename template", "error");
+    }
+    setIsRenaming(false);
   };
 
   const isRecurring = frequency !== "one-time";
@@ -938,16 +971,58 @@ export function DonateClient({
                     >
                       {/* Template Header */}
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-medium text-slate-900 flex-1">
-                          {template.name}
-                        </h4>
-                        <button
-                          onClick={() => handleDeleteTemplate(template.id)}
-                          className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors flex-shrink-0"
-                          title="Delete template"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {editingTemplateId === template.id ? (
+                          <div className="flex items-center gap-2 flex-1">
+                            <input
+                              type="text"
+                              value={editingTemplateName}
+                              onChange={(e) => setEditingTemplateName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleSaveRename();
+                                if (e.key === "Escape") handleCancelRename();
+                              }}
+                              className="flex-1 px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              autoFocus
+                              disabled={isRenaming}
+                            />
+                            <button
+                              onClick={handleSaveRename}
+                              disabled={isRenaming || !editingTemplateName.trim()}
+                              className="rounded p-1.5 text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+                              title="Save"
+                            >
+                              <Check className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={handleCancelRename}
+                              disabled={isRenaming}
+                              className="rounded p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"
+                              title="Cancel"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <h4 className="font-medium text-slate-900 flex-1">
+                              {template.name}
+                            </h4>
+                            <button
+                              onClick={() => handleStartRename(template)}
+                              className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors flex-shrink-0"
+                              title="Rename template"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTemplate(template.id)}
+                              className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors flex-shrink-0"
+                              title="Delete template"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
 
                       {/* Description */}
