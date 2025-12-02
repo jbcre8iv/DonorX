@@ -148,7 +148,7 @@ export function AmountInput({
             {getRangeLabelForTier(tierIndex)}
           </span>
         </div>
-        <div className="relative px-2">
+        <div className="relative">
           <input
             type="range"
             min="0"
@@ -161,22 +161,23 @@ export function AmountInput({
               background: `linear-gradient(to right, #1d4ed8 0%, #1d4ed8 ${(tierIndex / 6) * 100}%, #e2e8f0 ${(tierIndex / 6) * 100}%, #e2e8f0 100%)`,
             }}
           />
-        </div>
-        {/* Tier labels - clickable */}
-        <div className="flex justify-between mt-2 text-xs text-slate-500">
-          {["$0", "$1K", "$15K", "$150K", "$750K", "$2.5M", "$50M"].map((label, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => handleTierChange(idx)}
-              className={cn(
-                "hover:text-blue-600 transition-colors min-w-[40px] text-center",
-                idx === tierIndex && "text-blue-600 font-medium"
-              )}
-            >
-              {label}
-            </button>
-          ))}
+          {/* Subtle tick marks */}
+          <div className="flex justify-between mt-2 px-0.5">
+            {[0, 1, 2, 3, 4, 5, 6].map((tick) => (
+              <div
+                key={tick}
+                className={cn(
+                  "w-px h-2 rounded-full",
+                  tick <= tierIndex ? "bg-blue-300" : "bg-slate-300"
+                )}
+              />
+            ))}
+          </div>
+          {/* Min/Max labels only */}
+          <div className="flex justify-between mt-1 text-xs text-slate-400">
+            <span>$0</span>
+            <span>$50M</span>
+          </div>
         </div>
       </div>
 
