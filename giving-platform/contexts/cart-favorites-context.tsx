@@ -597,9 +597,19 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
-        setUserId(session.user.id);
-        // Re-initialize to sync
-        initialize();
+        // Fetch user data from database immediately on sign in
+        const uid = session.user.id;
+        setUserId(uid);
+
+        try {
+          const freshData = await fetchFromDatabase(uid);
+          setCartItems(freshData.cart);
+          setFavorites(freshData.favorites);
+          setDonationDraft(freshData.draft);
+          saveToLocalStorage(freshData.cart, freshData.favorites);
+        } catch (error) {
+          console.error("Error fetching data on sign in:", error);
+        }
       } else if (event === "SIGNED_OUT") {
         setUserId(null);
         // Clean up subscriptions
@@ -625,31 +635,43 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   // Track previous userId to detect logout
   const prevUserIdRef = useRef<string | null>(null);
 
-  // Re-check auth status when pathname changes (catches logout redirect)
+  // Re-check auth status when pathname changes (catches login/logout redirects)
   useEffect(() => {
-    const checkAuthAndClear = async () => {
+    const checkAuthAndSync = async () => {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Only clear local state when user has JUST logged out
-      // (we had a userId before, but now there's no authenticated user)
-      // This prevents clearing when: initial load, or refreshing while logged out
+      // Case 1: User just logged out (had userId, now no user)
       if (prevUserIdRef.current && !user) {
         setUserId(null);
         setCartItems([]);
         setFavorites([]);
         setDonationDraft(null);
-        // Only clear localStorage cache, NOT the database
         localStorage.removeItem(CART_STORAGE_KEY);
         localStorage.removeItem(FAVORITES_STORAGE_KEY);
         localStorage.removeItem(DRAFT_STORAGE_KEY);
+      }
+
+      // Case 2: User just logged in (no userId in state, but user exists)
+      // This catches the case where login redirect happens before SIGNED_IN event
+      if (!userId && user) {
+        setUserId(user.id);
+        try {
+          const freshData = await fetchFromDatabase(user.id);
+          setCartItems(freshData.cart);
+          setFavorites(freshData.favorites);
+          setDonationDraft(freshData.draft);
+          saveToLocalStorage(freshData.cart, freshData.favorites);
+        } catch (error) {
+          console.error("Error fetching data on pathname change:", error);
+        }
       }
 
       // Update the ref for next comparison
       prevUserIdRef.current = userId;
     };
 
-    checkAuthAndClear();
-  }, [pathname, userId, supabase]);
+    checkAuthAndSync();
+  }, [pathname, userId, supabase, fetchFromDatabase, saveToLocalStorage]);
 
   // Cart total percentage
   const cartTotal = cartItems.reduce((sum, item) => sum + item.percentage, 0);
