@@ -88,17 +88,17 @@ export function CartTab() {
     // Check if on donate page (usePathname returns path without query params)
     const shouldRedirect = pathname === "/donate";
     try {
-      // Close sidebar first to trigger re-render with cleared state
-      setSidebarOpen(false);
       await clearDonationDraft();
-      // If user is on the donate page, redirect to directory to start fresh
-      if (shouldRedirect) {
-        router.push("/directory");
-      }
     } catch (error) {
       console.error("Error clearing draft:", error);
     } finally {
       setIsClearingDraft(false);
+      // Close sidebar after clearing
+      setSidebarOpen(false);
+      // Always redirect to directory if on donate page (even if clearing failed)
+      if (shouldRedirect) {
+        router.push("/directory");
+      }
     }
   };
 
