@@ -8,45 +8,45 @@ const MAX_AMOUNT = 50_000_000; // $50 million
 
 // Get the tier index that best contains a given amount
 function getTierForAmount(amount: number): number {
-  if (amount <= 1000) return 0;
-  if (amount <= 15000) return 1;
-  if (amount <= 150000) return 2;
-  if (amount <= 750000) return 3;
-  if (amount <= 2500000) return 4;
-  if (amount <= 15000000) return 5;
+  if (amount <= 500) return 0;
+  if (amount <= 5000) return 1;
+  if (amount <= 50000) return 2;
+  if (amount <= 250000) return 3;
+  if (amount <= 1000000) return 4;
+  if (amount <= 10000000) return 5;
   return 6;
 }
 
-// Map tier index to preset amounts
+// Map tier index to preset amounts - no overlaps between tiers
 function getPresetsForTier(tierIndex: number): number[] {
   switch (tierIndex) {
-    case 0: // $0 - $1,000 range
-      return [25, 50, 100, 250, 500, 1000];
-    case 1: // $1,000 - $15,000 range
-      return [1000, 2500, 5000, 7500, 10000, 15000];
-    case 2: // $10,000 - $150,000 range
-      return [10000, 25000, 50000, 75000, 100000, 150000];
-    case 3: // $100,000 - $750,000 range
-      return [100000, 150000, 250000, 350000, 500000, 750000];
-    case 4: // $500,000 - $2.5M range
-      return [500000, 750000, 1000000, 1500000, 2000000, 2500000];
-    case 5: // $1M - $15M range
-      return [1000000, 2500000, 5000000, 7500000, 10000000, 15000000];
-    case 6: // $10M - $50M range
+    case 0: // $0 - $500
+      return [25, 50, 100, 150, 250, 500];
+    case 1: // $500 - $5,000
+      return [750, 1000, 1500, 2500, 3500, 5000];
+    case 2: // $5,000 - $50,000
+      return [7500, 10000, 15000, 25000, 35000, 50000];
+    case 3: // $50,000 - $250,000
+      return [75000, 100000, 125000, 150000, 200000, 250000];
+    case 4: // $250,000 - $1M
+      return [350000, 500000, 650000, 750000, 850000, 1000000];
+    case 5: // $1M - $10M
+      return [1500000, 2500000, 4000000, 5000000, 7500000, 10000000];
+    case 6: // $10M - $50M
     default:
-      return [10000000, 15000000, 20000000, 25000000, 35000000, 50000000];
+      return [15000000, 20000000, 25000000, 30000000, 40000000, 50000000];
   }
 }
 
 // Get the range label based on tier index
 function getRangeLabelForTier(tierIndex: number): string {
   switch (tierIndex) {
-    case 0: return "$0 - $1,000";
-    case 1: return "$1,000 - $15,000";
-    case 2: return "$10,000 - $150,000";
-    case 3: return "$100,000 - $750,000";
-    case 4: return "$500,000 - $2.5M";
-    case 5: return "$1M - $15M";
+    case 0: return "$0 - $500";
+    case 1: return "$500 - $5,000";
+    case 2: return "$5,000 - $50,000";
+    case 3: return "$50,000 - $250,000";
+    case 4: return "$250,000 - $1M";
+    case 5: return "$1M - $10M";
     case 6:
     default: return "$10M - $50M";
   }
