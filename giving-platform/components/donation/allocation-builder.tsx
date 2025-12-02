@@ -420,7 +420,7 @@ export function AllocationBuilder({
               >
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-emerald-600" />
-                  <span className="text-sm font-medium text-emerald-900">Need help getting started?</span>
+                  <span className="text-sm font-medium text-emerald-900">Smart giving starts here</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-emerald-600">AI Assistant</span>
