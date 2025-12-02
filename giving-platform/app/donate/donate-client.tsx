@@ -49,6 +49,8 @@ export function DonateClient({
   const [loadedFromDraft, setLoadedFromDraft] = React.useState(false);
   // Track the last draft we saved to avoid syncing our own changes back
   const lastSavedDraftRef = React.useRef<string | null>(null);
+  // Track when proceeding to payment to prevent redirect on draft clear
+  const proceedingToPaymentRef = React.useRef(false);
 
   const [amount, setAmount] = React.useState(75000); // Start with $75K (first preset of tier 3)
   const [frequency, setFrequency] = React.useState<DonationFrequency>("one-time");
@@ -136,8 +138,9 @@ export function DonateClient({
 
   // Redirect when draft is cleared externally (e.g., from "Clear & Start Over" on another device)
   // Only redirect if the allocations were originally loaded from a draft
+  // Don't redirect if user is proceeding to payment (they cleared draft intentionally)
   React.useEffect(() => {
-    if (draftLoaded && loadedFromDraft && donationDraft === null && allocations.length > 0) {
+    if (draftLoaded && loadedFromDraft && donationDraft === null && allocations.length > 0 && !proceedingToPaymentRef.current) {
       // Draft was cleared externally - redirect to directory
       console.log('[Donate] Draft cleared on another device, redirecting to directory');
       router.push('/directory');
@@ -541,9 +544,11 @@ export function DonateClient({
       const result = await createCheckoutSession(amountCents, allocationInputs, frequency);
 
       if (result.success && result.url) {
+        // Mark that we're proceeding to payment to prevent redirect on draft clear
+        proceedingToPaymentRef.current = true;
         // Clear the draft since user is proceeding to payment
         await clearDonationDraft();
-        // Redirect to Stripe Checkout
+        // Redirect to Stripe Checkout (or success page for simulation mode)
         window.location.assign(result.url);
       } else {
         setError(result.error || "Something went wrong. Please try again.");
