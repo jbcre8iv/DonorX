@@ -384,13 +384,15 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         data: { user },
       } = await supabase.auth.getUser();
 
-      // If no user, clear any stale data that may have been left behind
-      // This handles the case where server-side logout happens and SIGNED_OUT event doesn't fire
+      // If no user, just set empty state (don't load from localStorage)
+      // The data will persist in the database for when they log back in
       if (!user) {
         setUserId(null);
         setCartItems([]);
         setFavorites([]);
         setDonationDraft(null);
+        // Clear localStorage cache since no user is logged in
+        // This doesn't affect the database - data is preserved there
         localStorage.removeItem(CART_STORAGE_KEY);
         localStorage.removeItem(FAVORITES_STORAGE_KEY);
         localStorage.removeItem(DRAFT_STORAGE_KEY);
@@ -620,34 +622,34 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Track previous userId to detect logout
+  const prevUserIdRef = useRef<string | null>(null);
+
   // Re-check auth status when pathname changes (catches logout redirect)
   useEffect(() => {
     const checkAuthAndClear = async () => {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // If no user is logged in, clear everything
-      // This handles server-side logout where SIGNED_OUT event may not fire
-      if (!user) {
-        // Only clear if there's actually data to clear (state or localStorage)
-        const hasStateData = userId || cartItems.length > 0 || favorites.length > 0 || donationDraft;
-        const hasLocalData = localStorage.getItem(CART_STORAGE_KEY) ||
-                            localStorage.getItem(FAVORITES_STORAGE_KEY) ||
-                            localStorage.getItem(DRAFT_STORAGE_KEY);
-
-        if (hasStateData || hasLocalData) {
-          setUserId(null);
-          setCartItems([]);
-          setFavorites([]);
-          setDonationDraft(null);
-          localStorage.removeItem(CART_STORAGE_KEY);
-          localStorage.removeItem(FAVORITES_STORAGE_KEY);
-          localStorage.removeItem(DRAFT_STORAGE_KEY);
-        }
+      // Only clear local state when user has JUST logged out
+      // (we had a userId before, but now there's no authenticated user)
+      // This prevents clearing when: initial load, or refreshing while logged out
+      if (prevUserIdRef.current && !user) {
+        setUserId(null);
+        setCartItems([]);
+        setFavorites([]);
+        setDonationDraft(null);
+        // Only clear localStorage cache, NOT the database
+        localStorage.removeItem(CART_STORAGE_KEY);
+        localStorage.removeItem(FAVORITES_STORAGE_KEY);
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
       }
+
+      // Update the ref for next comparison
+      prevUserIdRef.current = userId;
     };
 
     checkAuthAndClear();
-  }, [pathname, userId, cartItems.length, favorites.length, donationDraft, supabase]);
+  }, [pathname, userId, supabase]);
 
   // Cart total percentage
   const cartTotal = cartItems.reduce((sum, item) => sum + item.percentage, 0);
