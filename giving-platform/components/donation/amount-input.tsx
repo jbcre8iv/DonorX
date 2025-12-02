@@ -219,7 +219,10 @@ export function AmountInput({
           Custom Amount
         </label>
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
+          <span className={cn(
+            "absolute left-3 top-1/2 -translate-y-1/2 font-medium pointer-events-none",
+            isCustom && customAmount ? "text-slate-700" : "text-slate-400"
+          )}>
             $
           </span>
           <Input
