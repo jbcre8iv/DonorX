@@ -148,7 +148,7 @@ export function AmountInput({
             {getRangeLabelForTier(tierIndex)}
           </span>
         </div>
-        <div className="relative">
+        <div className="relative px-2">
           <input
             type="range"
             min="0"
@@ -156,28 +156,27 @@ export function AmountInput({
             step="1"
             value={tierIndex}
             onChange={handleRangeChange}
-            onInput={handleRangeChange}
-            className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb"
+            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb"
             style={{
               background: `linear-gradient(to right, #1d4ed8 0%, #1d4ed8 ${(tierIndex / 6) * 100}%, #e2e8f0 ${(tierIndex / 6) * 100}%, #e2e8f0 100%)`,
             }}
           />
-          {/* Tier labels - clickable */}
-          <div className="flex justify-between mt-2 text-xs text-slate-500">
-            {["$0", "$1K", "$15K", "$150K", "$750K", "$2.5M", "$50M"].map((label, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleTierChange(idx)}
-                className={cn(
-                  "hover:text-blue-600 transition-colors",
-                  idx === tierIndex && "text-blue-600 font-medium"
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+        </div>
+        {/* Tier labels - clickable */}
+        <div className="flex justify-between mt-2 text-xs text-slate-500">
+          {["$0", "$1K", "$15K", "$150K", "$750K", "$2.5M", "$50M"].map((label, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => handleTierChange(idx)}
+              className={cn(
+                "hover:text-blue-600 transition-colors min-w-[40px] text-center",
+                idx === tierIndex && "text-blue-600 font-medium"
+              )}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
