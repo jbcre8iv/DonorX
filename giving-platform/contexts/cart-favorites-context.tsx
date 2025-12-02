@@ -1000,10 +1000,14 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       try {
         // Mark that we're doing a local operation so realtime ignores our own update
         isLocalDraftOperation.current = true;
-        await supabase
+        const { error } = await supabase
           .from("donation_drafts")
           .delete()
           .eq("user_id", userId);
+
+        if (error) {
+          console.error("Error deleting donation draft:", error);
+        }
         // Reset flag after a short delay to ensure realtime event has been processed
         setTimeout(() => {
           isLocalDraftOperation.current = false;
