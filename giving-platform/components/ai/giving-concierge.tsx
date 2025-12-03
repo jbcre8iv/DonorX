@@ -339,7 +339,7 @@ export function GivingConcierge() {
   ];
 
   // Handle nonprofit card click - fetch data and open modal
-  const handleNonprofitClick = useCallback(async (nonprofitId: string, name: string) => {
+  const handleNonprofitClick = useCallback((nonprofitId: string, name: string) => {
     console.log("handleNonprofitClick called:", { nonprofitId, name });
 
     // Validate UUID format before querying
@@ -350,38 +350,39 @@ export function GivingConcierge() {
     }
 
     console.log("UUID valid, fetching nonprofit...");
-    try {
-      // Create fresh client to avoid stale closure issues
-      const freshSupabase = createClient();
-      console.log("Fresh Supabase client created");
 
-      const result = await freshSupabase
-        .from("nonprofits")
-        .select("*, category:categories(*)")
-        .eq("id", nonprofitId)
-        .single();
+    // Create fresh client to avoid stale closure issues
+    const freshSupabase = createClient();
+    console.log("Fresh Supabase client created");
 
-      console.log("Supabase full result:", result);
-      const { data: nonprofit, error } = result;
+    freshSupabase
+      .from("nonprofits")
+      .select("*, category:categories(*)")
+      .eq("id", nonprofitId)
+      .single()
+      .then((result) => {
+        console.log("Supabase full result:", result);
+        const { data: nonprofit, error } = result;
 
-      if (error) {
-        console.error("Supabase error:", error);
-        return;
-      }
+        if (error) {
+          console.error("Supabase error:", error);
+          return;
+        }
 
-      if (!nonprofit) {
-        console.error("Nonprofit not found for ID:", nonprofitId);
-        return;
-      }
+        if (!nonprofit) {
+          console.error("Nonprofit not found for ID:", nonprofitId);
+          return;
+        }
 
-      console.log("Opening modal with nonprofit:", nonprofit.name);
-      setSelectedNonprofit(nonprofit as Nonprofit);
-      console.log("State set, opening modal...");
-      setNonprofitModalOpen(true);
-      console.log("Modal should be open now");
-    } catch (error) {
-      console.error("Caught exception:", error);
-    }
+        console.log("Opening modal with nonprofit:", nonprofit.name);
+        setSelectedNonprofit(nonprofit as Nonprofit);
+        console.log("State set, opening modal...");
+        setNonprofitModalOpen(true);
+        console.log("Modal should be open now");
+      })
+      .catch((error) => {
+        console.error("Caught exception:", error);
+      });
   }, []);
 
   // Close nonprofit modal
