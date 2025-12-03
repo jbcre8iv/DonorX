@@ -53,18 +53,18 @@ export async function POST(request: Request) {
       })
       .join("\n");
 
-    const contextMessage = `Available nonprofits on DonorX (use [[NONPROFIT:id:name]] format when recommending):\n${nonprofitContext}`;
+    const contextMessage = `IMPORTANT: These are the ONLY nonprofits available. Use EXACT IDs from this list - do not make up any IDs or names:\n${nonprofitContext}`;
 
     // Build messages array with context
     const apiMessages: Array<{ role: "user" | "assistant"; content: string }> = [
       {
         role: "user",
-        content: `Here's context about available nonprofits:\n${contextMessage}`,
+        content: contextMessage,
       },
       {
         role: "assistant",
         content:
-          "I understand. I have information about these nonprofits and can help you find the right fit for your giving goals.",
+          "I understand. I will ONLY recommend nonprofits from this exact list using their real IDs.",
       },
       ...messages.map((m: { role: string; content: string }) => ({
         role: m.role as "user" | "assistant",

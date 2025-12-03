@@ -343,6 +343,15 @@ export function GivingConcierge() {
 
   // Handle nonprofit card click - fetch data and open modal
   const handleNonprofitClick = useCallback(async (nonprofitId: string, name: string) => {
+    // Validate UUID format before querying
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(nonprofitId)) {
+      console.error("Invalid nonprofit ID format:", nonprofitId);
+      // Show a user-friendly message - the AI generated an invalid ID
+      alert(`Sorry, "${name}" could not be found. The AI may have generated an invalid reference.`);
+      return;
+    }
+
     setLoadingNonprofitId(nonprofitId);
     try {
       const { data: nonprofit, error } = await supabase
@@ -353,6 +362,7 @@ export function GivingConcierge() {
 
       if (error) {
         console.error("Error fetching nonprofit:", error);
+        alert(`Sorry, "${name}" could not be found in our database.`);
         return;
       }
 
@@ -361,9 +371,11 @@ export function GivingConcierge() {
         setNonprofitModalOpen(true);
       } else {
         console.error("Nonprofit not found:", nonprofitId);
+        alert(`Sorry, "${name}" could not be found in our database.`);
       }
     } catch (error) {
       console.error("Error fetching nonprofit:", error);
+      alert("Something went wrong. Please try again.");
     } finally {
       setLoadingNonprofitId(null);
     }
