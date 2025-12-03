@@ -355,12 +355,15 @@ export function GivingConcierge() {
     const freshSupabase = createClient();
     console.log("Fresh Supabase client created");
 
-    freshSupabase
-      .from("nonprofits")
-      .select("*, category:categories(*)")
-      .eq("id", nonprofitId)
-      .single()
-      .then((result) => {
+    // Wrap in async IIFE to use try/catch
+    (async () => {
+      try {
+        const result = await freshSupabase
+          .from("nonprofits")
+          .select("*, category:categories(*)")
+          .eq("id", nonprofitId)
+          .single();
+
         console.log("Supabase full result:", result);
         const { data: nonprofit, error } = result;
 
@@ -379,10 +382,10 @@ export function GivingConcierge() {
         console.log("State set, opening modal...");
         setNonprofitModalOpen(true);
         console.log("Modal should be open now");
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Caught exception:", error);
-      });
+      }
+    })();
   }, []);
 
   // Close nonprofit modal
