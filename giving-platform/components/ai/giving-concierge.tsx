@@ -553,7 +553,7 @@ export function GivingConcierge() {
                       >
                         {message.content ? (
                           message.role === "assistant" ? (
-                            <div className="whitespace-pre-wrap leading-relaxed [&>ul]:mt-1 [&>ul]:space-y-1 [&>ul]:list-disc [&>ul]:pl-4">
+                            <div className="leading-relaxed [&>ul]:mt-1 [&>ul]:space-y-1 [&>ul]:list-disc [&>ul]:pl-4">
                               {renderMessageContent(message.content, handleNonprofitClick)}
                             </div>
                           ) : (
