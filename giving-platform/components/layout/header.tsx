@@ -316,9 +316,17 @@ export function Header({ initialUser = null }: HeaderProps) {
         </div>
       </div>
 
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 top-16 z-40 bg-black/50 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white">
+        <div className="md:hidden border-t border-slate-200 bg-white relative z-50">
           <nav className="flex flex-col px-4 py-4 space-y-3">
             {navLinks.map((link) => {
               const isActive =
