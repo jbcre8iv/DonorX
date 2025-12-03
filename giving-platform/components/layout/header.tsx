@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, LogOut, LayoutDashboard, Settings, Shield, HandHeart } from "lucide-react";
+import { Menu, X, LogOut, LayoutDashboard, Settings, Shield, HandHeart, ChevronDown } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -80,6 +80,7 @@ export function Header({ initialUser = null }: HeaderProps) {
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [user, setUser] = React.useState<{ email: string; firstName: string | null; lastName: string | null; role: string | null; avatarUrl: string | null } | null>(initialUser);
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
+  const [mobileUserMenuOpen, setMobileUserMenuOpen] = React.useState(false);
   const userMenuRef = React.useRef<HTMLDivElement>(null);
 
   // Helper to get full name from first and last name
@@ -349,60 +350,83 @@ export function Header({ initialUser = null }: HeaderProps) {
                 </Link>
               );
             })}
-            <div className="flex flex-col gap-3 pt-4 border-t border-slate-200">
+            <div className="pt-4 border-t border-slate-200">
               {user ? (
-                <>
-                  <div className="flex items-center gap-3 pb-2">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold overflow-hidden">
-                      {user.avatarUrl ? (
-                        <Image
-                          src={user.avatarUrl}
-                          alt="Profile"
-                          width={40}
-                          height={40}
-                          className="h-full w-full object-cover"
-                          unoptimized
-                        />
-                      ) : (
-                        getInitials(user.firstName, user.lastName, user.email)
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-900 truncate">{getFullName(user.firstName, user.lastName) || "User"}</p>
-                      <p className="text-sm text-slate-500 truncate">{user.email}</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" asChild fullWidth>
-                    <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                      Dashboard
-                    </Link>
-                  </Button>
-                  <Button variant="outline" asChild fullWidth>
-                    <Link href="/dashboard/settings" onClick={() => setMobileMenuOpen(false)}>
-                      Account Settings
-                    </Link>
-                  </Button>
-                  {(user.role === "owner" || user.role === "admin") && (
-                    <Button variant="outline" asChild fullWidth className="text-purple-700 border-purple-200 hover:bg-purple-50">
-                      <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
-                        <Shield className="h-4 w-4 mr-2" />
-                        Admin Panel
-                      </Link>
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    fullWidth
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      handleLogout();
-                    }}
+                <div>
+                  {/* Collapsible user menu trigger */}
+                  <button
+                    onClick={() => setMobileUserMenuOpen(!mobileUserMenuOpen)}
+                    className="flex items-center justify-between w-full py-2 text-left"
                   >
-                    Log out
-                  </Button>
-                </>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold overflow-hidden">
+                        {user.avatarUrl ? (
+                          <Image
+                            src={user.avatarUrl}
+                            alt="Profile"
+                            width={40}
+                            height={40}
+                            className="h-full w-full object-cover"
+                            unoptimized
+                          />
+                        ) : (
+                          getInitials(user.firstName, user.lastName, user.email)
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-900 truncate">{getFullName(user.firstName, user.lastName) || "User"}</p>
+                        <p className="text-sm text-slate-500 truncate">{user.email}</p>
+                      </div>
+                    </div>
+                    <ChevronDown className={cn(
+                      "h-5 w-5 text-slate-400 transition-transform",
+                      mobileUserMenuOpen && "rotate-180"
+                    )} />
+                  </button>
+                  {/* Dropdown menu items */}
+                  {mobileUserMenuOpen && (
+                    <div className="mt-2 ml-2 pl-4 border-l-2 border-slate-200 space-y-1">
+                      <Link
+                        href="/dashboard"
+                        className="flex items-center gap-3 py-2 px-2 text-slate-700 hover:bg-slate-50 rounded-lg"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <LayoutDashboard className="h-4 w-4 text-slate-500" />
+                        Dashboard
+                      </Link>
+                      <Link
+                        href="/dashboard/settings"
+                        className="flex items-center gap-3 py-2 px-2 text-slate-700 hover:bg-slate-50 rounded-lg"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Settings className="h-4 w-4 text-slate-500" />
+                        Account Settings
+                      </Link>
+                      {(user.role === "owner" || user.role === "admin") && (
+                        <Link
+                          href="/admin"
+                          className="flex items-center gap-3 py-2 px-2 text-purple-700 hover:bg-purple-50 rounded-lg"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <Shield className="h-4 w-4" />
+                          Admin Panel
+                        </Link>
+                      )}
+                      <button
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          handleLogout();
+                        }}
+                        className="flex items-center gap-3 py-2 px-2 w-full text-left text-red-600 hover:bg-red-50 rounded-lg"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Log out
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
-                <>
+                <div className="flex flex-col gap-3">
                   <Button variant="outline" asChild fullWidth>
                     <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                       Login
@@ -413,7 +437,7 @@ export function Header({ initialUser = null }: HeaderProps) {
                       Get Started
                     </Link>
                   </Button>
-                </>
+                </div>
               )}
             </div>
           </nav>
