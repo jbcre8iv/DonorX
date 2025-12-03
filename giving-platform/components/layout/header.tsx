@@ -20,6 +20,13 @@ const navLinks = [
   { href: "/contact", label: "Contact" },
 ];
 
+// Secondary links for mobile hamburger menu (items not in bottom nav)
+const mobileMenuLinks = [
+  { href: "/apply", label: "For Nonprofits" },
+  { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
+];
+
 // Giving List button component to avoid hook issues
 function GivingListButton() {
   const { cartItems, setSidebarOpen, hasDraft } = useCartFavorites();
@@ -316,24 +323,21 @@ export function Header({ initialUser = null }: HeaderProps) {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Only secondary links (Home, Directory, Profile are in bottom nav) */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-slate-200 bg-white">
-          <nav className="flex flex-col px-4 py-4 space-y-3">
-            {navLinks.map((link) => {
-              const isActive =
-                link.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(link.href);
+          <nav className="flex flex-col px-4 py-4 space-y-1">
+            {mobileMenuLinks.map((link) => {
+              const isActive = pathname.startsWith(link.href);
               return (
                 <Link
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "text-base font-medium transition-colors py-2",
+                    "text-base font-medium transition-colors py-3 px-2 rounded-lg",
                     isActive
-                      ? "text-blue-700"
-                      : "text-slate-600 hover:text-slate-900"
+                      ? "text-blue-700 bg-blue-50"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                   )}
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -341,73 +345,6 @@ export function Header({ initialUser = null }: HeaderProps) {
                 </Link>
               );
             })}
-            <div className="flex flex-col gap-3 pt-4 border-t border-slate-200">
-              {user ? (
-                <>
-                  <div className="flex items-center gap-3 pb-2">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold overflow-hidden">
-                      {user.avatarUrl ? (
-                        <Image
-                          src={user.avatarUrl}
-                          alt="Profile"
-                          width={40}
-                          height={40}
-                          className="h-full w-full object-cover"
-                          unoptimized
-                        />
-                      ) : (
-                        getInitials(user.firstName, user.lastName, user.email)
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-900 truncate">{getFullName(user.firstName, user.lastName) || "User"}</p>
-                      <p className="text-sm text-slate-500 truncate">{user.email}</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" asChild fullWidth>
-                    <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                      Dashboard
-                    </Link>
-                  </Button>
-                  <Button variant="outline" asChild fullWidth>
-                    <Link href="/dashboard/settings" onClick={() => setMobileMenuOpen(false)}>
-                      Account Settings
-                    </Link>
-                  </Button>
-                  {(user.role === "owner" || user.role === "admin") && (
-                    <Button variant="outline" asChild fullWidth className="text-purple-700 border-purple-200 hover:bg-purple-50">
-                      <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
-                        <Shield className="h-4 w-4 mr-2" />
-                        Admin Panel
-                      </Link>
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    fullWidth
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      handleLogout();
-                    }}
-                  >
-                    Log out
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button variant="outline" asChild fullWidth>
-                    <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                      Login
-                    </Link>
-                  </Button>
-                  <Button asChild fullWidth>
-                    <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
-                      Get Started
-                    </Link>
-                  </Button>
-                </>
-              )}
-            </div>
           </nav>
         </div>
       )}

@@ -19,11 +19,93 @@ interface Message {
 // Regex to match [[NONPROFIT:id:name]] format
 const NONPROFIT_CARD_REGEX = /\[\[NONPROFIT:([^:]+):([^\]]+)\]\]/g;
 
+// Format text with basic markdown-like styling
+function formatText(text: string, keyPrefix: string): ReactNode[] {
+  const result: ReactNode[] = [];
+
+  // Split by double newlines to get paragraphs
+  const paragraphs = text.split(/\n\n+/);
+
+  paragraphs.forEach((paragraph, pIndex) => {
+    const trimmed = paragraph.trim();
+    if (!trimmed) return;
+
+    // Check if it's a numbered list item (e.g., "1. Item" or "1) Item")
+    if (/^\d+[\.\)]\s/.test(trimmed)) {
+      const items = trimmed.split(/\n/).filter(line => line.trim());
+      result.push(
+        <ol key={`${keyPrefix}-ol-${pIndex}`} className="space-y-2 my-3">
+          {items.map((item, i) => {
+            const content = item.replace(/^\d+[\.\)]\s*/, '');
+            // Bold text between ** **
+            const formatted = content.split(/\*\*(.+?)\*\*/).map((part, j) =>
+              j % 2 === 1 ? <strong key={j} className="font-semibold text-slate-900">{part}</strong> : part
+            );
+            return (
+              <li key={i} className="flex gap-2">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium flex items-center justify-center">
+                  {i + 1}
+                </span>
+                <span className="flex-1">{formatted}</span>
+              </li>
+            );
+          })}
+        </ol>
+      );
+    }
+    // Check if it's a bullet list
+    else if (/^[-•]\s/.test(trimmed)) {
+      const items = trimmed.split(/\n/).filter(line => line.trim());
+      result.push(
+        <ul key={`${keyPrefix}-ul-${pIndex}`} className="space-y-1.5 my-3 ml-1">
+          {items.map((item, i) => {
+            const content = item.replace(/^[-•]\s*/, '');
+            const formatted = content.split(/\*\*(.+?)\*\*/).map((part, j) =>
+              j % 2 === 1 ? <strong key={j} className="font-semibold text-slate-900">{part}</strong> : part
+            );
+            return (
+              <li key={i} className="flex gap-2 items-start">
+                <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2" />
+                <span className="flex-1">{formatted}</span>
+              </li>
+            );
+          })}
+        </ul>
+      );
+    }
+    // Regular paragraph
+    else {
+      // Handle bold text and line breaks within paragraph
+      const lines = trimmed.split(/\n/);
+      const formattedLines = lines.map((line, lIndex) => {
+        const formatted = line.split(/\*\*(.+?)\*\*/).map((part, j) =>
+          j % 2 === 1 ? <strong key={j} className="font-semibold text-slate-900">{part}</strong> : part
+        );
+        return (
+          <span key={lIndex}>
+            {formatted}
+            {lIndex < lines.length - 1 && <br />}
+          </span>
+        );
+      });
+
+      result.push(
+        <p key={`${keyPrefix}-p-${pIndex}`} className="my-2 first:mt-0 last:mb-0">
+          {formattedLines}
+        </p>
+      );
+    }
+  });
+
+  return result;
+}
+
 // Parse message content and render nonprofit cards
 function renderMessageContent(content: string): ReactNode[] {
   const parts: ReactNode[] = [];
   let lastIndex = 0;
   let match;
+  let partIndex = 0;
 
   // Reset regex lastIndex
   NONPROFIT_CARD_REGEX.lastIndex = 0;
@@ -31,7 +113,8 @@ function renderMessageContent(content: string): ReactNode[] {
   while ((match = NONPROFIT_CARD_REGEX.exec(content)) !== null) {
     // Add text before the match
     if (match.index > lastIndex) {
-      parts.push(content.slice(lastIndex, match.index));
+      const textBefore = content.slice(lastIndex, match.index);
+      parts.push(...formatText(textBefore, `part-${partIndex++}`));
     }
 
     // Add the nonprofit card
@@ -45,10 +128,11 @@ function renderMessageContent(content: string): ReactNode[] {
 
   // Add remaining text after last match
   if (lastIndex < content.length) {
-    parts.push(content.slice(lastIndex));
+    const remainingText = content.slice(lastIndex);
+    parts.push(...formatText(remainingText, `part-${partIndex++}`));
   }
 
-  return parts.length > 0 ? parts : [content];
+  return parts.length > 0 ? parts : formatText(content, 'single');
 }
 
 export function GivingConcierge() {
@@ -370,7 +454,7 @@ export function GivingConcierge() {
                       >
                         {message.content ? (
                           message.role === "assistant" ? (
-                            <div className="whitespace-pre-wrap leading-relaxed [&>ul]:mt-1 [&>ul]:space-y-1 [&>ul]:list-disc [&>ul]:pl-4">
+                            <div className="leading-relaxed text-slate-700">
                               {renderMessageContent(message.content)}
                             </div>
                           ) : (
@@ -435,10 +519,7 @@ export function GivingConcierge() {
                     )}
                   </Button>
                 </div>
-                <p className="text-xs text-slate-400 text-center mt-2">
-                  Powered by Claude AI
-                </p>
-              </form>
+                              </form>
             </>
           )}
         </>
