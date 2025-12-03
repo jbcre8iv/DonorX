@@ -126,7 +126,7 @@ export function GivingConcierge() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Re-check auth and focus input when chat opens
+  // Re-check auth and focus input when chat opens (skip focus on mobile to prevent keyboard)
   useEffect(() => {
     if (isOpen) {
       // Re-check auth status when chatbot is opened
@@ -134,7 +134,9 @@ export function GivingConcierge() {
         setIsAuthenticated(!!session?.user);
       });
 
-      if (!isMinimized && isAuthenticated) {
+      // Only auto-focus on desktop to prevent keyboard opening on mobile
+      const isMobile = window.innerWidth < 640;
+      if (!isMinimized && isAuthenticated && !isMobile) {
         inputRef.current?.focus();
       }
     }
@@ -238,8 +240,10 @@ export function GivingConcierge() {
   return (
     <div
       className={cn(
-        "fixed bottom-6 right-6 z-50 flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 transition-all duration-300",
-        isMinimized ? "w-72 h-14" : "w-96 h-[500px]"
+        "fixed z-50 flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 transition-all duration-300",
+        "bottom-6 right-6 sm:bottom-6 sm:right-6",
+        "max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:bottom-4 max-sm:right-auto",
+        isMinimized ? "w-72 h-14" : "w-96 max-sm:w-[calc(100%-2rem)] h-[500px] max-sm:h-[70vh]"
       )}
     >
       {/* Header */}
