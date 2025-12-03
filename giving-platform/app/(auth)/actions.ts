@@ -39,6 +39,7 @@ export async function register(formData: FormData) {
   const lastName = formData.get("lastName") as string;
   const organizationName = formData.get("organizationName") as string;
   const organizationType = formData.get("organizationType") as string;
+  const redirectTo = formData.get("redirect") as string | null;
   const fullName = `${firstName} ${lastName}`.trim();
 
   // First, sign up the user
@@ -95,10 +96,18 @@ export async function register(formData: FormData) {
     }
 
     revalidatePath("/", "layout");
+    // Redirect to the specified URL or default to dashboard
+    if (redirectTo && redirectTo.startsWith("/")) {
+      redirect(redirectTo);
+    }
     redirect("/dashboard");
   }
 
   revalidatePath("/", "layout");
+  // Redirect to the specified URL or default to dashboard
+  if (redirectTo && redirectTo.startsWith("/")) {
+    redirect(redirectTo);
+  }
   redirect("/dashboard");
 }
 

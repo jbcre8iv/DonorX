@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,9 @@ const organizationTypes = [
   { value: "individual", label: "Individual" },
 ];
 
-export default function RegisterPage() {
+function RegisterForm() {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -26,6 +29,10 @@ export default function RegisterPage() {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
+    // Pass redirect URL to the action
+    if (redirectTo) {
+      formData.set("redirect", redirectTo);
+    }
 
     // Basic validation
     const password = formData.get("password") as string;
@@ -141,12 +148,43 @@ export default function RegisterPage() {
           </form>
           <p className="mt-6 text-center text-sm text-slate-600">
             Already have an account?{" "}
-            <Link href="/login" className="text-blue-700 hover:underline">
+            <Link href={redirectTo ? `/login?redirect=${encodeURIComponent(redirectTo)}` : "/login"} className="text-blue-700 hover:underline">
               Sign in
             </Link>
           </p>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function RegisterFormFallback() {
+  return (
+    <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-12">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Create your account</CardTitle>
+          <CardDescription>
+            Get started with {config.appName} for free
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="h-10 bg-slate-100 rounded animate-pulse" />
+            <div className="h-10 bg-slate-100 rounded animate-pulse" />
+            <div className="h-10 bg-slate-100 rounded animate-pulse" />
+            <div className="h-10 bg-slate-100 rounded animate-pulse" />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<RegisterFormFallback />}>
+      <RegisterForm />
+    </Suspense>
   );
 }

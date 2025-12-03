@@ -88,7 +88,7 @@ function LoginForm() {
         </form>
         <p className="mt-6 text-center text-sm text-slate-600">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-blue-700 hover:underline">
+          <Link href={redirectTo ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"} className="text-blue-700 hover:underline">
             Get started
           </Link>
         </p>
