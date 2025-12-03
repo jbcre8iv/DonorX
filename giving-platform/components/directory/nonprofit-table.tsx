@@ -135,7 +135,7 @@ function ActionButtons({
         >
           <Heart className={`h-4 w-4 ${favorited ? "fill-current" : ""}`} />
         </button>
-        <span className="absolute bottom-full right-0 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
+        <span className="absolute bottom-full left-1/2 -translate-x-[60%] mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
           {favorited ? "Remove from favorites" : "Add to favorites"}
         </span>
       </div>
