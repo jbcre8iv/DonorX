@@ -94,7 +94,7 @@ export function NonprofitModal({ nonprofit, open, onClose }: NonprofitModalProps
         )}
       </ModalBody>
 
-      <ModalFooter>
+      <ModalFooter className="justify-center">
         <Button variant="outline" onClick={onClose}>
           Close
         </Button>
