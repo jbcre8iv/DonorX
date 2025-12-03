@@ -109,7 +109,8 @@ function formatInlineText(text: string): ReactNode[] {
 // Parse message content and render nonprofit cards with formatted text
 function renderMessageContent(
   content: string,
-  onNonprofitClick?: (id: string, name: string) => void
+  onNonprofitClick?: (id: string, name: string) => void,
+  loadingNonprofitId?: string | null
 ): ReactNode[] {
   const parts: ReactNode[] = [];
   let lastIndex = 0;
@@ -138,6 +139,7 @@ function renderMessageContent(
         id={id}
         name={name}
         onClick={onNonprofitClick}
+        isLoading={loadingNonprofitId === id}
       />
     );
 
@@ -343,15 +345,22 @@ export function GivingConcierge() {
   const handleNonprofitClick = useCallback(async (nonprofitId: string, name: string) => {
     setLoadingNonprofitId(nonprofitId);
     try {
-      const { data: nonprofit } = await supabase
+      const { data: nonprofit, error } = await supabase
         .from("nonprofits")
         .select("*, category:categories(*)")
         .eq("id", nonprofitId)
         .single();
 
+      if (error) {
+        console.error("Error fetching nonprofit:", error);
+        return;
+      }
+
       if (nonprofit) {
         setSelectedNonprofit(nonprofit as Nonprofit);
         setNonprofitModalOpen(true);
+      } else {
+        console.error("Nonprofit not found:", nonprofitId);
       }
     } catch (error) {
       console.error("Error fetching nonprofit:", error);
@@ -542,7 +551,7 @@ export function GivingConcierge() {
                         {message.content ? (
                           message.role === "assistant" ? (
                             <div className="whitespace-pre-wrap leading-relaxed [&>ul]:mt-1 [&>ul]:space-y-1 [&>ul]:list-disc [&>ul]:pl-4">
-                              {renderMessageContent(message.content, handleNonprofitClick)}
+                              {renderMessageContent(message.content, handleNonprofitClick, loadingNonprofitId)}
                             </div>
                           ) : (
                             <span className="leading-relaxed">{message.content}</span>
