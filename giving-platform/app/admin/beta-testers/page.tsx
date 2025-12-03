@@ -48,6 +48,14 @@ export default async function BetaTestersPage() {
     console.error("Error fetching beta testers:", error);
   }
 
+  // Transform the data to flatten the added_by_user array to single object
+  const transformedTesters = (testers || []).map(tester => ({
+    ...tester,
+    added_by_user: Array.isArray(tester.added_by_user)
+      ? tester.added_by_user[0] || null
+      : tester.added_by_user
+  }));
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -58,7 +66,7 @@ export default async function BetaTestersPage() {
         </p>
       </div>
 
-      <BetaTestersClient initialTesters={testers || []} />
+      <BetaTestersClient initialTesters={transformedTesters} />
     </div>
   );
 }
