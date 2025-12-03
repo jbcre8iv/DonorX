@@ -130,13 +130,10 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="mt-16 grid gap-8 sm:grid-cols-3">
-            {steps.map((step, index) => (
-              <div key={step.title} className="relative text-center">
+            {steps.map((step) => (
+              <div key={step.title} className="text-center">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
                   <step.icon className="h-8 w-8 text-blue-700" />
-                </div>
-                <div className="absolute -right-4 top-8 hidden text-4xl font-bold text-slate-100 sm:block">
-                  {index + 1}
                 </div>
                 <h3 className="mt-6 text-lg font-semibold text-slate-900">
                   {step.title}
