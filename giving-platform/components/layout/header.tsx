@@ -170,6 +170,7 @@ export function Header({ initialUser = null }: HeaderProps) {
   };
 
   return (
+    <>
     <header
       className={cn(
         "sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur transition-shadow no-print",
@@ -317,7 +318,9 @@ export function Header({ initialUser = null }: HeaderProps) {
         </div>
       </div>
 
-      {/* Mobile Menu Overlay */}
+    </header>
+
+      {/* Mobile Menu Overlay - outside header so it covers page content */}
       {mobileMenuOpen && (
         <div
           className="fixed inset-0 top-16 z-40 bg-black/50 md:hidden"
@@ -325,9 +328,9 @@ export function Header({ initialUser = null }: HeaderProps) {
         />
       )}
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - fixed position below header */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white relative z-50">
+        <div className="fixed top-16 left-0 right-0 z-50 md:hidden border-t border-slate-200 bg-white shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto">
           <div className="px-4 py-4">
             {/* User section at top */}
             <div className="pb-4 border-b border-slate-200">
@@ -448,6 +451,6 @@ export function Header({ initialUser = null }: HeaderProps) {
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 }
