@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +13,12 @@ interface ModalProps {
 }
 
 export function Modal({ open, onClose, children, className }: ModalProps) {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   React.useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -35,10 +42,10 @@ export function Modal({ open, onClose, children, className }: ModalProps) {
     return () => window.removeEventListener("keydown", handleEscape);
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50">
+  const modalContent = (
+    <div className="fixed inset-0 z-[60]">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm"
@@ -58,7 +65,7 @@ export function Modal({ open, onClose, children, className }: ModalProps) {
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="absolute right-4 top-4 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              className="absolute right-4 top-4 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors z-10"
             >
               <X className="h-5 w-5" />
             </button>
@@ -69,6 +76,9 @@ export function Modal({ open, onClose, children, className }: ModalProps) {
       </div>
     </div>
   );
+
+  // Use portal to render modal at document body level
+  return createPortal(modalContent, document.body);
 }
 
 export function ModalHeader({
@@ -107,7 +117,7 @@ export function ModalFooter({
   className?: string;
 }) {
   return (
-    <div className={cn("px-6 pb-6 pt-2 flex gap-3 justify-end", className)}>
+    <div className={cn("px-6 pb-6 pt-2 flex flex-col sm:flex-row gap-2 sm:gap-3 sm:justify-end", className)}>
       {children}
     </div>
   );

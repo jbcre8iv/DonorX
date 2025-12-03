@@ -95,26 +95,26 @@ export function NonprofitModal({ nonprofit, open, onClose, onViewFullProfile }: 
         )}
       </ModalBody>
 
-      <ModalFooter className="justify-center">
-        <Button variant="outline" onClick={onClose}>
-          Close
-        </Button>
-        <Button asChild>
+      <ModalFooter className="sm:justify-center">
+        <Button asChild className="w-full sm:w-auto order-1 sm:order-2">
           <Link href={`/donate?nonprofit=${nonprofit.id}`} onClick={onClose}>
             Donate Now
           </Link>
         </Button>
         {onViewFullProfile ? (
-          <Button variant="ghost" onClick={() => onViewFullProfile(nonprofit.id)}>
+          <Button variant="outline" onClick={() => onViewFullProfile(nonprofit.id)} className="w-full sm:w-auto order-2 sm:order-3">
             View Full Profile
           </Button>
         ) : (
-          <Button variant="ghost" asChild>
+          <Button variant="outline" asChild className="w-full sm:w-auto order-2 sm:order-3">
             <Link href={`/directory/${nonprofit.id}`} onClick={onClose}>
               View Full Profile
             </Link>
           </Button>
         )}
+        <Button variant="ghost" onClick={onClose} className="w-full sm:w-auto order-3 sm:order-1">
+          Close
+        </Button>
       </ModalFooter>
     </Modal>
   );
