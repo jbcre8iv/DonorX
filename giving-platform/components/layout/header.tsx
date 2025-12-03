@@ -40,7 +40,7 @@ function GivingListButton() {
     <button
       onClick={() => setSidebarOpen(true)}
       className={cn(
-        "relative rounded-lg p-2 transition-colors",
+        "relative rounded-lg p-2 md:p-2.5 transition-colors",
         hasDraft
           ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100"
           : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
@@ -48,7 +48,7 @@ function GivingListButton() {
       )}
       aria-label="Open giving list"
     >
-      <HandHeart className={cn("h-5 w-5", isAnimating && !hasDraft && "text-blue-600")} />
+      <HandHeart className={cn("h-5 w-5 md:h-6 md:w-6", isAnimating && !hasDraft && "text-blue-600")} />
       {/* Active donation indicator - pulsing green dot */}
       {hasDraft && (
         <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
