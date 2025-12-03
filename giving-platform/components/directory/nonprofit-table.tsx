@@ -44,7 +44,7 @@ function ActionButtons({
       </Button>
       {/* 2. Add to donation/cart - Secondary giving action */}
       {hasDraft ? (
-        <div className="relative group">
+        <div className="relative group/tip">
           <Button
             variant={inDraft ? "secondary" : "outline"}
             size="sm"
@@ -66,7 +66,7 @@ function ActionButtons({
           </span>
         </div>
       ) : (
-        <div className="relative group">
+        <div className="relative group/tip">
           <Button
             variant={inCart ? "secondary" : "outline"}
             size="sm"
@@ -90,7 +90,7 @@ function ActionButtons({
       )}
       {/* 3. Quick View - Learn more */}
       {onQuickView && (
-        <div className="relative group">
+        <div className="relative group/tip">
           <Button
             variant="outline"
             size="sm"
@@ -107,7 +107,7 @@ function ActionButtons({
       {/* 4. Website - External link */}
       <div className="w-9 h-9 flex items-center justify-center">
         {nonprofit.website && (
-          <div className="relative group">
+          <div className="relative group/tip">
             <Button variant="outline" size="sm" className="h-9 w-9 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer" asChild>
               <a
                 href={nonprofit.website}
@@ -124,7 +124,7 @@ function ActionButtons({
         )}
       </div>
       {/* 5. Favorite - Passive "save for later" action */}
-      <div className="relative group">
+      <div className="relative group/tip">
         <button
           onClick={onToggleFavorite}
           className={`h-9 w-9 flex items-center justify-center rounded-xl border transition-all cursor-pointer ${
@@ -135,7 +135,7 @@ function ActionButtons({
         >
           <Heart className={`h-4 w-4 ${favorited ? "fill-current" : ""}`} />
         </button>
-        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
+        <span className="absolute bottom-full left-1/2 -translate-x-full mr-[-18px] mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
           {favorited ? "Remove from favorites" : "Add to favorites"}
         </span>
       </div>

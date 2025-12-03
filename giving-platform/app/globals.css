@@ -129,9 +129,10 @@ body {
   pointer-events: none;
 }
 
-.group:hover .tooltip-animate,
-.group\/btn:hover .tooltip-animate,
-.group\/fav:hover .tooltip-animate {
+/* Only trigger tooltip on direct parent hover - use specific group names to avoid card-level group triggering all tooltips */
+.group\/btn:hover > .tooltip-animate,
+.group\/fav:hover > .tooltip-animate,
+.group\/tip:hover > .tooltip-animate {
   animation: tooltipFadeInOut 2s ease-in-out forwards;
 }
 

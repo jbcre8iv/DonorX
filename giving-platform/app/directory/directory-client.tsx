@@ -115,8 +115,8 @@ export function DirectoryClient({
   );
 
   return (
-    <div className="py-12">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="py-12 overflow-visible">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 overflow-visible">
         {/* Header */}
         <div className="text-center">
           <h1 className="text-3xl font-semibold text-slate-900 sm:text-4xl">
@@ -206,7 +206,7 @@ export function DirectoryClient({
         </div>
 
         {/* All Nonprofits - single unified list */}
-        <div className="mt-12">
+        <div className="mt-12 overflow-visible">
           {paginatedNonprofits.length > 0 ? (
             <>
               {viewMode === "grid" ? (
