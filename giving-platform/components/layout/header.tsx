@@ -301,8 +301,9 @@ export function Header({ initialUser = null }: HeaderProps) {
           )}
         </div>
 
-        {/* Mobile: Hamburger Menu Button only */}
+        {/* Mobile: Giving List + Hamburger Menu Button */}
         <div className="md:hidden flex items-center gap-1">
+          <GivingListButton />
           <button
             type="button"
             className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
