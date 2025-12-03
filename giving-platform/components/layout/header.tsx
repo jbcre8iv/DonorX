@@ -328,29 +328,9 @@ export function Header({ initialUser = null }: HeaderProps) {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-slate-200 bg-white relative z-50">
-          <nav className="flex flex-col px-4 py-4 space-y-3">
-            {navLinks.map((link) => {
-              const isActive =
-                link.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(link.href);
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "text-base font-medium transition-colors py-2",
-                    isActive
-                      ? "text-blue-700"
-                      : "text-slate-600 hover:text-slate-900"
-                  )}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-            <div className="pt-4 border-t border-slate-200">
+          <div className="px-4 py-4">
+            {/* User section at top */}
+            <div className="pb-4 border-b border-slate-200">
               {user ? (
                 <div>
                   {/* Collapsible user menu trigger */}
@@ -440,7 +420,32 @@ export function Header({ initialUser = null }: HeaderProps) {
                 </div>
               )}
             </div>
-          </nav>
+
+            {/* Navigation links */}
+            <nav className="flex flex-col pt-4 space-y-3">
+              {navLinks.map((link) => {
+                const isActive =
+                  link.href === "/"
+                    ? pathname === "/"
+                    : pathname.startsWith(link.href);
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "text-base font-medium transition-colors py-2",
+                      isActive
+                        ? "text-blue-700"
+                        : "text-slate-600 hover:text-slate-900"
+                    )}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
         </div>
       )}
     </header>
