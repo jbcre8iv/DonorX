@@ -435,9 +435,6 @@ export function GivingConcierge() {
                     )}
                   </Button>
                 </div>
-                <p className="text-xs text-slate-400 text-center mt-2">
-                  Powered by Claude AI
-                </p>
               </form>
             </>
           )}
