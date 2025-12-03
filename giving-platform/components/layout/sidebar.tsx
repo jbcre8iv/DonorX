@@ -131,7 +131,7 @@ export function Sidebar({ variant, userRole }: SidebarProps) {
         className={cn(
           "md:hidden fixed left-0 top-[calc(4rem+49px)] bottom-0 w-64 border-r z-40 transform transition-transform duration-200 ease-in-out no-print",
           isAdmin
-            ? "bg-purple-50/50 border-purple-200"
+            ? "bg-purple-50 border-purple-200"
             : "bg-white border-slate-200",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
