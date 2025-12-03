@@ -351,8 +351,11 @@ export function GivingConcierge() {
 
     console.log("UUID valid, fetching nonprofit...");
     try {
-      console.log("Supabase client:", supabase);
-      const result = await supabase
+      // Create fresh client to avoid stale closure issues
+      const freshSupabase = createClient();
+      console.log("Fresh Supabase client created");
+
+      const result = await freshSupabase
         .from("nonprofits")
         .select("*, category:categories(*)")
         .eq("id", nonprofitId)
@@ -379,7 +382,7 @@ export function GivingConcierge() {
     } catch (error) {
       console.error("Caught exception:", error);
     }
-  }, [supabase]);
+  }, []);
 
   // Close nonprofit modal
   const handleCloseNonprofitModal = useCallback(() => {
