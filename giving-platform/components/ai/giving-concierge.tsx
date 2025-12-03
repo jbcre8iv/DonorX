@@ -109,8 +109,7 @@ function formatInlineText(text: string): ReactNode[] {
 // Parse message content and render nonprofit cards with formatted text
 function renderMessageContent(
   content: string,
-  onNonprofitClick?: (id: string, name: string) => void,
-  loadingNonprofitId?: string | null
+  onNonprofitClick?: (id: string, name: string) => void
 ): ReactNode[] {
   const parts: ReactNode[] = [];
   let lastIndex = 0;
@@ -139,7 +138,6 @@ function renderMessageContent(
         id={id}
         name={name}
         onClick={onNonprofitClick}
-        isLoading={loadingNonprofitId === id}
       />
     );
 
@@ -175,7 +173,6 @@ export function GivingConcierge() {
   // Nonprofit preview modal state
   const [selectedNonprofit, setSelectedNonprofit] = useState<Nonprofit | null>(null);
   const [nonprofitModalOpen, setNonprofitModalOpen] = useState(false);
-  const [loadingNonprofitId, setLoadingNonprofitId] = useState<string | null>(null);
 
   // Create a stable Supabase client instance
   const supabase = useMemo(() => createClient(), []);
@@ -347,12 +344,9 @@ export function GivingConcierge() {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(nonprofitId)) {
       console.error("Invalid nonprofit ID format:", nonprofitId);
-      // Show a user-friendly message - the AI generated an invalid ID
-      alert(`Sorry, "${name}" could not be found. The AI may have generated an invalid reference.`);
       return;
     }
 
-    setLoadingNonprofitId(nonprofitId);
     try {
       const { data: nonprofit, error } = await supabase
         .from("nonprofits")
@@ -360,24 +354,15 @@ export function GivingConcierge() {
         .eq("id", nonprofitId)
         .single();
 
-      if (error) {
-        console.error("Error fetching nonprofit:", error);
-        alert(`Sorry, "${name}" could not be found in our database.`);
+      if (error || !nonprofit) {
+        console.error("Error fetching nonprofit:", error || "Not found");
         return;
       }
 
-      if (nonprofit) {
-        setSelectedNonprofit(nonprofit as Nonprofit);
-        setNonprofitModalOpen(true);
-      } else {
-        console.error("Nonprofit not found:", nonprofitId);
-        alert(`Sorry, "${name}" could not be found in our database.`);
-      }
+      setSelectedNonprofit(nonprofit as Nonprofit);
+      setNonprofitModalOpen(true);
     } catch (error) {
       console.error("Error fetching nonprofit:", error);
-      alert("Something went wrong. Please try again.");
-    } finally {
-      setLoadingNonprofitId(null);
     }
   }, [supabase]);
 
@@ -563,7 +548,7 @@ export function GivingConcierge() {
                         {message.content ? (
                           message.role === "assistant" ? (
                             <div className="whitespace-pre-wrap leading-relaxed [&>ul]:mt-1 [&>ul]:space-y-1 [&>ul]:list-disc [&>ul]:pl-4">
-                              {renderMessageContent(message.content, handleNonprofitClick, loadingNonprofitId)}
+                              {renderMessageContent(message.content, handleNonprofitClick)}
                             </div>
                           ) : (
                             <span className="leading-relaxed">{message.content}</span>
