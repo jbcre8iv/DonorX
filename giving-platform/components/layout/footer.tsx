@@ -36,22 +36,12 @@ export function Footer() {
             </Link>
             <p className="mt-4 text-sm text-slate-600">{config.tagline}</p>
             <div className="mt-4 flex gap-4">
-              <a
-                href={config.links.twitter}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-              >
+              <span className="text-slate-400">
                 <Twitter className="h-5 w-5" />
-              </a>
-              <a
-                href={config.links.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-              >
+              </span>
+              <span className="text-slate-400">
                 <Linkedin className="h-5 w-5" />
-              </a>
+              </span>
             </div>
           </div>
 
