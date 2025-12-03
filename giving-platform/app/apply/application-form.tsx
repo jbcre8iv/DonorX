@@ -241,7 +241,7 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
       {/* Quick Fill Section */}
       <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
         <h3 className="flex items-center gap-2 font-medium text-emerald-900">
-          <Sparkles className="h-4 w-4" />
+          <Sparkles className="h-4 w-4 animate-pulse" />
           Quick Fill from Website
         </h3>
         <p className="mt-1 text-sm text-emerald-700">
@@ -268,7 +268,7 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
               </>
             ) : (
               <>
-                <Sparkles className="mr-2 h-4 w-4" />
+                <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
                 Quick Fill
               </>
             )}

@@ -257,7 +257,7 @@ export function AllocationAdvisor({
               </>
             ) : (
               <>
-                <Sparkles className="mr-2 h-4 w-4" />
+                <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
                 Get AI Advice
               </>
             )}

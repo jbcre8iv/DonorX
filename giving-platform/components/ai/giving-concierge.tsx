@@ -323,14 +323,30 @@ export function GivingConcierge() {
     "Recommend education nonprofits",
   ];
 
+  // Entrance animation state
+  const [showButton, setShowButton] = useState(false);
+
+  // Delayed entrance animation for the chat button
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowButton(true);
+    }, 1500); // 1.5 second delay before appearing
+    return () => clearTimeout(timer);
+  }, []);
+
   if (!isOpen) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all hover:scale-105"
+        className={cn(
+          "fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all hover:scale-105",
+          showButton
+            ? "animate-in slide-in-from-bottom-8 fade-in zoom-in-75 duration-500"
+            : "opacity-0 translate-y-8 scale-75"
+        )}
         aria-label="Open Giving Concierge"
       >
-        <Sparkles className="h-6 w-6" />
+        <Sparkles className="h-6 w-6 animate-pulse" />
       </button>
     );
   }
@@ -353,7 +369,7 @@ export function GivingConcierge() {
         onClick={() => isMinimized && setIsMinimized(false)}
       >
         <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-white" />
+          <Sparkles className="h-5 w-5 text-white animate-pulse" />
           <span className="font-semibold text-white">Giving Concierge</span>
         </div>
         <div className="flex items-center gap-1">
@@ -418,7 +434,7 @@ export function GivingConcierge() {
                 {messages.length === 0 ? (
                   <div className="text-center py-8">
                     <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 mx-auto mb-4">
-                      <Sparkles className="h-8 w-8 text-emerald-600" />
+                      <Sparkles className="h-8 w-8 text-emerald-600 animate-pulse" />
                     </div>
                     <h3 className="font-semibold text-slate-900 mb-2">
                       Hi! I&apos;m your Giving Concierge
@@ -433,7 +449,13 @@ export function GivingConcierge() {
                           key={question}
                           onClick={() => {
                             setInput(question);
-                            inputRef.current?.focus();
+                            // Auto-submit after setting input
+                            setTimeout(() => {
+                              const form = inputRef.current?.closest('form');
+                              if (form) {
+                                form.requestSubmit();
+                              }
+                            }, 0);
                           }}
                           className="px-4 py-2 text-sm bg-white border border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50 rounded-full text-emerald-700 transition-colors shadow-sm"
                         >
@@ -454,7 +476,7 @@ export function GivingConcierge() {
                       {/* Assistant Avatar */}
                       {message.role === "assistant" && (
                         <div className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-sm">
-                          <Sparkles className="h-3.5 w-3.5 text-white" />
+                          <Sparkles className="h-3.5 w-3.5 text-white animate-pulse" />
                         </div>
                       )}
 

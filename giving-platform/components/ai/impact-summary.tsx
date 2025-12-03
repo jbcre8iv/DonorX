@@ -54,7 +54,7 @@ export function ImpactSummary({ nonprofitId, className }: ImpactSummaryProps) {
     <Card className={className}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-emerald-600" />
+          <Sparkles className="h-5 w-5 text-emerald-600 animate-pulse" />
           AI Impact Summary
         </CardTitle>
       </CardHeader>
@@ -62,7 +62,7 @@ export function ImpactSummary({ nonprofitId, className }: ImpactSummaryProps) {
         {!hasGenerated ? (
           <div className="text-center py-6">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 mx-auto mb-4">
-              <Sparkles className="h-8 w-8 text-emerald-600" />
+              <Sparkles className="h-8 w-8 text-emerald-600 animate-pulse" />
             </div>
             <p className="text-slate-600 mb-4">
               Generate an AI-powered summary of your impact across all nonprofits
@@ -76,7 +76,7 @@ export function ImpactSummary({ nonprofitId, className }: ImpactSummaryProps) {
                 </>
               ) : (
                 <>
-                  <Sparkles className="mr-2 h-4 w-4" />
+                  <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
                   Generate Summary
                 </>
               )}
@@ -147,7 +147,7 @@ export function ImpactSummary({ nonprofitId, className }: ImpactSummaryProps) {
               disabled={isLoading}
               className="w-full"
             >
-              <Sparkles className="mr-2 h-4 w-4" />
+              <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
               Regenerate Summary
             </Button>
           </div>

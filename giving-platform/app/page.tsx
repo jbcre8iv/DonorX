@@ -179,7 +179,7 @@ export default async function HomePage() {
             <div className="flex flex-col items-center gap-4">
               <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700" asChild>
                 <Link href="/apply">
-                  <Sparkles className="mr-2 h-5 w-5" />
+                  <Sparkles className="mr-2 h-5 w-5 animate-pulse" />
                   Apply to Join
                 </Link>
               </Button>

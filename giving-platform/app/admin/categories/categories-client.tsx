@@ -204,7 +204,7 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
             {!editingCategory && (
               <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="h-4 w-4 text-green-600" />
+                  <Sparkles className="h-4 w-4 text-green-600 animate-pulse" />
                   <span className="text-sm font-medium text-green-800">
                     AI Quick Fill
                   </span>
@@ -251,7 +251,7 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
                         </svg>
                       </span>
                     ) : (
-                      <Sparkles className="h-4 w-4" />
+                      <Sparkles className="h-4 w-4 animate-pulse" />
                     )}
                   </Button>
                 </div>

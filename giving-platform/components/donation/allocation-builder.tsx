@@ -419,7 +419,7 @@ export function AllocationBuilder({
                 className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-emerald-100/50 transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-emerald-600" />
+                  <Sparkles className="h-4 w-4 text-emerald-600 animate-pulse" />
                   <span className="text-sm font-medium text-emerald-900">Smart giving starts here</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -595,7 +595,7 @@ export function AllocationBuilder({
                   onClick={handleAiAutoBalance}
                   className="text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 gap-1.5"
                 >
-                  <Sparkles className="h-3.5 w-3.5" />
+                  <Sparkles className="h-3.5 w-3.5 animate-pulse" />
                   Auto-balance
                 </Button>
               )}
@@ -607,7 +607,7 @@ export function AllocationBuilder({
             <div ref={addSuggestionRef} className="p-4 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-4">
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-emerald-100">
-                  <Sparkles className="h-4 w-4 text-emerald-600" />
+                  <Sparkles className="h-4 w-4 text-emerald-600 animate-pulse" />
                 </div>
                 <div className="flex-1">
                   <h4 className="font-medium text-emerald-900">AI Suggested Rebalance</h4>
@@ -672,7 +672,7 @@ export function AllocationBuilder({
             <div ref={removalSuggestionRef} className="p-4 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-4">
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-emerald-100">
-                  <Sparkles className="h-4 w-4 text-emerald-600" />
+                  <Sparkles className="h-4 w-4 text-emerald-600 animate-pulse" />
                 </div>
                 <div className="flex-1">
                   <h4 className="font-medium text-emerald-900">Redistribute {removalSuggestion.removedPercentage}%?</h4>

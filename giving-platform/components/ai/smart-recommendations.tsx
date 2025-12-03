@@ -75,7 +75,7 @@ export function SmartRecommendations({ onSelectNonprofit }: SmartRecommendations
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-emerald-600" />
+          <Sparkles className="h-5 w-5 text-emerald-600 animate-pulse" />
           AI-Powered Recommendations
         </CardTitle>
       </CardHeader>
@@ -116,7 +116,7 @@ export function SmartRecommendations({ onSelectNonprofit }: SmartRecommendations
               </>
             ) : (
               <>
-                <Sparkles className="mr-2 h-4 w-4" />
+                <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
                 Get AI Recommendations
               </>
             )}

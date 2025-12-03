@@ -25,7 +25,7 @@ export default async function AIToolsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold text-slate-900 flex items-center gap-2">
-          <Sparkles className="h-6 w-6 text-emerald-600" />
+          <Sparkles className="h-6 w-6 text-emerald-600 animate-pulse" />
           AI-Powered Tools
         </h1>
         <p className="text-slate-600">

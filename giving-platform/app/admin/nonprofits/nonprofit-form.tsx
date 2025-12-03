@@ -204,7 +204,7 @@ export function NonprofitForm({ nonprofit, categories, onClose }: NonprofitFormP
                   </>
                 ) : (
                   <>
-                    <Sparkles className="mr-2 h-4 w-4" />
+                    <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
                     Fill Form
                   </>
                 )}
@@ -291,7 +291,7 @@ export function NonprofitForm({ nonprofit, categories, onClose }: NonprofitFormP
                 {isDetectingLogo ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Sparkles className="h-4 w-4" />
+                  <Sparkles className="h-4 w-4 animate-pulse" />
                 )}
               </Button>
             </div>
