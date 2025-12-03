@@ -135,7 +135,7 @@ function ActionButtons({
         >
           <Heart className={`h-4 w-4 ${favorited ? "fill-current" : ""}`} />
         </button>
-        <span className="absolute bottom-full left-1/2 -translate-x-full mr-[-18px] mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
+        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
           {favorited ? "Remove from favorites" : "Add to favorites"}
         </span>
       </div>
@@ -300,7 +300,7 @@ function NonprofitRow({
           </p>
         </td>
         {/* Desktop actions - hidden on mobile */}
-        <td className="py-3 pr-3 hidden sm:table-cell rounded-r-lg">
+        <td className="py-3 pr-6 hidden sm:table-cell rounded-r-lg">
           <ActionButtons
             className="justify-end"
             nonprofit={nonprofit}
@@ -369,7 +369,7 @@ export function NonprofitTable({ nonprofits, onQuickView }: NonprofitTableProps)
             <th className="pb-3 pl-3 font-medium">Organization</th>
             <th className="pb-3 font-medium hidden sm:table-cell">Category</th>
             <th className="pb-3 font-medium hidden lg:table-cell">Mission</th>
-            <th className="pb-3 pr-3 font-medium text-right hidden sm:table-cell">Actions</th>
+            <th className="pb-3 pr-6 font-medium text-right hidden sm:table-cell">Actions</th>
             <th className="pb-3 sm:hidden w-10"></th>
           </tr>
         </thead>
