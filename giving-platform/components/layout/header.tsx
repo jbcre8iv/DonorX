@@ -48,7 +48,7 @@ function GivingListButton() {
       )}
       aria-label="Open giving list"
     >
-      <HandHeart className={cn("h-5 w-5 md:h-6 md:w-6", isAnimating && !hasDraft && "text-blue-600")} />
+      <HandHeart className={cn("h-6 w-6 md:h-7 md:w-7", isAnimating && !hasDraft && "text-blue-600")} />
       {/* Active donation indicator - pulsing green dot */}
       {hasDraft && (
         <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
