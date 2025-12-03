@@ -340,6 +340,8 @@ export function GivingConcierge() {
 
   // Handle nonprofit card click - fetch data and open modal
   const handleNonprofitClick = useCallback(async (nonprofitId: string, name: string) => {
+    console.log("handleNonprofitClick called:", { nonprofitId, name });
+
     // Validate UUID format before querying
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(nonprofitId)) {
@@ -347,6 +349,7 @@ export function GivingConcierge() {
       return;
     }
 
+    console.log("UUID valid, fetching nonprofit...");
     try {
       const { data: nonprofit, error } = await supabase
         .from("nonprofits")
@@ -354,11 +357,14 @@ export function GivingConcierge() {
         .eq("id", nonprofitId)
         .single();
 
+      console.log("Supabase response:", { nonprofit, error });
+
       if (error || !nonprofit) {
         console.error("Error fetching nonprofit:", error || "Not found");
         return;
       }
 
+      console.log("Opening modal with nonprofit:", nonprofit.name);
       setSelectedNonprofit(nonprofit as Nonprofit);
       setNonprofitModalOpen(true);
     } catch (error) {
