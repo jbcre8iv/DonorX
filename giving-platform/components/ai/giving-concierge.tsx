@@ -351,24 +351,33 @@ export function GivingConcierge() {
 
     console.log("UUID valid, fetching nonprofit...");
     try {
-      const { data: nonprofit, error } = await supabase
+      console.log("Supabase client:", supabase);
+      const result = await supabase
         .from("nonprofits")
         .select("*, category:categories(*)")
         .eq("id", nonprofitId)
         .single();
 
-      console.log("Supabase response:", { nonprofit, error });
+      console.log("Supabase full result:", result);
+      const { data: nonprofit, error } = result;
 
-      if (error || !nonprofit) {
-        console.error("Error fetching nonprofit:", error || "Not found");
+      if (error) {
+        console.error("Supabase error:", error);
+        return;
+      }
+
+      if (!nonprofit) {
+        console.error("Nonprofit not found for ID:", nonprofitId);
         return;
       }
 
       console.log("Opening modal with nonprofit:", nonprofit.name);
       setSelectedNonprofit(nonprofit as Nonprofit);
+      console.log("State set, opening modal...");
       setNonprofitModalOpen(true);
+      console.log("Modal should be open now");
     } catch (error) {
-      console.error("Error fetching nonprofit:", error);
+      console.error("Caught exception:", error);
     }
   }, [supabase]);
 
