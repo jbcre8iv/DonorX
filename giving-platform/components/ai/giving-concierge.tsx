@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo, useCallback, ReactNode } from "re
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { X, Send, Sparkles, Loader2, Minimize2, LogIn, User } from "lucide-react";
+import { X, Send, Sparkles, Loader2, Minimize2, LogIn, User, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -162,7 +162,20 @@ export function GivingConcierge() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    // Load persisted messages from localStorage on initial render
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('givingConciergeMessages');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          return [];
+        }
+      }
+    }
+    return [];
+  });
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -239,6 +252,13 @@ export function GivingConcierge() {
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Persist messages to localStorage
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('givingConciergeMessages', JSON.stringify(messages));
+    }
   }, [messages]);
 
   // Re-check auth and focus input when chat opens (skip focus on mobile to prevent keyboard)
@@ -376,6 +396,12 @@ export function GivingConcierge() {
     setSelectedNonprofit(null);
   }, []);
 
+  // Clear chat and start new conversation
+  const handleClearChat = useCallback(() => {
+    setMessages([]);
+    localStorage.removeItem('givingConciergeMessages');
+  }, []);
+
   // Navigate to full profile and close chat
   const handleViewFullProfile = useCallback((nonprofitId: string) => {
     setNonprofitModalOpen(false);
@@ -434,6 +460,18 @@ export function GivingConcierge() {
           <span className="font-semibold text-white">Giving Concierge</span>
         </div>
         <div className="flex items-center gap-1">
+          {messages.length > 0 && !isMinimized && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClearChat();
+              }}
+              className="p-1 text-white/80 hover:text-white hover:bg-white/10 rounded"
+              title="New conversation"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation();
