@@ -52,7 +52,7 @@ export default async function AdminLayout({
 
   return (
     <div className="flex flex-col md:flex-row min-h-[calc(100vh-4rem)]">
-      <Sidebar variant="admin" />
+      <Sidebar variant="admin" userRole={userData?.role} />
       <div className="flex-1 overflow-auto bg-purple-50/30">
         {/* Admin header bar - desktop only */}
         <div className="hidden md:flex items-center justify-between px-8 py-3 bg-purple-100/50 border-b border-purple-200">

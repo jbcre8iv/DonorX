@@ -19,51 +19,51 @@ CREATE INDEX IF NOT EXISTS idx_beta_testers_active ON beta_testers(is_active) WH
 -- Enable RLS
 ALTER TABLE beta_testers ENABLE ROW LEVEL SECURITY;
 
--- Only admins/owners can view beta testers
-CREATE POLICY "Admins can view beta testers"
+-- Only owners can view beta testers
+CREATE POLICY "Owners can view beta testers"
   ON beta_testers FOR SELECT
   TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM users
       WHERE users.id = auth.uid()
-      AND users.role IN ('owner', 'admin')
+      AND users.role = 'owner'
     )
   );
 
--- Only admins/owners can insert beta testers
-CREATE POLICY "Admins can add beta testers"
+-- Only owners can insert beta testers
+CREATE POLICY "Owners can add beta testers"
   ON beta_testers FOR INSERT
   TO authenticated
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM users
       WHERE users.id = auth.uid()
-      AND users.role IN ('owner', 'admin')
+      AND users.role = 'owner'
     )
   );
 
--- Only admins/owners can update beta testers
-CREATE POLICY "Admins can update beta testers"
+-- Only owners can update beta testers
+CREATE POLICY "Owners can update beta testers"
   ON beta_testers FOR UPDATE
   TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM users
       WHERE users.id = auth.uid()
-      AND users.role IN ('owner', 'admin')
+      AND users.role = 'owner'
     )
   );
 
--- Only admins/owners can delete beta testers
-CREATE POLICY "Admins can delete beta testers"
+-- Only owners can delete beta testers
+CREATE POLICY "Owners can delete beta testers"
   ON beta_testers FOR DELETE
   TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM users
       WHERE users.id = auth.uid()
-      AND users.role IN ('owner', 'admin')
+      AND users.role = 'owner'
     )
   );
 

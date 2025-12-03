@@ -30,6 +30,7 @@ interface SidebarLink {
   href: string;
   label: string;
   icon: React.ElementType;
+  ownerOnly?: boolean;
 }
 
 const donorLinks: SidebarLink[] = [
@@ -52,17 +53,20 @@ const adminLinks: SidebarLink[] = [
   { href: "/admin/donors", label: "Donors", icon: Heart },
   { href: "/admin/categories", label: "Categories", icon: Tag },
   { href: "/admin/users", label: "Team", icon: Users },
-  { href: "/admin/beta-testers", label: "Beta Testers", icon: UserCheck },
+  { href: "/admin/beta-testers", label: "Beta Testers", icon: UserCheck, ownerOnly: true },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 interface SidebarProps {
   variant: "donor" | "admin";
+  userRole?: string | null;
 }
 
-export function Sidebar({ variant }: SidebarProps) {
+export function Sidebar({ variant, userRole }: SidebarProps) {
   const pathname = usePathname();
-  const links = variant === "admin" ? adminLinks : donorLinks;
+  const allLinks = variant === "admin" ? adminLinks : donorLinks;
+  // Filter out owner-only links if user is not an owner
+  const links = allLinks.filter(link => !link.ownerOnly || userRole === "owner");
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   // Close mobile sidebar when route changes

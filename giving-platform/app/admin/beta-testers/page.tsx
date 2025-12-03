@@ -1,4 +1,5 @@
-import { createAdminClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { BetaTestersClient } from "./beta-testers-client";
 
 export const metadata = {
@@ -6,6 +7,24 @@ export const metadata = {
 };
 
 export default async function BetaTestersPage() {
+  // Check if user is an owner
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: userData } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (!userData || userData.role !== "owner") {
+    redirect("/admin");
+  }
+
   const adminClient = createAdminClient();
 
   const { data: testers, error } = await adminClient

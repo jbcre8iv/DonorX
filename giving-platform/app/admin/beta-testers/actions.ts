@@ -18,7 +18,7 @@ export async function addBetaTester(formData: FormData) {
     .eq("id", user.id)
     .single();
 
-  if (!userData || !["owner", "admin"].includes(userData.role || "")) {
+  if (!userData || userData.role !== "owner") {
     return { error: "Not authorized" };
   }
 
@@ -95,7 +95,7 @@ export async function revokeBetaAccess(testerId: string) {
     .eq("id", user.id)
     .single();
 
-  if (!userData || !["owner", "admin"].includes(userData.role || "")) {
+  if (!userData || userData.role !== "owner") {
     return { error: "Not authorized" };
   }
 
@@ -129,7 +129,7 @@ export async function restoreBetaAccess(testerId: string) {
     .eq("id", user.id)
     .single();
 
-  if (!userData || !["owner", "admin"].includes(userData.role || "")) {
+  if (!userData || userData.role !== "owner") {
     return { error: "Not authorized" };
   }
 
@@ -163,7 +163,7 @@ export async function deleteBetaTester(testerId: string) {
     .eq("id", user.id)
     .single();
 
-  if (!userData || !["owner", "admin"].includes(userData.role || "")) {
+  if (!userData || userData.role !== "owner") {
     return { error: "Not authorized" };
   }
 
