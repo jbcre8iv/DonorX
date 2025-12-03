@@ -44,9 +44,9 @@ function ActionButtons({
       {/* Add to donation/cart button - changes based on draft state */}
       {hasDraft ? (
         <Button
-          variant={inDraft ? "secondary" : "ghost"}
+          variant={inDraft ? "secondary" : "outline"}
           size="sm"
-          className={`h-8 w-8 p-0 ${!inDraft ? "text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800" : ""}`}
+          className={`h-9 w-9 p-0 rounded-xl ${!inDraft ? "text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50" : ""}`}
           onClick={onAddToCartOrDraft}
           title={inDraft ? "In donation" : "Add to donation"}
           disabled={inDraft}
@@ -62,9 +62,9 @@ function ActionButtons({
         </Button>
       ) : (
         <Button
-          variant={inCart ? "secondary" : "ghost"}
+          variant={inCart ? "secondary" : "outline"}
           size="sm"
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 p-0 rounded-xl text-slate-600"
           onClick={onAddToCartOrDraft}
           title={inCart ? "In giving list" : "Add to giving list"}
           disabled={inCart}
@@ -81,10 +81,10 @@ function ActionButtons({
       )}
       <button
         onClick={onToggleFavorite}
-        className={`h-8 w-8 flex items-center justify-center rounded-md transition-colors ${
+        className={`h-9 w-9 flex items-center justify-center rounded-xl border transition-colors ${
           favorited
-            ? "text-pink-500 bg-pink-50 hover:bg-pink-100"
-            : "text-slate-400 hover:text-pink-500 hover:bg-pink-50"
+            ? "text-pink-500 bg-pink-50 border-pink-200 hover:bg-pink-100"
+            : "text-slate-600 border-slate-200 bg-white hover:text-pink-500 hover:border-pink-300 hover:bg-pink-50"
         }`}
         title={favorited ? "Remove from favorites" : "Add to favorites"}
       >
@@ -92,9 +92,9 @@ function ActionButtons({
       </button>
       {onQuickView && (
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 p-0 rounded-xl text-slate-600"
           onClick={() => onQuickView(nonprofit)}
           title="Quick View"
         >
@@ -102,9 +102,9 @@ function ActionButtons({
         </Button>
       )}
       {/* Fixed-width container for external link to prevent layout shift */}
-      <div className="w-8 h-8 flex items-center justify-center">
+      <div className="w-9 h-9 flex items-center justify-center">
         {nonprofit.website && (
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>
+          <Button variant="outline" size="sm" className="h-9 w-9 p-0 rounded-xl text-slate-600" asChild>
             <a
               href={nonprofit.website}
               target="_blank"
