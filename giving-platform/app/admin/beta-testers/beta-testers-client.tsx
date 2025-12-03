@@ -10,7 +10,6 @@ import {
   Mail,
   User,
   StickyNote,
-  Trash2,
   Ban,
   RotateCcw,
   CheckCircle,
@@ -18,7 +17,7 @@ import {
   Loader2,
   Search
 } from "lucide-react";
-import { addBetaTester, revokeBetaAccess, restoreBetaAccess, deleteBetaTester } from "./actions";
+import { addBetaTester, revokeBetaAccess, restoreBetaAccess } from "./actions";
 
 interface BetaTester {
   id: string;
@@ -86,20 +85,6 @@ export function BetaTestersClient({ initialTesters }: BetaTestersClientProps) {
       setError(result.error);
     } else {
       setTesters(testers.map(t => t.id === id ? { ...t, is_active: true } : t));
-    }
-    setLoadingId(null);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to permanently delete this beta tester?")) {
-      return;
-    }
-    setLoadingId(id);
-    const result = await deleteBetaTester(id);
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setTesters(testers.filter(t => t.id !== id));
     }
     setLoadingId(null);
   };
@@ -300,15 +285,6 @@ export function BetaTestersClient({ initialTesters }: BetaTestersClientProps) {
                         )}
                       </Button>
                     )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(tester.id)}
-                      disabled={loadingId === tester.id}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
                 </div>
               ))}
