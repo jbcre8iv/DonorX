@@ -145,6 +145,18 @@ body {
   scrollbar-width: none;
 }
 
+/* Safe area for bottom nav on iOS devices with notch/home indicator */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Bottom nav spacing - adds padding to main content on mobile to prevent content being hidden behind bottom nav */
+@media (max-width: 767px) {
+  main {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* Range slider styling */
 input[type="range"] {
   -webkit-appearance: none;

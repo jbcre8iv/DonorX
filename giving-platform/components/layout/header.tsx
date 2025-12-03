@@ -299,13 +299,13 @@ export function Header({ initialUser = null }: HeaderProps) {
           )}
         </div>
 
-        {/* Mobile: Giving List + Menu Button */}
+        {/* Mobile: Hamburger Menu Button only */}
         <div className="md:hidden flex items-center gap-1">
-          <GivingListButton />
           <button
             type="button"
-            className="p-2 text-slate-600"
+            className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
           >
             {mobileMenuOpen ? (
               <X className="h-6 w-6" />

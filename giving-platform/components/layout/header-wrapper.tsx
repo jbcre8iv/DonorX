@@ -1,5 +1,6 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Header } from "./header";
+import { BottomNav } from "./bottom-nav";
 import { SimulationModeBanner } from "@/components/layout/simulation-mode-banner";
 
 async function getSimulationMode(): Promise<boolean> {
@@ -73,6 +74,7 @@ export async function HeaderWrapper() {
     <>
       <SimulationModeBanner enabled={simulationEnabled} isAdmin={isAdmin} />
       <Header initialUser={userData} />
+      <BottomNav user={userData} />
     </>
   );
 }
