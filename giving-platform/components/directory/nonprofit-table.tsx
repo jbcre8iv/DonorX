@@ -61,7 +61,7 @@ function ActionButtons({
               </span>
             )}
           </Button>
-          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
             {inDraft ? "In donation" : "Add to donation"}
           </span>
         </div>
@@ -83,7 +83,7 @@ function ActionButtons({
               </span>
             )}
           </Button>
-          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
             {inCart ? "In giving list" : "Add to giving list"}
           </span>
         </div>
@@ -99,7 +99,7 @@ function ActionButtons({
           >
             <Eye className="h-4 w-4" />
           </Button>
-          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
             Quick View
           </span>
         </div>
@@ -117,7 +117,7 @@ function ActionButtons({
                 <Globe className="h-4 w-4" />
               </a>
             </Button>
-            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
               Visit Website
             </span>
           </div>
@@ -135,7 +135,7 @@ function ActionButtons({
         >
           <Heart className={`h-4 w-4 ${favorited ? "fill-current" : ""}`} />
         </button>
-        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
           {favorited ? "Remove from favorites" : "Add to favorites"}
         </span>
       </div>
@@ -362,7 +362,7 @@ export function NonprofitTable({ nonprofits, onQuickView }: NonprofitTableProps)
   };
 
   return (
-    <div className="sm:overflow-x-auto">
+    <div className="sm:overflow-x-auto overflow-visible">
       <table className="w-full table-fixed sm:table-auto">
         <thead>
           <tr className="border-b border-slate-200 text-left text-sm text-slate-600">

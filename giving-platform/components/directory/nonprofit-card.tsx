@@ -122,7 +122,7 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
               >
                 <Heart className={`h-4 w-4 ${favorited ? "fill-current" : ""}`} />
               </button>
-              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover/fav:opacity-100 transition-opacity pointer-events-none z-10">
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
                 {favorited ? "Remove from favorites" : "Add to favorites"}
               </span>
             </div>
@@ -163,7 +163,7 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
                   </span>
                 )}
               </Button>
-              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-10">
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
                 {inDraft ? "In donation" : "Add to donation"}
               </span>
             </div>
@@ -185,7 +185,7 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
                   </span>
                 )}
               </Button>
-              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-10">
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
                 {inCart ? "In giving list" : "Add to giving list"}
               </span>
             </div>
@@ -200,7 +200,7 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
               >
                 <Eye className="h-4 w-4" />
               </Button>
-              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-10">
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
                 Quick View
               </span>
             </div>
@@ -216,7 +216,7 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
                   <Globe className="h-4 w-4" />
                 </a>
               </Button>
-              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-10">
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
                 Visit Website
               </span>
             </div>
