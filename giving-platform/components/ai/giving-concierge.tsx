@@ -3,12 +3,14 @@
 import { useState, useRef, useEffect, useMemo, useCallback, ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { MessageCircle, X, Send, Sparkles, Loader2, Minimize2, LogIn, User } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { X, Send, Sparkles, Loader2, Minimize2, LogIn, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { NonprofitMiniCard } from "./nonprofit-mini-card";
+import { NonprofitModal } from "@/components/directory/nonprofit-modal";
+import type { Nonprofit } from "@/types/database";
 
 interface Message {
   id: string;
@@ -105,7 +107,10 @@ function formatInlineText(text: string): ReactNode[] {
 }
 
 // Parse message content and render nonprofit cards with formatted text
-function renderMessageContent(content: string): ReactNode[] {
+function renderMessageContent(
+  content: string,
+  onNonprofitClick?: (id: string, name: string) => void
+): ReactNode[] {
   const parts: ReactNode[] = [];
   let lastIndex = 0;
   let match;
@@ -128,7 +133,12 @@ function renderMessageContent(content: string): ReactNode[] {
     // Add the nonprofit card
     const [, id, name] = match;
     parts.push(
-      <NonprofitMiniCard key={`${id}-${match.index}`} id={id} name={name} />
+      <NonprofitMiniCard
+        key={`${id}-${match.index}`}
+        id={id}
+        name={name}
+        onClick={onNonprofitClick}
+      />
     );
 
     lastIndex = match.index + match[0].length;
@@ -149,6 +159,7 @@ function renderMessageContent(content: string): ReactNode[] {
 
 export function GivingConcierge() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -158,6 +169,11 @@ export function GivingConcierge() {
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Nonprofit preview modal state
+  const [selectedNonprofit, setSelectedNonprofit] = useState<Nonprofit | null>(null);
+  const [nonprofitModalOpen, setNonprofitModalOpen] = useState(false);
+  const [loadingNonprofitId, setLoadingNonprofitId] = useState<string | null>(null);
 
   // Create a stable Supabase client instance
   const supabase = useMemo(() => createClient(), []);
@@ -322,6 +338,41 @@ export function GivingConcierge() {
     "How do I maximize my impact?",
     "Recommend education nonprofits",
   ];
+
+  // Handle nonprofit card click - fetch data and open modal
+  const handleNonprofitClick = useCallback(async (nonprofitId: string, name: string) => {
+    setLoadingNonprofitId(nonprofitId);
+    try {
+      const { data: nonprofit } = await supabase
+        .from("nonprofits")
+        .select("*, category:categories(*)")
+        .eq("id", nonprofitId)
+        .single();
+
+      if (nonprofit) {
+        setSelectedNonprofit(nonprofit as Nonprofit);
+        setNonprofitModalOpen(true);
+      }
+    } catch (error) {
+      console.error("Error fetching nonprofit:", error);
+    } finally {
+      setLoadingNonprofitId(null);
+    }
+  }, [supabase]);
+
+  // Close nonprofit modal
+  const handleCloseNonprofitModal = useCallback(() => {
+    setNonprofitModalOpen(false);
+    setSelectedNonprofit(null);
+  }, []);
+
+  // Navigate to full profile and close chat
+  const handleViewFullProfile = useCallback((nonprofitId: string) => {
+    setNonprofitModalOpen(false);
+    setSelectedNonprofit(null);
+    setIsOpen(false);
+    router.push(`/directory/${nonprofitId}`);
+  }, [router]);
 
   // Entrance animation state
   const [showButton, setShowButton] = useState(false);
@@ -491,7 +542,7 @@ export function GivingConcierge() {
                         {message.content ? (
                           message.role === "assistant" ? (
                             <div className="whitespace-pre-wrap leading-relaxed [&>ul]:mt-1 [&>ul]:space-y-1 [&>ul]:list-disc [&>ul]:pl-4">
-                              {renderMessageContent(message.content)}
+                              {renderMessageContent(message.content, handleNonprofitClick)}
                             </div>
                           ) : (
                             <span className="leading-relaxed">{message.content}</span>
@@ -560,6 +611,14 @@ export function GivingConcierge() {
           )}
         </>
       )}
+
+      {/* Nonprofit Preview Modal */}
+      <NonprofitModal
+        nonprofit={selectedNonprofit}
+        open={nonprofitModalOpen}
+        onClose={handleCloseNonprofitModal}
+        onViewFullProfile={handleViewFullProfile}
+      />
     </div>
   );
 }

@@ -11,9 +11,10 @@ interface NonprofitModalProps {
   nonprofit: Nonprofit | null;
   open: boolean;
   onClose: () => void;
+  onViewFullProfile?: (nonprofitId: string) => void;
 }
 
-export function NonprofitModal({ nonprofit, open, onClose }: NonprofitModalProps) {
+export function NonprofitModal({ nonprofit, open, onClose, onViewFullProfile }: NonprofitModalProps) {
   if (!nonprofit) return null;
 
   return (
@@ -103,11 +104,17 @@ export function NonprofitModal({ nonprofit, open, onClose }: NonprofitModalProps
             Donate Now
           </Link>
         </Button>
-        <Button variant="ghost" asChild>
-          <Link href={`/directory/${nonprofit.id}`} onClick={onClose}>
+        {onViewFullProfile ? (
+          <Button variant="ghost" onClick={() => onViewFullProfile(nonprofit.id)}>
             View Full Profile
-          </Link>
-        </Button>
+          </Button>
+        ) : (
+          <Button variant="ghost" asChild>
+            <Link href={`/directory/${nonprofit.id}`} onClick={onClose}>
+              View Full Profile
+            </Link>
+          </Button>
+        )}
       </ModalFooter>
     </Modal>
   );
