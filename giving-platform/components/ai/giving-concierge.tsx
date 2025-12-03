@@ -427,7 +427,7 @@ export function GivingConcierge() {
                       I can help you discover nonprofits, build your giving
                       portfolio, and maximize your impact.
                     </p>
-                    <div className="space-y-2">
+                    <div className="flex flex-wrap justify-center gap-2">
                       {suggestedQuestions.map((question) => (
                         <button
                           key={question}
@@ -435,7 +435,7 @@ export function GivingConcierge() {
                             setInput(question);
                             inputRef.current?.focus();
                           }}
-                          className="block w-full text-left px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100 rounded-lg text-slate-700 transition-colors"
+                          className="px-4 py-2 text-sm bg-white border border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50 rounded-full text-emerald-700 transition-colors shadow-sm"
                         >
                           {question}
                         </button>
