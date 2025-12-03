@@ -38,16 +38,17 @@ function ActionButtons({
 }) {
   return (
     <div className={`flex items-center gap-1 ${className}`}>
+      {/* 1. Donate - Primary action */}
       <Button asChild size="sm" className="h-8">
         <Link href={`/donate?nonprofit=${nonprofit.id}`}>Donate</Link>
       </Button>
-      {/* Add to donation/cart button - changes based on draft state */}
+      {/* 2. Add to donation/cart - Secondary giving action */}
       {hasDraft ? (
         <div className="relative group">
           <Button
             variant={inDraft ? "secondary" : "outline"}
             size="sm"
-            className={`h-9 w-9 p-0 rounded-xl ${!inDraft ? "text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md" : ""}`}
+            className={`h-9 w-9 p-0 rounded-xl cursor-pointer ${!inDraft ? "text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md" : ""}`}
             onClick={onAddToCartOrDraft}
             disabled={inDraft}
           >
@@ -69,7 +70,7 @@ function ActionButtons({
           <Button
             variant={inCart ? "secondary" : "outline"}
             size="sm"
-            className="h-9 w-9 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md"
+            className="h-9 w-9 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer"
             onClick={onAddToCartOrDraft}
             disabled={inCart}
           >
@@ -87,27 +88,13 @@ function ActionButtons({
           </span>
         </div>
       )}
-      <div className="relative group">
-        <button
-          onClick={onToggleFavorite}
-          className={`h-9 w-9 flex items-center justify-center rounded-xl border transition-all ${
-            favorited
-              ? "text-pink-500 bg-pink-50 border-pink-200 hover:bg-pink-100 hover:shadow-md"
-              : "text-slate-600 border-slate-200 bg-white hover:text-pink-500 hover:border-pink-300 hover:bg-pink-50 hover:shadow-md"
-          }`}
-        >
-          <Heart className={`h-4 w-4 ${favorited ? "fill-current" : ""}`} />
-        </button>
-        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-          {favorited ? "Remove from favorites" : "Add to favorites"}
-        </span>
-      </div>
+      {/* 3. Quick View - Learn more */}
       {onQuickView && (
         <div className="relative group">
           <Button
             variant="outline"
             size="sm"
-            className="h-9 w-9 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md"
+            className="h-9 w-9 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer"
             onClick={() => onQuickView(nonprofit)}
           >
             <Eye className="h-4 w-4" />
@@ -117,11 +104,11 @@ function ActionButtons({
           </span>
         </div>
       )}
-      {/* Fixed-width container for external link to prevent layout shift */}
+      {/* 4. Website - External link */}
       <div className="w-9 h-9 flex items-center justify-center">
         {nonprofit.website && (
           <div className="relative group">
-            <Button variant="outline" size="sm" className="h-9 w-9 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md" asChild>
+            <Button variant="outline" size="sm" className="h-9 w-9 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer" asChild>
               <a
                 href={nonprofit.website}
                 target="_blank"
@@ -135,6 +122,22 @@ function ActionButtons({
             </span>
           </div>
         )}
+      </div>
+      {/* 5. Favorite - Passive "save for later" action */}
+      <div className="relative group">
+        <button
+          onClick={onToggleFavorite}
+          className={`h-9 w-9 flex items-center justify-center rounded-xl border transition-all cursor-pointer ${
+            favorited
+              ? "text-pink-500 bg-pink-50 border-pink-200 hover:bg-pink-100 hover:shadow-md"
+              : "text-slate-600 border-slate-200 bg-white hover:text-pink-500 hover:border-pink-300 hover:bg-pink-50 hover:shadow-md"
+          }`}
+        >
+          <Heart className={`h-4 w-4 ${favorited ? "fill-current" : ""}`} />
+        </button>
+        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+          {favorited ? "Remove from favorites" : "Add to favorites"}
+        </span>
       </div>
     </div>
   );
@@ -224,7 +227,7 @@ function NonprofitRow({
           }
         }}
       >
-        <td className="py-3 pr-2 sm:pr-4">
+        <td className="py-3 pl-3 pr-2 sm:pr-4 rounded-l-lg">
           {/* Desktop: Link to detail page */}
           <Link
             href={`/directory/${nonprofit.id}`}
@@ -297,7 +300,7 @@ function NonprofitRow({
           </p>
         </td>
         {/* Desktop actions - hidden on mobile */}
-        <td className="py-3 hidden sm:table-cell">
+        <td className="py-3 pr-3 hidden sm:table-cell rounded-r-lg">
           <ActionButtons
             className="justify-end"
             nonprofit={nonprofit}
@@ -363,10 +366,10 @@ export function NonprofitTable({ nonprofits, onQuickView }: NonprofitTableProps)
       <table className="w-full table-fixed sm:table-auto">
         <thead>
           <tr className="border-b border-slate-200 text-left text-sm text-slate-600">
-            <th className="pb-3 font-medium">Organization</th>
+            <th className="pb-3 pl-3 font-medium">Organization</th>
             <th className="pb-3 font-medium hidden sm:table-cell">Category</th>
             <th className="pb-3 font-medium hidden lg:table-cell">Mission</th>
-            <th className="pb-3 font-medium text-right hidden sm:table-cell">Actions</th>
+            <th className="pb-3 pr-3 font-medium text-right hidden sm:table-cell">Actions</th>
             <th className="pb-3 sm:hidden w-10"></th>
           </tr>
         </thead>

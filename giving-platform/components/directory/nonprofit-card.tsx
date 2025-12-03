@@ -111,17 +111,21 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
             {nonprofit.featured && (
               <Badge variant="success">Featured</Badge>
             )}
-            <button
-              onClick={handleToggleFavorite}
-              className={`rounded-full p-1.5 transition-colors ${
-                favorited
-                  ? "text-pink-500 bg-pink-50 hover:bg-pink-100"
-                  : "text-slate-400 hover:text-pink-500 hover:bg-pink-50"
-              }`}
-              title={favorited ? "Remove from favorites" : "Add to favorites"}
-            >
-              <Heart className={`h-4 w-4 ${favorited ? "fill-current" : ""}`} />
-            </button>
+            <div className="relative group/fav">
+              <button
+                onClick={handleToggleFavorite}
+                className={`h-9 w-9 flex items-center justify-center rounded-xl border transition-all cursor-pointer ${
+                  favorited
+                    ? "text-pink-500 bg-pink-50 border-pink-200 hover:bg-pink-100 hover:shadow-md"
+                    : "text-slate-600 border-slate-200 bg-white hover:text-pink-500 hover:border-pink-300 hover:bg-pink-50 hover:shadow-md"
+                }`}
+              >
+                <Heart className={`h-4 w-4 ${favorited ? "fill-current" : ""}`} />
+              </button>
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover/fav:opacity-100 transition-opacity pointer-events-none z-10">
+                {favorited ? "Remove from favorites" : "Add to favorites"}
+              </span>
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -142,62 +146,80 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
           </Button>
           {/* Add to donation/cart button - changes based on draft state */}
           {hasDraft ? (
-            <Button
-              variant={inDraft ? "secondary" : "outline"}
-              size="sm"
-              onClick={handleAddToCartOrDraft}
-              title={inDraft ? "In donation" : "Add to donation"}
-              disabled={inDraft}
-              className={!inDraft ? "border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800" : ""}
-            >
-              {inDraft ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <span className="flex items-center gap-0.5">
-                  <Plus className="h-3 w-3" />
-                  <CreditCard className="h-4 w-4" />
-                </span>
-              )}
-            </Button>
+            <div className="relative group/btn">
+              <Button
+                variant={inDraft ? "secondary" : "outline"}
+                size="sm"
+                onClick={handleAddToCartOrDraft}
+                disabled={inDraft}
+                className={`h-9 w-9 p-0 rounded-xl cursor-pointer ${!inDraft ? "text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md" : ""}`}
+              >
+                {inDraft ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <span className="flex items-center gap-0.5">
+                    <Plus className="h-3 w-3" />
+                    <CreditCard className="h-4 w-4" />
+                  </span>
+                )}
+              </Button>
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-10">
+                {inDraft ? "In donation" : "Add to donation"}
+              </span>
+            </div>
           ) : (
-            <Button
-              variant={inCart ? "secondary" : "outline"}
-              size="sm"
-              onClick={handleAddToCartOrDraft}
-              title={inCart ? "In giving list" : "Add to giving list"}
-              disabled={inCart}
-            >
-              {inCart ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <span className="flex items-center gap-0.5">
-                  <Plus className="h-3 w-3" />
-                  <HandHeart className="h-4 w-4" />
-                </span>
-              )}
-            </Button>
+            <div className="relative group/btn">
+              <Button
+                variant={inCart ? "secondary" : "outline"}
+                size="sm"
+                onClick={handleAddToCartOrDraft}
+                disabled={inCart}
+                className="h-9 w-9 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer"
+              >
+                {inCart ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <span className="flex items-center gap-0.5">
+                    <Plus className="h-3 w-3" />
+                    <HandHeart className="h-4 w-4" />
+                  </span>
+                )}
+              </Button>
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-10">
+                {inCart ? "In giving list" : "Add to giving list"}
+              </span>
+            </div>
           )}
           {onQuickView && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onQuickView(nonprofit)}
-              title="Quick View"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
+            <div className="relative group/btn">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onQuickView(nonprofit)}
+                className="h-9 w-9 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-10">
+                Quick View
+              </span>
+            </div>
           )}
           {nonprofit.website && (
-            <Button variant="outline" size="sm" asChild>
-              <a
-                href={nonprofit.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Visit Website"
-              >
-                <Globe className="h-4 w-4" />
-              </a>
-            </Button>
+            <div className="relative group/btn">
+              <Button variant="outline" size="sm" className="h-9 w-9 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer" asChild>
+                <a
+                  href={nonprofit.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Globe className="h-4 w-4" />
+                </a>
+              </Button>
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none z-10">
+                Visit Website
+              </span>
+            </div>
           )}
         </div>
       </CardContent>
