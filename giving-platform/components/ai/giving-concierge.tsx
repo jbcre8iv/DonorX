@@ -341,7 +341,7 @@ export function GivingConcierge() {
         "fixed z-50 flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 transition-all duration-300",
         "bottom-6 right-6 sm:bottom-6 sm:right-6",
         "max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:bottom-4 max-sm:right-auto",
-        isMinimized ? "w-72 h-14" : "w-96 max-sm:w-[calc(100%-2rem)] h-[500px] max-sm:h-[70vh]"
+        isMinimized ? "w-72 h-14" : "w-96 max-sm:w-[calc(100%-2rem)] h-[800px] max-sm:h-[70vh]"
       )}
     >
       {/* Header */}
