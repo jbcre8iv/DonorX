@@ -229,10 +229,8 @@ export function GivingConcierge() {
   // Re-check auth and focus input when chat opens (skip focus on mobile to prevent keyboard)
   useEffect(() => {
     if (isOpen) {
-      // Re-check auth status when chatbot is opened
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        setIsAuthenticated(!!session?.user);
-      });
+      // Re-check auth status and avatar when chatbot is opened
+      checkAuth();
 
       // Only auto-focus on desktop to prevent keyboard opening on mobile
       const isMobile = window.innerWidth < 640;
@@ -240,7 +238,7 @@ export function GivingConcierge() {
         inputRef.current?.focus();
       }
     }
-  }, [isOpen, isMinimized, isAuthenticated, supabase]);
+  }, [isOpen, isMinimized, isAuthenticated, checkAuth]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
