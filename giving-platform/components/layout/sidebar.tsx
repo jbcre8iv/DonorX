@@ -22,6 +22,7 @@ import {
   Menu,
   X,
   Shield,
+  UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +52,7 @@ const adminLinks: SidebarLink[] = [
   { href: "/admin/donors", label: "Donors", icon: Heart },
   { href: "/admin/categories", label: "Categories", icon: Tag },
   { href: "/admin/users", label: "Team", icon: Users },
+  { href: "/admin/beta-testers", label: "Beta Testers", icon: UserCheck },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

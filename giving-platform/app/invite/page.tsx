@@ -2,36 +2,38 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lock, Heart, ArrowRight, AlertCircle } from "lucide-react";
+import { Lock, Heart, ArrowRight, AlertCircle, CheckCircle, Mail, LogIn } from "lucide-react";
 
 export default function InvitePage() {
-  const [code, setCode] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCheckAccess = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
+    setHasAccess(null);
 
     try {
-      const res = await fetch("/api/verify-invite", {
+      const res = await fetch("/api/check-beta-access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code.trim().toUpperCase() }),
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
 
       const data = await res.json();
 
-      if (data.success) {
-        router.push("/");
-        router.refresh();
+      if (data.hasAccess) {
+        setHasAccess(true);
       } else {
-        setError("Invalid invite code. Please try again.");
+        setHasAccess(false);
       }
     } catch {
       setError("Something went wrong. Please try again.");
@@ -60,57 +62,122 @@ export default function InvitePage() {
             <CardTitle className="text-xl">Invite Only</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-slate-600 text-center mb-6">
-              DonorX is currently in private beta. Enter your invite code to get early access.
-            </p>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Input
-                  type="text"
-                  placeholder="Enter invite code"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  className="text-center text-lg tracking-widest uppercase"
-                  maxLength={20}
-                  autoFocus
-                />
-              </div>
-
-              {error && (
-                <div className="flex items-center gap-2 text-red-600 text-sm justify-center">
-                  <AlertCircle className="h-4 w-4" />
-                  {error}
+            {hasAccess === true ? (
+              // Access granted - show login/register options
+              <div className="text-center space-y-4">
+                <div className="flex items-center justify-center gap-2 text-emerald-600">
+                  <CheckCircle className="h-5 w-5" />
+                  <span className="font-medium">You have beta access!</span>
                 </div>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={!code.trim() || isLoading}
-              >
-                {isLoading ? (
-                  "Verifying..."
-                ) : (
-                  <>
-                    Enter Beta
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </form>
-
-            <div className="mt-6 pt-6 border-t border-slate-100">
-              <p className="text-xs text-slate-500 text-center">
-                Don&apos;t have an invite code?{" "}
-                <a
-                  href="mailto:hello@donorx.com"
-                  className="text-emerald-600 hover:underline"
+                <p className="text-sm text-slate-600">
+                  Log in or create an account to continue.
+                </p>
+                <div className="flex flex-col gap-3 pt-2">
+                  <Button asChild className="w-full">
+                    <Link href="/login">
+                      <LogIn className="h-4 w-4 mr-2" />
+                      Log In
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href="/register">
+                      Create Account
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            ) : hasAccess === false ? (
+              // Access denied
+              <div className="text-center space-y-4">
+                <div className="flex items-center justify-center gap-2 text-amber-600">
+                  <AlertCircle className="h-5 w-5" />
+                  <span className="font-medium">No beta access found</span>
+                </div>
+                <p className="text-sm text-slate-600">
+                  The email <strong>{email}</strong> is not on our beta list.
+                </p>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setHasAccess(null);
+                    setEmail("");
+                  }}
                 >
-                  Request access
-                </a>
-              </p>
-            </div>
+                  Try a different email
+                </Button>
+                <div className="pt-4 border-t border-slate-100">
+                  <p className="text-xs text-slate-500">
+                    Think this is a mistake?{" "}
+                    <a
+                      href="mailto:hello@donorx.com"
+                      className="text-emerald-600 hover:underline"
+                    >
+                      Contact us
+                    </a>
+                  </p>
+                </div>
+              </div>
+            ) : (
+              // Initial state - show email form
+              <>
+                <p className="text-sm text-slate-600 text-center mb-6">
+                  DonorX is currently in private beta. Enter your email to check if you have access.
+                </p>
+
+                <form onSubmit={handleCheckAccess} className="space-y-4">
+                  <div>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        type="email"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10"
+                        autoFocus
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div className="flex items-center gap-2 text-red-600 text-sm justify-center">
+                      <AlertCircle className="h-4 w-4" />
+                      {error}
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={!email.trim() || isLoading}
+                  >
+                    {isLoading ? (
+                      "Checking..."
+                    ) : (
+                      <>
+                        Check Access
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+
+                <div className="mt-6 pt-6 border-t border-slate-100">
+                  <p className="text-xs text-slate-500 text-center">
+                    Don&apos;t have access?{" "}
+                    <a
+                      href="mailto:hello@donorx.com"
+                      className="text-emerald-600 hover:underline"
+                    >
+                      Request an invite
+                    </a>
+                  </p>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
