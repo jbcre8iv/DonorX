@@ -602,7 +602,7 @@ export function DonateClient({
                 size="sm"
                 onClick={() => {
                   if (!isAuthenticated) {
-                    addToast("Please sign in to save templates", "info", 3000);
+                    router.push("/login?redirect=/donate");
                   } else {
                     setShowSaveModal(true);
                   }
