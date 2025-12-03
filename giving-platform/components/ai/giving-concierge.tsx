@@ -19,19 +19,110 @@ interface Message {
 // Regex to match [[NONPROFIT:id:name]] format
 const NONPROFIT_CARD_REGEX = /\[\[NONPROFIT:([^:]+):([^\]]+)\]\]/g;
 
-// Parse message content and render nonprofit cards
+// Format text with bold, bullets, and proper spacing
+function formatTextSegment(text: string, keyPrefix: string): ReactNode[] {
+  const elements: ReactNode[] = [];
+  const lines = text.split('\n');
+
+  lines.forEach((line, lineIndex) => {
+    const trimmedLine = line.trim();
+
+    // Skip empty lines but add spacing
+    if (!trimmedLine) {
+      if (lineIndex > 0) {
+        elements.push(<div key={`${keyPrefix}-space-${lineIndex}`} className="h-2" />);
+      }
+      return;
+    }
+
+    // Check for numbered list items (1. 2. 3. etc)
+    const numberedMatch = trimmedLine.match(/^(\d+)\.\s+(.+)$/);
+    if (numberedMatch) {
+      const [, num, content] = numberedMatch;
+      elements.push(
+        <div key={`${keyPrefix}-num-${lineIndex}`} className="flex items-start gap-2 my-1.5">
+          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium flex items-center justify-center">
+            {num}
+          </span>
+          <span className="flex-1">{formatInlineText(content)}</span>
+        </div>
+      );
+      return;
+    }
+
+    // Check for bullet points (• or - or *)
+    const bulletMatch = trimmedLine.match(/^[•\-\*]\s*(.+)$/);
+    if (bulletMatch) {
+      const [, content] = bulletMatch;
+      elements.push(
+        <div key={`${keyPrefix}-bullet-${lineIndex}`} className="flex items-start gap-2 my-1.5">
+          <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2" />
+          <span className="flex-1">{formatInlineText(content)}</span>
+        </div>
+      );
+      return;
+    }
+
+    // Regular paragraph
+    elements.push(
+      <p key={`${keyPrefix}-p-${lineIndex}`} className={lineIndex > 0 ? "mt-2" : ""}>
+        {formatInlineText(trimmedLine)}
+      </p>
+    );
+  });
+
+  return elements;
+}
+
+// Format inline text (bold)
+function formatInlineText(text: string): ReactNode[] {
+  const parts: ReactNode[] = [];
+  const boldRegex = /\*\*([^*]+)\*\*/g;
+  let lastIndex = 0;
+  let match;
+  let keyIndex = 0;
+
+  while ((match = boldRegex.exec(text)) !== null) {
+    // Add text before the match
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    // Add bold text
+    parts.push(
+      <strong key={`bold-${keyIndex++}`} className="font-semibold text-slate-900">
+        {match[1]}
+      </strong>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : [text];
+}
+
+// Parse message content and render nonprofit cards with formatted text
 function renderMessageContent(content: string): ReactNode[] {
   const parts: ReactNode[] = [];
   let lastIndex = 0;
   let match;
+  let partIndex = 0;
 
   // Reset regex lastIndex
   NONPROFIT_CARD_REGEX.lastIndex = 0;
 
   while ((match = NONPROFIT_CARD_REGEX.exec(content)) !== null) {
-    // Add text before the match
+    // Add formatted text before the match
     if (match.index > lastIndex) {
-      parts.push(content.slice(lastIndex, match.index));
+      const textBefore = content.slice(lastIndex, match.index);
+      parts.push(
+        <div key={`text-${partIndex++}`}>
+          {formatTextSegment(textBefore, `seg-${partIndex}`)}
+        </div>
+      );
     }
 
     // Add the nonprofit card
@@ -43,12 +134,17 @@ function renderMessageContent(content: string): ReactNode[] {
     lastIndex = match.index + match[0].length;
   }
 
-  // Add remaining text after last match
+  // Add remaining formatted text after last match
   if (lastIndex < content.length) {
-    parts.push(content.slice(lastIndex));
+    const remainingText = content.slice(lastIndex);
+    parts.push(
+      <div key={`text-${partIndex++}`}>
+        {formatTextSegment(remainingText, `seg-${partIndex}`)}
+      </div>
+    );
   }
 
-  return parts.length > 0 ? parts : [content];
+  return parts.length > 0 ? parts : formatTextSegment(content, "main");
 }
 
 export function GivingConcierge() {
