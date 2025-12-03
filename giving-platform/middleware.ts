@@ -66,38 +66,42 @@ export async function middleware(request: NextRequest) {
 
   // If not a public path, check beta access
   if (!isPublicPath) {
-    // Check for beta access cookie (set after email verification)
-    const hasBetaAccessCookie = request.cookies.get("beta_access")?.value === "granted";
+    // If user is logged in, always verify beta access against database
+    if (user?.email) {
+      try {
+        const adminClient = getAdminClient();
+        const { data: betaTester } = await adminClient
+          .from("beta_testers")
+          .select("id, is_active")
+          .eq("email", user.email.toLowerCase())
+          .eq("is_active", true)
+          .single();
 
-    if (!hasBetaAccessCookie) {
-      // If user is logged in, check if their email is in beta_testers
-      if (user?.email) {
-        try {
-          const adminClient = getAdminClient();
-          const { data: betaTester } = await adminClient
-            .from("beta_testers")
-            .select("id, is_active")
-            .eq("email", user.email.toLowerCase())
-            .eq("is_active", true)
-            .single();
-
-          if (betaTester) {
-            // User has beta access, set cookie and continue
-            supabaseResponse.cookies.set("beta_access", "granted", {
-              httpOnly: true,
-              secure: process.env.NODE_ENV === "production",
-              sameSite: "lax",
-              maxAge: 60 * 60 * 24 * 30, // 30 days
-              path: "/",
-            });
-            return supabaseResponse;
-          }
-        } catch {
-          // Error checking beta access, redirect to invite page
+        if (betaTester) {
+          // User has active beta access, continue
+          return supabaseResponse;
+        } else {
+          // User's access was revoked - clear cookie and redirect
+          supabaseResponse.cookies.set("beta_access", "", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 0, // Delete cookie
+            path: "/",
+          });
+          const inviteUrl = new URL("/invite", request.url);
+          return NextResponse.redirect(inviteUrl);
         }
+      } catch {
+        // No beta access found, redirect to invite page
+        const inviteUrl = new URL("/invite", request.url);
+        return NextResponse.redirect(inviteUrl);
       }
+    }
 
-      // No beta access, redirect to invite page
+    // User not logged in - check for beta access cookie (from invite page verification)
+    const hasBetaAccessCookie = request.cookies.get("beta_access")?.value === "granted";
+    if (!hasBetaAccessCookie) {
       const inviteUrl = new URL("/invite", request.url);
       return NextResponse.redirect(inviteUrl);
     }
