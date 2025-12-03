@@ -168,12 +168,16 @@ export function GivingConcierge() {
     setIsAuthenticated(!!session?.user);
 
     if (session?.user) {
+      // First try to get avatar from user profile in database
       const { data: profile } = await supabase
         .from("users")
         .select("avatar_url")
         .eq("id", session.user.id)
         .single();
-      setUserAvatarUrl(profile?.avatar_url || null);
+
+      // Use profile avatar, or fall back to auth metadata avatar
+      const avatarUrl = profile?.avatar_url || session.user.user_metadata?.avatar_url || null;
+      setUserAvatarUrl(avatarUrl);
     } else {
       setUserAvatarUrl(null);
     }
