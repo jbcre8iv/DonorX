@@ -349,28 +349,28 @@ export function GivingConcierge() {
       return;
     }
 
-    console.log("UUID valid, fetching nonprofit...");
+    console.log("UUID valid, fetching nonprofit via REST...");
 
-    // Create fresh client to avoid stale closure issues
-    const freshSupabase = createClient();
-    console.log("Fresh Supabase client created");
+    // Use direct REST API call to bypass any Supabase SDK issues
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const url = `${supabaseUrl}/rest/v1/nonprofits?id=eq.${nonprofitId}&select=*,category:categories(*)`;
 
-    // Wrap in async IIFE to use try/catch
-    (async () => {
-      try {
-        const result = await freshSupabase
-          .from("nonprofits")
-          .select("*, category:categories(*)")
-          .eq("id", nonprofitId)
-          .single();
+    console.log("Fetching from URL:", url);
 
-        console.log("Supabase full result:", result);
-        const { data: nonprofit, error } = result;
-
-        if (error) {
-          console.error("Supabase error:", error);
-          return;
-        }
+    fetch(url, {
+      headers: {
+        'apikey': supabaseKey || '',
+        'Authorization': `Bearer ${supabaseKey}`,
+      },
+    })
+      .then((response) => {
+        console.log("Fetch response status:", response.status);
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Fetch data:", data);
+        const nonprofit = data?.[0];
 
         if (!nonprofit) {
           console.error("Nonprofit not found for ID:", nonprofitId);
@@ -382,10 +382,10 @@ export function GivingConcierge() {
         console.log("State set, opening modal...");
         setNonprofitModalOpen(true);
         console.log("Modal should be open now");
-      } catch (error) {
-        console.error("Caught exception:", error);
-      }
-    })();
+      })
+      .catch((error) => {
+        console.error("Fetch error:", error);
+      });
   }, []);
 
   // Close nonprofit modal
