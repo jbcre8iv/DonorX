@@ -116,7 +116,7 @@ export function DirectoryClient({
 
   return (
     <div className="py-12 overflow-visible">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 overflow-visible pr-9 sm:pr-11 lg:pr-14">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 overflow-visible pr-12 sm:pr-16 lg:pr-20">
         {/* Header */}
         <div className="text-center">
           <h1 className="text-3xl font-semibold text-slate-900 sm:text-4xl">
