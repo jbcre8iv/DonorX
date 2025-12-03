@@ -340,23 +340,16 @@ export function GivingConcierge() {
 
   // Handle nonprofit card click - fetch data and open modal
   const handleNonprofitClick = useCallback((nonprofitId: string, name: string) => {
-    console.log("handleNonprofitClick called:", { nonprofitId, name });
-
     // Validate UUID format before querying
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(nonprofitId)) {
-      console.error("Invalid nonprofit ID format:", nonprofitId);
       return;
     }
 
-    console.log("UUID valid, fetching nonprofit via REST...");
-
-    // Use direct REST API call to bypass any Supabase SDK issues
+    // Use direct REST API call for reliable async behavior
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const url = `${supabaseUrl}/rest/v1/nonprofits?id=eq.${nonprofitId}&select=*,category:categories(*)`;
-
-    console.log("Fetching from URL:", url);
 
     fetch(url, {
       headers: {
@@ -364,27 +357,16 @@ export function GivingConcierge() {
         'Authorization': `Bearer ${supabaseKey}`,
       },
     })
-      .then((response) => {
-        console.log("Fetch response status:", response.status);
-        return response.json();
-      })
+      .then((response) => response.json())
       .then((data) => {
-        console.log("Fetch data:", data);
         const nonprofit = data?.[0];
+        if (!nonprofit) return;
 
-        if (!nonprofit) {
-          console.error("Nonprofit not found for ID:", nonprofitId);
-          return;
-        }
-
-        console.log("Opening modal with nonprofit:", nonprofit.name);
         setSelectedNonprofit(nonprofit as Nonprofit);
-        console.log("State set, opening modal...");
         setNonprofitModalOpen(true);
-        console.log("Modal should be open now");
       })
       .catch((error) => {
-        console.error("Fetch error:", error);
+        console.error("Error fetching nonprofit:", error);
       });
   }, []);
 

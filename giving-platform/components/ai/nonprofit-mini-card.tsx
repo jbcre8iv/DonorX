@@ -12,7 +12,6 @@ export function NonprofitMiniCard({ id, name, onClick }: NonprofitMiniCardProps)
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("NonprofitMiniCard clicked:", { id, name });
     onClick?.(id, name);
   };
 
