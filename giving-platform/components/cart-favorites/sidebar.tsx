@@ -14,7 +14,10 @@ export function CartFavoritesSidebar() {
     setActiveTab,
     cartItems,
     favorites,
+    userId,
   } = useCartFavorites();
+
+  const isLoggedIn = !!userId;
 
   // Close sidebar on escape key
   useEffect(() => {
@@ -82,12 +85,14 @@ export function CartFavoritesSidebar() {
               className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                 activeTab === "favorites"
                   ? "bg-white text-slate-900 shadow-sm"
+                  : !isLoggedIn
+                  ? "text-slate-400 cursor-default"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <Heart className="h-4 w-4" />
+              <Heart className={`h-4 w-4 ${!isLoggedIn ? "text-slate-300" : ""}`} />
               <span className="hidden sm:inline">Favorites</span>
-              {favorites.length > 0 && (
+              {isLoggedIn && favorites.length > 0 && (
                 <span className="ml-1 rounded-full bg-pink-100 px-1.5 py-0.5 text-xs font-semibold text-pink-700">
                   {favorites.length}
                 </span>
