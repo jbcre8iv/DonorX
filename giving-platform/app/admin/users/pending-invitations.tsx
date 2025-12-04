@@ -30,6 +30,7 @@ export function PendingInvitations({ isOwner }: PendingInvitationsProps) {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
 
   async function loadInvitations() {
     const result = await getPendingInvitations();
@@ -115,7 +116,7 @@ export function PendingInvitations({ isOwner }: PendingInvitationsProps) {
         <div className="space-y-3">
           {invitations.map((invitation) => {
             const expiresAt = new Date(invitation.expires_at);
-            const isExpiringSoon = expiresAt.getTime() - Date.now() < 24 * 60 * 60 * 1000;
+            const isExpiringSoon = expiresAt.getTime() - currentTime < 24 * 60 * 60 * 1000;
             const inviterName = invitation.inviter
               ? `${invitation.inviter.first_name || ""} ${invitation.inviter.last_name || ""}`.trim()
               : "Unknown";
