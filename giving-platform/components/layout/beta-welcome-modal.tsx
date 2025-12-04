@@ -87,14 +87,18 @@ export function BetaWelcomeModal() {
   const handleDismiss = () => {
     localStorage.setItem(STORAGE_KEY, "true");
     setOpen(false);
+    // Explicitly reset body overflow after closing
+    document.body.style.overflow = "";
   };
 
-  if (!open || !mounted) return null;
+  // Don't render anything if not open or not mounted
+  if (!mounted) return null;
+  if (!open) return null;
 
   const modalContent = (
-    <div className="fixed inset-0 z-[70]">
+    <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true">
       {/* Backdrop - no click to close, must use button */}
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true" />
 
       {/* Modal Container */}
       <div className="fixed inset-0 overflow-y-auto">
