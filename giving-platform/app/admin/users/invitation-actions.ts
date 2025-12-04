@@ -16,6 +16,9 @@ import { headers } from "next/headers";
 // Initialize Resend for email sending
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Use verified domain or Resend test sender
+const EMAIL_FROM = process.env.RESEND_FROM_EMAIL || "DonorX <onboarding@resend.dev>";
+
 type InviteRole = "admin" | "member" | "viewer";
 
 interface SendInvitationResult {
@@ -132,7 +135,7 @@ export async function sendTeamInvitation(
 
     // Send invitation email with secure HTML
     const { error: emailError } = await resend.emails.send({
-      from: "DonorX <noreply@donor-x.vercel.app>",
+      from: EMAIL_FROM,
       to: normalizedEmail,
       subject: "You've been invited to join the DonorX team",
       html: generateInvitationEmailHtml({
@@ -264,7 +267,7 @@ export async function resendInvitation(invitationId: string): Promise<SendInvita
       : "The DonorX team";
 
     await resend.emails.send({
-      from: "DonorX <noreply@donor-x.vercel.app>",
+      from: EMAIL_FROM,
       to: invitation.email,
       subject: "Reminder: You've been invited to join the DonorX team",
       html: generateInvitationEmailHtml({

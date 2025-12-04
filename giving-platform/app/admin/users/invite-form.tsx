@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { UserPlus, Mail, Shield, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ const roleOptions = [
 ];
 
 export function InviteTeamMemberForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "member" | "viewer">("member");
   const [loading, setLoading] = useState(false);
@@ -46,6 +48,9 @@ export function InviteTeamMemberForm() {
       setSuccess(result.error || `Invitation sent to ${email}`);
       setEmail("");
       setRole("member");
+
+      // Refresh the page to show updated pending invitations
+      router.refresh();
 
       // Clear success message after 5 seconds
       setTimeout(() => setSuccess(null), 5000);
