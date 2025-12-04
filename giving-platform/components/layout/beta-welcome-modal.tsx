@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 const STORAGE_KEY = "donorx_beta_welcome_shown";
+const TRIGGER_KEY = "donorx_beta_welcome_trigger";
 
 export function BetaWelcomeModal() {
   const [open, setOpen] = React.useState(false);
@@ -24,10 +25,19 @@ export function BetaWelcomeModal() {
 
   React.useEffect(() => {
     setMounted(true);
-    // Check if the user has already seen the welcome modal
+
+    // Check if we should trigger the welcome modal (set by invite page)
+    const shouldTrigger = localStorage.getItem(TRIGGER_KEY);
     const hasSeenWelcome = localStorage.getItem(STORAGE_KEY);
-    if (!hasSeenWelcome) {
-      setOpen(true);
+
+    if (shouldTrigger && !hasSeenWelcome) {
+      // Clear the trigger immediately
+      localStorage.removeItem(TRIGGER_KEY);
+      // Show modal after 1.5 second delay
+      const timer = setTimeout(() => {
+        setOpen(true);
+      }, 1500);
+      return () => clearTimeout(timer);
     }
   }, []);
 

@@ -32,6 +32,8 @@ export default function InvitePage() {
 
       if (data.hasAccess) {
         setHasAccess(true);
+        // Trigger the welcome modal to show after they navigate
+        localStorage.setItem("donorx_beta_welcome_trigger", "true");
       } else {
         setHasAccess(false);
       }
