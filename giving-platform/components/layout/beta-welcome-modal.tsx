@@ -10,7 +10,6 @@ import {
   CreditCard,
   LayoutDashboard,
   FileText,
-  Users,
   CheckCircle,
   Bug,
   MessageSquare,
@@ -160,10 +159,10 @@ export function BetaWelcomeModal() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
-                    <Users className="h-5 w-5 text-cyan-600 mt-0.5 flex-shrink-0" />
+                    <Sparkles className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="font-medium text-slate-900 text-sm">Team Management</p>
-                      <p className="text-xs text-slate-500">Invite family members</p>
+                      <p className="font-medium text-slate-900 text-sm">AI Chatbot</p>
+                      <p className="text-xs text-slate-500">Get personalized giving advice</p>
                     </div>
                   </div>
                 </div>
@@ -185,7 +184,7 @@ export function BetaWelcomeModal() {
                     </p>
                     <div className="flex items-center gap-2 mt-2 text-xs text-amber-600">
                       <MessageSquare className="h-3.5 w-3.5" />
-                      <span>Contact: feedback@donor-x.com</span>
+                      <span>Contact: support@jbcre8iv.com</span>
                     </div>
                   </div>
                 </div>
