@@ -2,13 +2,17 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 
-// Paths that don't require beta access
+// Paths that don't require beta access at all
 const PUBLIC_PATHS = [
   "/invite",
   "/api/check-beta-access",
+  "/auth/callback",
+];
+
+// Paths that require beta cookie but not login
+const BETA_COOKIE_PATHS = [
   "/login",
   "/register",
-  "/auth/callback",
   "/forgot-password",
   "/reset-password",
 ];
@@ -32,6 +36,9 @@ export async function middleware(request: NextRequest) {
 
   // Allow public paths without beta check
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+
+  // Paths that need beta cookie but not login
+  const isBetaCookiePath = BETA_COOKIE_PATHS.some((path) => pathname.startsWith(path));
 
   // Continue with Supabase session update
   let supabaseResponse = NextResponse.next({
@@ -63,6 +70,16 @@ export async function middleware(request: NextRequest) {
 
   // Get the current user
   const { data: { user } } = await supabase.auth.getUser();
+
+  // For beta cookie paths (login, register, etc), just check for the cookie
+  if (isBetaCookiePath) {
+    const hasBetaAccessCookie = request.cookies.get("beta_access")?.value === "granted";
+    if (!hasBetaAccessCookie) {
+      const inviteUrl = new URL("/invite", request.url);
+      return NextResponse.redirect(inviteUrl);
+    }
+    return supabaseResponse;
+  }
 
   // If not a public path, check beta access
   if (!isPublicPath) {

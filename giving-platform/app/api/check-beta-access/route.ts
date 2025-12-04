@@ -32,7 +32,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ hasAccess: false });
     }
 
-    return NextResponse.json({ hasAccess: true });
+    // Set the beta access cookie
+    const response = NextResponse.json({ hasAccess: true });
+    response.cookies.set("beta_access", "granted", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      path: "/",
+    });
+
+    return response;
   } catch {
     return NextResponse.json({ hasAccess: false });
   }

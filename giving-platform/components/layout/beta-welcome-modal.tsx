@@ -28,14 +28,11 @@ export function BetaWelcomeModal() {
 
     const showModalIfNotSeen = () => {
       const hasSeenWelcome = localStorage.getItem(STORAGE_KEY);
-      console.log("[BetaWelcome] showModalIfNotSeen called, hasSeenWelcome:", hasSeenWelcome);
       if (!hasSeenWelcome) {
         // Clear the trigger
         localStorage.removeItem(TRIGGER_KEY);
-        console.log("[BetaWelcome] Scheduling modal to open in 1.5s");
         // Show modal after 1.5 second delay
         setTimeout(() => {
-          console.log("[BetaWelcome] Opening modal now");
           setOpen(true);
         }, 1500);
       }
@@ -43,7 +40,6 @@ export function BetaWelcomeModal() {
 
     const checkAndShowModal = () => {
       const shouldTrigger = localStorage.getItem(TRIGGER_KEY);
-      console.log("[BetaWelcome] checkAndShowModal, shouldTrigger:", shouldTrigger);
       if (shouldTrigger) {
         showModalIfNotSeen();
       }
@@ -54,7 +50,6 @@ export function BetaWelcomeModal() {
 
     // Also listen for storage changes (cross-tab)
     const handleStorageChange = (e: StorageEvent) => {
-      console.log("[BetaWelcome] storage event:", e.key, e.newValue);
       if (e.key === TRIGGER_KEY && e.newValue === "true") {
         showModalIfNotSeen();
       }
@@ -62,7 +57,6 @@ export function BetaWelcomeModal() {
 
     // Custom event for same-tab communication (this is the primary trigger)
     const handleCustomTrigger = () => {
-      console.log("[BetaWelcome] betaWelcomeTrigger event received!");
       // When event fires, localStorage should already be set
       // Small delay to ensure localStorage is ready
       setTimeout(() => {
@@ -72,8 +66,6 @@ export function BetaWelcomeModal() {
 
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("betaWelcomeTrigger", handleCustomTrigger);
-
-    console.log("[BetaWelcome] Event listeners registered");
 
     return () => {
       window.removeEventListener("storage", handleStorageChange);
