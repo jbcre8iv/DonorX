@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import {
   Sparkles,
@@ -253,5 +252,5 @@ export function BetaWelcomeModal() {
     </div>
   );
 
-  return createPortal(modalContent, document.body);
+  return modalContent;
 }
