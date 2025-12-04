@@ -87,8 +87,8 @@ export function BetaWelcomeModal() {
     localStorage.setItem(STORAGE_KEY, "true");
     setOpen(false);
     document.body.style.overflow = "";
-    // Refresh the page to ensure clean state
-    window.location.reload();
+    // Redirect to home page
+    window.location.href = "/";
   };
 
   // Don't render anything if not open or not mounted
