@@ -20,10 +20,11 @@ interface User {
 
 interface UserListProps {
   users: User[];
-  isOwner: boolean;
+  currentUserRole: string | null;
 }
 
-export function UserList({ users, isOwner }: UserListProps) {
+export function UserList({ users, currentUserRole }: UserListProps) {
+  const canManageUsers = currentUserRole === "owner" || currentUserRole === "admin";
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<Record<string, "admin" | "member" | "viewer">>({});
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +47,7 @@ export function UserList({ users, isOwner }: UserListProps) {
     setLoadingUserId(null);
   }
 
-  if (!isOwner) {
+  if (!canManageUsers) {
     return null;
   }
 
@@ -116,7 +117,7 @@ export function UserList({ users, isOwner }: UserListProps) {
                     className="text-sm border border-slate-200 rounded-md px-2 py-1.5 bg-white"
                     disabled={isLoading}
                   >
-                    <option value="admin">Admin</option>
+                    {currentUserRole === "owner" && <option value="admin">Admin</option>}
                     <option value="member">Member</option>
                     <option value="viewer">Viewer</option>
                   </select>

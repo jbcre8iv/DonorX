@@ -152,8 +152,8 @@ export default async function AdminUsersPage() {
         </Card>
       </div>
 
-      {/* Registered Users - Owners can promote to team */}
-      <UserList users={users} isOwner={currentUserRole === "owner"} />
+      {/* Registered Users - Owners and admins can promote to team */}
+      <UserList users={users} currentUserRole={currentUserRole} />
 
       {/* Team Table */}
       <Card>

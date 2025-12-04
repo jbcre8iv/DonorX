@@ -2,7 +2,7 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { requireOwner } from "@/lib/auth/permissions";
+import { requireOwner, requireAdmin } from "@/lib/auth/permissions";
 
 type UserRole = "owner" | "admin" | "member" | "viewer";
 type UserStatus = "pending" | "approved" | "rejected";
@@ -143,18 +143,24 @@ export async function rejectUser(userId: string) {
 }
 
 /**
- * Promote a regular user to team member - only owners can promote
+ * Promote a regular user to team member - owners and admins can promote
+ * Admins can only promote to member/viewer, not admin
  */
 export async function promoteToTeam(userId: string, role: "admin" | "member" | "viewer") {
-  // Only owners can promote users
-  const ownerCheck = await requireOwner();
-  if ("error" in ownerCheck) {
-    return { error: ownerCheck.error };
+  // Owners and admins can promote users
+  const adminCheck = await requireAdmin();
+  if ("error" in adminCheck) {
+    return { error: adminCheck.error };
   }
 
   // Prevent promoting yourself
-  if (userId === ownerCheck.user.id) {
+  if (userId === adminCheck.user.id) {
     return { error: "You cannot promote yourself" };
+  }
+
+  // Admins can only promote to member or viewer, not admin
+  if (adminCheck.user.role === "admin" && role === "admin") {
+    return { error: "Only owners can promote users to admin" };
   }
 
   try {
@@ -184,7 +190,7 @@ export async function promoteToTeam(userId: string, role: "admin" | "member" | "
         role,
         status: "approved",
         approved_at: new Date().toISOString(),
-        approved_by: ownerCheck.user.id,
+        approved_by: adminCheck.user.id,
       })
       .eq("id", userId);
 
