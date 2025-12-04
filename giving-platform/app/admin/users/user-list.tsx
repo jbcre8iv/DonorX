@@ -35,6 +35,13 @@ export function UserList({ users, currentUserRole }: UserListProps) {
 
   async function handlePromote(userId: string) {
     const role = selectedRole[userId] || "member";
+    const user = regularUsers.find(u => u.id === userId);
+    const userName = user?.first_name || user?.email || "this user";
+
+    if (!confirm(`Are you sure you want to promote ${userName} to ${role}?`)) {
+      return;
+    }
+
     setLoadingUserId(userId);
     setError(null);
 
