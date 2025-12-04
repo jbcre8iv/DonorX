@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import { Globe, Eye, Heart, HandHeart, Check, Plus, ChevronDown, CreditCard } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -163,8 +162,6 @@ function NonprofitRow({
 }) {
   const { addToCart, isInCart, toggleFavorite, isFavorite, hasDraft, addToDraft, isInDraft, userId } = useCartFavorites();
   const { addToast } = useToast();
-  const pathname = usePathname();
-  const router = useRouter();
   const isLoggedIn = !!userId;
 
   const inCart = isInCart(nonprofit.id);
@@ -212,9 +209,9 @@ function NonprofitRow({
     e.preventDefault();
     e.stopPropagation();
 
-    // If not logged in, redirect to login with return URL
+    // If not logged in, show a subtle reminder
     if (!isLoggedIn) {
-      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      addToast("Sign in to save favorites", "info", 3000);
       return;
     }
 

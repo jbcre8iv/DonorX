@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import { Globe, Eye, Heart, HandHeart, Check, Plus, CreditCard } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,8 +17,6 @@ interface NonprofitCardProps {
 export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
   const { addToCart, isInCart, toggleFavorite, isFavorite, hasDraft, addToDraft, isInDraft, userId } = useCartFavorites();
   const { addToast } = useToast();
-  const pathname = usePathname();
-  const router = useRouter();
   const isLoggedIn = !!userId;
 
   const inCart = isInCart(nonprofit.id);
@@ -67,9 +64,9 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
     e.preventDefault();
     e.stopPropagation();
 
-    // If not logged in, redirect to login with return URL
+    // If not logged in, show a subtle reminder
     if (!isLoggedIn) {
-      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      addToast("Sign in to save favorites", "info", 3000);
       return;
     }
 
