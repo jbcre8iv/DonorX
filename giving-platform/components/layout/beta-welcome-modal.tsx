@@ -26,19 +26,42 @@ export function BetaWelcomeModal() {
   React.useEffect(() => {
     setMounted(true);
 
-    // Check if we should trigger the welcome modal (set by invite page)
-    const shouldTrigger = localStorage.getItem(TRIGGER_KEY);
-    const hasSeenWelcome = localStorage.getItem(STORAGE_KEY);
+    const checkAndShowModal = () => {
+      const shouldTrigger = localStorage.getItem(TRIGGER_KEY);
+      const hasSeenWelcome = localStorage.getItem(STORAGE_KEY);
 
-    if (shouldTrigger && !hasSeenWelcome) {
-      // Clear the trigger immediately
-      localStorage.removeItem(TRIGGER_KEY);
-      // Show modal after 1.5 second delay
-      const timer = setTimeout(() => {
-        setOpen(true);
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
+      if (shouldTrigger && !hasSeenWelcome) {
+        // Clear the trigger immediately
+        localStorage.removeItem(TRIGGER_KEY);
+        // Show modal after 1.5 second delay
+        setTimeout(() => {
+          setOpen(true);
+        }, 1500);
+      }
+    };
+
+    // Check on mount
+    checkAndShowModal();
+
+    // Also listen for storage changes (same tab)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === TRIGGER_KEY && e.newValue === "true") {
+        checkAndShowModal();
+      }
+    };
+
+    // Custom event for same-tab communication
+    const handleCustomTrigger = () => {
+      checkAndShowModal();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("betaWelcomeTrigger", handleCustomTrigger);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("betaWelcomeTrigger", handleCustomTrigger);
+    };
   }, []);
 
   React.useEffect(() => {
