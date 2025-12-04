@@ -151,34 +151,24 @@ export function UserProfileModal({ user, onClose }: UserProfileModalProps) {
 
           {/* Organization */}
           {user.organization && (
-            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+            <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
               {user.organization.logo_url ? (
                 <img
                   src={user.organization.logo_url}
                   alt={user.organization.name}
-                  className="h-9 w-9 rounded object-cover"
+                  className="h-9 w-9 rounded object-cover flex-shrink-0"
                 />
               ) : (
-                <div className="flex h-9 w-9 items-center justify-center rounded bg-slate-200 text-slate-500">
+                <div className="flex h-9 w-9 items-center justify-center rounded bg-slate-200 text-slate-500 flex-shrink-0">
                   <Building2 className="h-4 w-4" />
                 </div>
               )}
-              <div className="min-w-0 flex-1">
+              <div>
                 <p className="font-medium text-slate-900 text-sm">{user.organization.name}</p>
                 <p className="text-xs text-slate-500">
                   {orgTypeLabels[user.organization.type] || user.organization.type}
                 </p>
               </div>
-              {user.organization.website && (
-                <a
-                  href={user.organization.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-slate-400 hover:text-blue-600"
-                >
-                  <Globe className="h-4 w-4" />
-                </a>
-              )}
             </div>
           )}
 
