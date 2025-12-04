@@ -107,42 +107,46 @@ export function UserProfileModal({ user, onClose }: UserProfileModalProps) {
             </div>
           </div>
 
-          {/* Details Grid */}
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-slate-400" />
-              <span className="text-slate-600">{formatDate(user.created_at)}</span>
+          {/* Details */}
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-slate-400" />
+                <span className="text-slate-600">{formatDate(user.created_at)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-slate-400" />
+                <Badge
+                  variant={user.status === "approved" ? "success" : user.status === "pending" ? "warning" : "secondary"}
+                  className="capitalize"
+                >
+                  {user.status}
+                </Badge>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-slate-400" />
-              <Badge
-                variant={user.status === "approved" ? "success" : user.status === "pending" ? "warning" : "secondary"}
-                className="capitalize"
-              >
-                {user.status}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-2">
-              {role && RoleIcon ? (
-                <>
-                  <RoleIcon className="h-4 w-4 text-slate-400" />
-                  <Badge variant={roleColors[role]} className="capitalize">
-                    {role}
-                  </Badge>
-                </>
-              ) : (
-                <>
-                  <Users className="h-4 w-4 text-slate-400" />
-                  <Badge variant="secondary">Registered</Badge>
-                </>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                {role && RoleIcon ? (
+                  <>
+                    <RoleIcon className="h-4 w-4 text-slate-400" />
+                    <Badge variant={roleColors[role]} className="capitalize">
+                      {role}
+                    </Badge>
+                  </>
+                ) : (
+                  <>
+                    <Users className="h-4 w-4 text-slate-400" />
+                    <Badge variant="secondary">Registered</Badge>
+                  </>
+                )}
+              </div>
+              {user.approved_at && (
+                <div className="flex items-center gap-2">
+                  <UserCheck className="h-4 w-4 text-slate-400" />
+                  <span className="text-slate-600">{formatDate(user.approved_at)}</span>
+                </div>
               )}
             </div>
-            {user.approved_at && (
-              <div className="flex items-center gap-2">
-                <UserCheck className="h-4 w-4 text-slate-400" />
-                <span className="text-slate-600">{formatDate(user.approved_at)}</span>
-              </div>
-            )}
           </div>
 
           {/* Organization */}
