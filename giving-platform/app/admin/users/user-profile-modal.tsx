@@ -109,11 +109,11 @@ export function UserProfileModal({ user, onClose }: UserProfileModalProps) {
 
           {/* Details Grid */}
           <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
+            <div className="text-left">
               <p className="text-xs text-slate-400 mb-1">Registered</p>
               <p className="text-slate-600">{formatDate(user.created_at)}</p>
             </div>
-            <div>
+            <div className="text-left">
               <p className="text-xs text-slate-400 mb-1">Status</p>
               <Badge
                 variant={user.status === "approved" ? "success" : user.status === "pending" ? "warning" : "secondary"}
@@ -122,7 +122,7 @@ export function UserProfileModal({ user, onClose }: UserProfileModalProps) {
                 {user.status}
               </Badge>
             </div>
-            <div>
+            <div className="text-left">
               <p className="text-xs text-slate-400 mb-1">Role</p>
               {role ? (
                 <Badge variant={roleColors[role]} className="capitalize">
@@ -132,7 +132,7 @@ export function UserProfileModal({ user, onClose }: UserProfileModalProps) {
                 <Badge variant="secondary">User</Badge>
               )}
             </div>
-            <div>
+            <div className="text-left">
               <p className="text-xs text-slate-400 mb-1">Approved</p>
               <p className="text-slate-600">{user.approved_at ? formatDate(user.approved_at) : "—"}</p>
             </div>
