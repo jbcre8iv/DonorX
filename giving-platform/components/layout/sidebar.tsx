@@ -52,7 +52,7 @@ const adminLinks: SidebarLink[] = [
   { href: "/admin/donations", label: "Donations", icon: CreditCard },
   { href: "/admin/donors", label: "Donors", icon: Heart },
   { href: "/admin/categories", label: "Categories", icon: Tag },
-  { href: "/admin/users", label: "Team", icon: Users },
+  { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

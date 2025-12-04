@@ -7,7 +7,7 @@ import { RoleSelector } from "./role-selector";
 import { UserList, RemoveFromTeamButton } from "./user-list";
 
 export const metadata = {
-  title: "Team - Admin",
+  title: "Users - Admin",
 };
 
 type UserRole = "owner" | "admin" | "member" | "viewer";
@@ -92,8 +92,8 @@ export default async function AdminUsersPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-purple-900">Team</h1>
-        <p className="text-purple-700/70">Manage platform team members and roles</p>
+        <h1 className="text-2xl font-semibold text-purple-900">Users</h1>
+        <p className="text-purple-700/70">Manage platform users and team members</p>
       </div>
 
       {/* Stats */}
@@ -155,7 +155,7 @@ export default async function AdminUsersPage() {
       {/* Team Table */}
       <Card>
         <CardHeader>
-          <CardTitle>All Team Members</CardTitle>
+          <CardTitle>Team Members</CardTitle>
         </CardHeader>
         <CardContent>
           {teamMembers.length === 0 ? (
