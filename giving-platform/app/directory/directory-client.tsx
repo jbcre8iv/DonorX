@@ -18,11 +18,11 @@ const ITEMS_PER_PAGE_TABLE = 25;
 
 type SortOption = "name-asc" | "name-desc" | "category" | "recent";
 
-const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "name-asc", label: "Name (A-Z)" },
-  { value: "name-desc", label: "Name (Z-A)" },
-  { value: "category", label: "Category" },
-  { value: "recent", label: "Recently Added" },
+const SORT_OPTIONS: { value: SortOption; label: string; shortLabel: string }[] = [
+  { value: "name-asc", label: "Name (A-Z)", shortLabel: "A-Z" },
+  { value: "name-desc", label: "Name (Z-A)", shortLabel: "Z-A" },
+  { value: "category", label: "Category", shortLabel: "Category" },
+  { value: "recent", label: "Recently Added", shortLabel: "Recent" },
 ];
 
 interface DirectoryClientProps {
@@ -238,10 +238,23 @@ export function DirectoryClient({
             {/* Sort Dropdown - narrower on mobile */}
             <div className="relative flex-[2] sm:flex-1">
               <ArrowUpDown className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              {/* Mobile: short labels */}
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-9 pr-10 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-0"
+                className="sm:hidden flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-9 pr-10 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-0"
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.shortLabel}
+                  </option>
+                ))}
+              </select>
+              {/* Desktop: full labels */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="hidden sm:flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-9 pr-10 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-0"
               >
                 {SORT_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
