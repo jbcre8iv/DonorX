@@ -111,41 +111,50 @@ export function UserProfileModal({ user, onClose }: UserProfileModalProps) {
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-slate-400" />
-              <span className="text-slate-600">{formatDate(user.created_at)}</span>
+              <div>
+                <p className="text-xs text-slate-400">Registered</p>
+                <p className="text-slate-600">{formatDate(user.created_at)}</p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4 text-slate-400" />
-              <Badge
-                variant={user.status === "approved" ? "success" : user.status === "pending" ? "warning" : "secondary"}
-                className="capitalize"
-              >
-                {user.status}
-              </Badge>
+              <div>
+                <p className="text-xs text-slate-400">Status</p>
+                <Badge
+                  variant={user.status === "approved" ? "success" : user.status === "pending" ? "warning" : "secondary"}
+                  className="capitalize"
+                >
+                  {user.status}
+                </Badge>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {role && RoleIcon ? (
                 <>
                   <RoleIcon className="h-4 w-4 text-slate-400" />
-                  <Badge variant={roleColors[role]} className="capitalize">
-                    {role}
-                  </Badge>
+                  <div>
+                    <p className="text-xs text-slate-400">Role</p>
+                    <Badge variant={roleColors[role]} className="capitalize">
+                      {role}
+                    </Badge>
+                  </div>
                 </>
               ) : (
                 <>
                   <Users className="h-4 w-4 text-slate-400" />
-                  <Badge variant="secondary">Registered</Badge>
+                  <div>
+                    <p className="text-xs text-slate-400">Role</p>
+                    <Badge variant="secondary">User</Badge>
+                  </div>
                 </>
               )}
             </div>
             <div className="flex items-center gap-2">
-              {user.approved_at ? (
-                <>
-                  <UserCheck className="h-4 w-4 text-slate-400" />
-                  <span className="text-slate-600">{formatDate(user.approved_at)}</span>
-                </>
-              ) : (
-                <span className="text-slate-300">—</span>
-              )}
+              <UserCheck className="h-4 w-4 text-slate-400" />
+              <div>
+                <p className="text-xs text-slate-400">Approved</p>
+                <p className="text-slate-600">{user.approved_at ? formatDate(user.approved_at) : "—"}</p>
+              </div>
             </div>
           </div>
 
