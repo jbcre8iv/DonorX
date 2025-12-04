@@ -209,9 +209,12 @@ function NonprofitRow({
     e.preventDefault();
     e.stopPropagation();
 
-    // If not logged in, show a subtle reminder
+    // If not logged in, show a subtle reminder with sign in link
     if (!isLoggedIn) {
-      addToast("Sign in to save favorites", "info", 3000);
+      addToast("Sign in to save favorites", "info", 4000, {
+        label: "Sign in",
+        href: "/login?redirect=/directory",
+      });
       return;
     }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import Link from "next/link";
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -11,11 +12,16 @@ interface Toast {
   message: string;
   type: ToastType;
   duration?: number;
+  action?: {
+    label: string;
+    href?: string;
+    onClick?: () => void;
+  };
 }
 
 interface ToastContextType {
   toasts: Toast[];
-  addToast: (message: string, type?: ToastType, duration?: number) => void;
+  addToast: (message: string, type?: ToastType, duration?: number, action?: Toast["action"]) => void;
   removeToast: (id: string) => void;
 }
 
@@ -33,9 +39,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const addToast = useCallback(
-    (message: string, type: ToastType = "info", duration: number = 5000) => {
+    (message: string, type: ToastType = "info", duration: number = 5000, action?: Toast["action"]) => {
       const id = Math.random().toString(36).substring(2, 9);
-      setToasts((prev) => [...prev, { id, message, type, duration }]);
+      setToasts((prev) => [...prev, { id, message, type, duration, action }]);
 
       if (duration > 0) {
         setTimeout(() => {
@@ -68,7 +74,7 @@ function ToastContainer({
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 z-50 flex flex-col gap-2">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
       ))}
@@ -98,17 +104,45 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
     warning: "text-amber-500",
   };
 
+  const actionColors = {
+    success: "text-emerald-700 hover:text-emerald-900",
+    error: "text-red-700 hover:text-red-900",
+    info: "text-blue-700 hover:text-blue-900",
+    warning: "text-amber-700 hover:text-amber-900",
+  };
+
   const Icon = icons[toast.type];
 
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-lg border px-4 py-3 shadow-lg animate-in slide-in-from-right-5",
+        "flex items-center gap-3 rounded-lg border px-4 py-3 shadow-lg animate-in slide-in-from-bottom-5 sm:slide-in-from-right-5",
         colors[toast.type]
       )}
     >
       <Icon className={cn("h-5 w-5 flex-shrink-0", iconColors[toast.type])} />
       <p className="text-sm font-medium flex-1">{toast.message}</p>
+      {toast.action && (
+        toast.action.href ? (
+          <Link
+            href={toast.action.href}
+            className={cn("text-sm font-semibold underline flex-shrink-0", actionColors[toast.type])}
+            onClick={onClose}
+          >
+            {toast.action.label}
+          </Link>
+        ) : toast.action.onClick ? (
+          <button
+            onClick={() => {
+              toast.action?.onClick?.();
+              onClose();
+            }}
+            className={cn("text-sm font-semibold underline flex-shrink-0", actionColors[toast.type])}
+          >
+            {toast.action.label}
+          </button>
+        ) : null
+      )}
       <button
         onClick={onClose}
         className="flex-shrink-0 rounded-full p-1 hover:bg-black/5 transition-colors"
