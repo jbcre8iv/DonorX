@@ -81,16 +81,25 @@ export async function middleware(request: NextRequest) {
           // User has active beta access, continue
           return supabaseResponse;
         } else {
-          // User's access was revoked - clear cookie and redirect
-          supabaseResponse.cookies.set("beta_access", "", {
+          // User's access was revoked - sign them out and redirect
+          await supabase.auth.signOut();
+
+          // Clear all auth-related cookies
+          const response = NextResponse.redirect(new URL("/invite", request.url));
+          response.cookies.set("beta_access", "", {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
-            maxAge: 0, // Delete cookie
+            maxAge: 0,
             path: "/",
           });
-          const inviteUrl = new URL("/invite", request.url);
-          return NextResponse.redirect(inviteUrl);
+          // Clear Supabase auth cookies
+          request.cookies.getAll().forEach((cookie) => {
+            if (cookie.name.includes("supabase") || cookie.name.includes("sb-")) {
+              response.cookies.set(cookie.name, "", { maxAge: 0, path: "/" });
+            }
+          });
+          return response;
         }
       } catch {
         // No beta access found, redirect to invite page
