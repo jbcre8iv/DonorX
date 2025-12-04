@@ -2,10 +2,10 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
-import { Users, Shield, UserCheck, Clock, UserPlus, AlertCircle } from "lucide-react";
+import { Users, Shield, UserCheck, Clock } from "lucide-react";
 import { RoleSelector } from "./role-selector";
-import { CopyLinkButton } from "./copy-link-button";
-import { UserApprovalButtons } from "./user-approval-buttons";
+import { InviteTeamMemberForm } from "./invite-form";
+import { PendingInvitations } from "./pending-invitations";
 
 export const metadata = {
   title: "Team - Admin",
@@ -77,12 +77,16 @@ export default async function AdminUsersPage() {
     users = data || [];
   }
 
+  // Filter to only team members (those with explicit team roles)
+  const teamRoles = ["owner", "admin", "member", "viewer"];
+  const teamMembers = users.filter((u) => u.role && teamRoles.includes(u.role));
+
   const stats = {
-    total: users.length,
-    pending: users.filter((u) => u.status === "pending").length,
-    owners: users.filter((u) => u.role === "owner").length,
-    admins: users.filter((u) => u.role === "admin").length,
-    members: users.filter((u) => u.role === "member" || !u.role).length,
+    total: teamMembers.length,
+    pending: teamMembers.filter((u) => u.status === "pending").length,
+    owners: teamMembers.filter((u) => u.role === "owner").length,
+    admins: teamMembers.filter((u) => u.role === "admin").length,
+    members: teamMembers.filter((u) => u.role === "member" || u.role === "viewer").length,
   };
 
   return (
@@ -94,29 +98,16 @@ export default async function AdminUsersPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600">Total Users</p>
+                <p className="text-sm text-slate-600">Total Team</p>
                 <p className="mt-1 text-2xl font-semibold text-slate-900">{stats.total}</p>
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
                 <Users className="h-5 w-5 text-blue-700" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className={stats.pending > 0 ? "border-amber-300 bg-amber-50" : ""}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm ${stats.pending > 0 ? "text-amber-700" : "text-slate-600"}`}>Pending</p>
-                <p className={`mt-1 text-2xl font-semibold ${stats.pending > 0 ? "text-amber-900" : "text-slate-900"}`}>{stats.pending}</p>
-              </div>
-              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${stats.pending > 0 ? "bg-amber-200" : "bg-amber-100"}`}>
-                <AlertCircle className={`h-5 w-5 ${stats.pending > 0 ? "text-amber-700" : "text-amber-600"}`} />
               </div>
             </div>
           </CardContent>
@@ -162,53 +153,11 @@ export default async function AdminUsersPage() {
         </Card>
       </div>
 
-      {/* Add Team Member Card for Owners */}
-      {currentUserRole === "owner" && (
-        <Card className="border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-lg text-emerald-900">
-              <UserPlus className="h-5 w-5" />
-              Add Team Member
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-emerald-800">
-              Invite team members to help manage the platform. Follow these steps:
-            </p>
-            <ol className="space-y-3 text-sm">
-              <li className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-200 text-xs font-semibold text-emerald-800">1</span>
-                <div>
-                  <span className="font-medium text-slate-900">Share the registration link</span>
-                  <p className="text-slate-600">Send this link to your team member:</p>
-                  <CopyLinkButton />
-                </div>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-200 text-xs font-semibold text-emerald-800">2</span>
-                <div>
-                  <span className="font-medium text-slate-900">They create an account</span>
-                  <p className="text-slate-600">They&apos;ll sign up with their email and password (they&apos;ll see a pending approval page)</p>
-                </div>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-200 text-xs font-semibold text-emerald-800">3</span>
-                <div>
-                  <span className="font-medium text-slate-900">Approve their account</span>
-                  <p className="text-slate-600">Find them in the list below (status: pending) and click &quot;Approve&quot;</p>
-                </div>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-200 text-xs font-semibold text-emerald-800">4</span>
-                <div>
-                  <span className="font-medium text-slate-900">Promote them to Admin (optional)</span>
-                  <p className="text-slate-600">Once approved, click &quot;Change&quot; to set their role to Admin</p>
-                </div>
-              </li>
-            </ol>
-          </CardContent>
-        </Card>
-      )}
+      {/* Invite Team Member Form - Owners only */}
+      {currentUserRole === "owner" && <InviteTeamMemberForm />}
+
+      {/* Pending Invitations - Owners only */}
+      <PendingInvitations isOwner={currentUserRole === "owner"} />
 
       {/* Team Table */}
       <Card>
@@ -216,7 +165,7 @@ export default async function AdminUsersPage() {
           <CardTitle>All Team Members</CardTitle>
         </CardHeader>
         <CardContent>
-          {users.length === 0 ? (
+          {teamMembers.length === 0 ? (
             <p className="text-center text-slate-500 py-8">No team members found</p>
           ) : (
             <div className="overflow-x-auto">
@@ -225,7 +174,6 @@ export default async function AdminUsersPage() {
                   <tr className="border-b border-slate-200">
                     <th className="pb-3 text-left text-sm font-medium text-slate-600">User</th>
                     <th className="pb-3 text-left text-sm font-medium text-slate-600">Email</th>
-                    <th className="pb-3 text-left text-sm font-medium text-slate-600">Status</th>
                     <th className="pb-3 text-left text-sm font-medium text-slate-600">Role</th>
                     <th className="pb-3 text-left text-sm font-medium text-slate-600">Joined</th>
                     {currentUserRole === "owner" && (
@@ -234,7 +182,7 @@ export default async function AdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {users.map((user) => {
+                  {teamMembers.map((user) => {
                     const role = user.role || "member";
                     const RoleIcon = roleIcons[role] || Users;
                     const fullName = user.first_name && user.last_name
@@ -262,20 +210,6 @@ export default async function AdminUsersPage() {
                         </td>
                         <td className="py-4 text-sm text-slate-600">{user.email}</td>
                         <td className="py-4">
-                          <Badge
-                            variant={
-                              user.status === "approved"
-                                ? "success"
-                                : user.status === "pending"
-                                ? "warning"
-                                : "destructive"
-                            }
-                            className="capitalize"
-                          >
-                            {user.status}
-                          </Badge>
-                        </td>
-                        <td className="py-4">
                           <Badge variant={roleColors[role]} className="capitalize">
                             <RoleIcon className="mr-1 h-3 w-3" />
                             {role}
@@ -289,19 +223,12 @@ export default async function AdminUsersPage() {
                         </td>
                         {currentUserRole === "owner" && (
                           <td className="py-4 text-right">
-                            {user.status === "approved" ? (
-                              <RoleSelector
-                                userId={user.id}
-                                currentRole={role}
-                                isCurrentUser={isCurrentUser}
-                                currentUserRole={currentUserRole}
-                              />
-                            ) : (
-                              <UserApprovalButtons
-                                userId={user.id}
-                                userStatus={user.status}
-                              />
-                            )}
+                            <RoleSelector
+                              userId={user.id}
+                              currentRole={role}
+                              isCurrentUser={isCurrentUser}
+                              currentUserRole={currentUserRole}
+                            />
                           </td>
                         )}
                       </tr>
