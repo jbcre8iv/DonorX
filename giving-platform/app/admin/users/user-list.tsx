@@ -1,21 +1,34 @@
 "use client";
 
-import { useState } from "react";
-import { Users, UserPlus, Shield, Loader2, Clock, UserMinus } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Users, UserPlus, Loader2, Clock, UserMinus, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { promoteToTeam, removeFromTeam } from "./actions";
 import { formatDate } from "@/lib/utils";
+import { ViewProfileButton } from "./user-profile-modal";
+
+interface Organization {
+  id: string;
+  name: string;
+  type: string;
+  logo_url: string | null;
+  website: string | null;
+}
 
 interface User {
   id: string;
   email: string;
   first_name: string | null;
   last_name: string | null;
+  avatar_url: string | null;
   role: string | null;
   status: string;
   created_at: string;
+  approved_at: string | null;
+  organization: Organization | null;
 }
 
 interface UserListProps {
@@ -23,15 +36,79 @@ interface UserListProps {
   currentUserRole: string | null;
 }
 
+type SortField = "name" | "email" | "joined";
+type SortDirection = "asc" | "desc";
+
 export function UserList({ users, currentUserRole }: UserListProps) {
   const canManageUsers = currentUserRole === "owner" || currentUserRole === "admin";
   const [loadingUserId, setLoadingUserId] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<Record<string, "admin" | "member" | "viewer">>({});
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [sortField, setSortField] = useState<SortField>("joined");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   // Filter to only show non-team users (those without team roles)
   const teamRoles = ["owner", "admin", "member", "viewer"];
   const regularUsers = users.filter((u) => !u.role || !teamRoles.includes(u.role));
+
+  const filteredAndSortedUsers = useMemo(() => {
+    let filtered = regularUsers;
+
+    // Search filter
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filtered = filtered.filter(
+        (user) =>
+          user.email.toLowerCase().includes(searchLower) ||
+          user.first_name?.toLowerCase().includes(searchLower) ||
+          user.last_name?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Sort
+    filtered = [...filtered].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortField) {
+        case "name":
+          const nameA = `${a.first_name || ""} ${a.last_name || ""}`.trim().toLowerCase();
+          const nameB = `${b.first_name || ""} ${b.last_name || ""}`.trim().toLowerCase();
+          comparison = nameA.localeCompare(nameB);
+          break;
+        case "email":
+          comparison = a.email.localeCompare(b.email);
+          break;
+        case "joined":
+          comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          break;
+      }
+
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [regularUsers, search, sortField, sortDirection]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-3 w-3 text-slate-400" />;
+    }
+    return sortDirection === "asc" ? (
+      <ArrowUp className="h-3 w-3 text-blue-600" />
+    ) : (
+      <ArrowDown className="h-3 w-3 text-blue-600" />
+    );
+  };
 
   async function handlePromote(userId: string) {
     const role = selectedRole[userId] || "member";
@@ -65,11 +142,22 @@ export function UserList({ users, currentUserRole }: UserListProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Users className="h-5 w-5 text-blue-600" />
-          Registered Users
-          <Badge variant="secondary">{regularUsers.length}</Badge>
-        </CardTitle>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Users className="h-5 w-5 text-blue-600" />
+            Registered Users
+            <Badge variant="secondary">{regularUsers.length}</Badge>
+          </CardTitle>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Search users..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 w-full sm:w-64"
+            />
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <p className="text-sm text-slate-600 mb-4">
@@ -82,8 +170,36 @@ export function UserList({ users, currentUserRole }: UserListProps) {
           </div>
         )}
 
+        {/* Sort controls */}
+        <div className="flex items-center gap-4 mb-4 text-sm">
+          <span className="text-slate-500">Sort by:</span>
+          <button
+            onClick={() => handleSort("name")}
+            className="flex items-center gap-1 text-slate-600 hover:text-slate-900"
+          >
+            Name <SortIcon field="name" />
+          </button>
+          <button
+            onClick={() => handleSort("email")}
+            className="flex items-center gap-1 text-slate-600 hover:text-slate-900"
+          >
+            Email <SortIcon field="email" />
+          </button>
+          <button
+            onClick={() => handleSort("joined")}
+            className="flex items-center gap-1 text-slate-600 hover:text-slate-900"
+          >
+            Joined <SortIcon field="joined" />
+          </button>
+        </div>
+
+        {filteredAndSortedUsers.length === 0 ? (
+          <p className="text-center text-slate-500 py-8">
+            No users match your search
+          </p>
+        ) : (
         <div className="space-y-3">
-          {regularUsers.map((user) => {
+          {filteredAndSortedUsers.map((user) => {
             const fullName =
               user.first_name && user.last_name
                 ? `${user.first_name} ${user.last_name}`
@@ -113,6 +229,7 @@ export function UserList({ users, currentUserRole }: UserListProps) {
                 </div>
 
                 <div className="flex items-center gap-2 flex-shrink-0">
+                  <ViewProfileButton user={user} />
                   <select
                     value={selectedRole[user.id] || "member"}
                     onChange={(e) =>
@@ -148,6 +265,13 @@ export function UserList({ users, currentUserRole }: UserListProps) {
             );
           })}
         </div>
+        )}
+
+        {filteredAndSortedUsers.length > 0 && (
+          <div className="mt-4 text-sm text-slate-500">
+            Showing {filteredAndSortedUsers.length} of {regularUsers.length} users
+          </div>
+        )}
       </CardContent>
     </Card>
   );
