@@ -99,7 +99,7 @@ export function UserList({ users, currentUserRole }: UserListProps) {
     }
   };
 
-  const SortIcon = ({ field }: { field: SortField }) => {
+  const renderSortIcon = (field: SortField) => {
     if (sortField !== field) {
       return <ArrowUpDown className="h-3 w-3 text-slate-400" />;
     }
@@ -177,19 +177,19 @@ export function UserList({ users, currentUserRole }: UserListProps) {
             onClick={() => handleSort("name")}
             className="flex items-center gap-1 text-slate-600 hover:text-slate-900"
           >
-            Name <SortIcon field="name" />
+            Name {renderSortIcon("name")}
           </button>
           <button
             onClick={() => handleSort("email")}
             className="flex items-center gap-1 text-slate-600 hover:text-slate-900"
           >
-            Email <SortIcon field="email" />
+            Email {renderSortIcon("email")}
           </button>
           <button
             onClick={() => handleSort("joined")}
             className="flex items-center gap-1 text-slate-600 hover:text-slate-900"
           >
-            Joined <SortIcon field="joined" />
+            Joined {renderSortIcon("joined")}
           </button>
         </div>
 

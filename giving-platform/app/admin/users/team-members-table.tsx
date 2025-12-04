@@ -118,7 +118,7 @@ export function TeamMembersTable({ teamMembers, currentUserId, currentUserRole }
     }
   };
 
-  const SortIcon = ({ field }: { field: SortField }) => {
+  const renderSortIcon = (field: SortField) => {
     if (sortField !== field) {
       return <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />;
     }
@@ -176,7 +176,7 @@ export function TeamMembersTable({ teamMembers, currentUserId, currentUserRole }
                   >
                     <div className="flex items-center gap-1">
                       User
-                      <SortIcon field="name" />
+                      {renderSortIcon("name")}
                     </div>
                   </th>
                   <th
@@ -185,7 +185,7 @@ export function TeamMembersTable({ teamMembers, currentUserId, currentUserRole }
                   >
                     <div className="flex items-center gap-1">
                       Email
-                      <SortIcon field="email" />
+                      {renderSortIcon("email")}
                     </div>
                   </th>
                   <th
@@ -194,7 +194,7 @@ export function TeamMembersTable({ teamMembers, currentUserId, currentUserRole }
                   >
                     <div className="flex items-center gap-1">
                       Role
-                      <SortIcon field="role" />
+                      {renderSortIcon("role")}
                     </div>
                   </th>
                   <th
@@ -203,7 +203,7 @@ export function TeamMembersTable({ teamMembers, currentUserId, currentUserRole }
                   >
                     <div className="flex items-center gap-1">
                       Joined
-                      <SortIcon field="joined" />
+                      {renderSortIcon("joined")}
                     </div>
                   </th>
                   <th className="pb-3 text-right text-sm font-medium text-slate-600">Actions</th>
