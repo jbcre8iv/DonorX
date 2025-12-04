@@ -209,8 +209,8 @@ export function DirectoryClient({
 
           {/* Category Filter and Sort - Dropdowns */}
           <div className="flex flex-row gap-3 max-w-xl mx-auto">
-            {/* Category Filter */}
-            <div className="relative flex-1">
+            {/* Category Filter - wider on mobile to prevent truncation */}
+            <div className="relative flex-[3] sm:flex-1">
               <select
                 value={selectedCategory || ""}
                 onChange={(e) => setSelectedCategory(e.target.value || null)}
@@ -235,8 +235,8 @@ export function DirectoryClient({
               <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             </div>
 
-            {/* Sort Dropdown */}
-            <div className="relative flex-1">
+            {/* Sort Dropdown - narrower on mobile */}
+            <div className="relative flex-[2] sm:flex-1">
               <ArrowUpDown className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <select
                 value={sortBy}
