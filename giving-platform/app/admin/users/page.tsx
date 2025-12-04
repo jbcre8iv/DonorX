@@ -56,7 +56,11 @@ export default async function AdminUsersPage() {
     if (error) {
       console.error("[AdminUsersPage] Error fetching users:", error.message);
     } else {
-      users = data || [];
+      // Transform data to handle organization being returned as array from Supabase join
+      users = (data || []).map((u) => ({
+        ...u,
+        organization: Array.isArray(u.organization) ? u.organization[0] || null : u.organization,
+      })) as User[];
     }
 
     // Get current user's role
@@ -74,7 +78,10 @@ export default async function AdminUsersPage() {
         organization:organizations(id, name, type, logo_url, website)
       `)
       .order("created_at", { ascending: false });
-    users = data || [];
+    users = (data || []).map((u) => ({
+      ...u,
+      organization: Array.isArray(u.organization) ? u.organization[0] || null : u.organization,
+    })) as User[];
   }
 
   // Filter to only team members (those with explicit team roles)
