@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { Globe, Eye, Heart, HandHeart, Check, Plus, CreditCard } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,8 +16,11 @@ interface NonprofitCardProps {
 }
 
 export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
-  const { addToCart, isInCart, toggleFavorite, isFavorite, hasDraft, addToDraft, isInDraft } = useCartFavorites();
+  const { addToCart, isInCart, toggleFavorite, isFavorite, hasDraft, addToDraft, isInDraft, userId } = useCartFavorites();
   const { addToast } = useToast();
+  const pathname = usePathname();
+  const router = useRouter();
+  const isLoggedIn = !!userId;
 
   const inCart = isInCart(nonprofit.id);
   const inDraft = isInDraft(nonprofit.id);
@@ -62,7 +66,14 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const result = await toggleFavorite({
+
+    // If not logged in, redirect to login with return URL
+    if (!isLoggedIn) {
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    await toggleFavorite({
       nonprofitId: nonprofit.id,
       nonprofit: {
         id: nonprofit.id,
@@ -71,10 +82,6 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
         mission: nonprofit.mission || undefined,
       },
     });
-
-    if (!result.success && result.requiresAuth) {
-      addToast("Please sign in to save favorites", "info", 3000);
-    }
   };
 
   return (
@@ -115,7 +122,9 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
               <button
                 onClick={handleToggleFavorite}
                 className={`h-9 w-9 flex items-center justify-center rounded-xl border transition-all cursor-pointer ${
-                  favorited
+                  !isLoggedIn
+                    ? "text-slate-300 border-slate-200 bg-slate-50"
+                    : favorited
                     ? "text-pink-500 bg-pink-50 border-pink-200 hover:bg-pink-100 hover:shadow-md"
                     : "text-slate-600 border-slate-200 bg-white hover:text-pink-500 hover:border-pink-300 hover:bg-pink-50 hover:shadow-md"
                 }`}
@@ -123,7 +132,7 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
                 <Heart className={`h-4 w-4 ${favorited ? "fill-current" : ""}`} />
               </button>
               <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
-                {favorited ? "Remove from favorites" : "Add to favorites"}
+                {!isLoggedIn ? "Sign in to save favorites" : favorited ? "Remove from favorites" : "Add to favorites"}
               </span>
             </div>
           </div>

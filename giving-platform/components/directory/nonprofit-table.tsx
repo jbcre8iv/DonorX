@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { Globe, Eye, Heart, HandHeart, Check, Plus, ChevronDown, CreditCard } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ function ActionButtons({
   inDraft,
   hasDraft,
   favorited,
+  isLoggedIn,
   onAddToCartOrDraft,
   onToggleFavorite,
   onQuickView,
@@ -33,6 +35,7 @@ function ActionButtons({
   inDraft: boolean;
   hasDraft: boolean;
   favorited: boolean;
+  isLoggedIn: boolean;
   onAddToCartOrDraft: (e: React.MouseEvent) => void;
   onToggleFavorite: (e: React.MouseEvent) => void;
   onQuickView?: (nonprofit: Nonprofit) => void;
@@ -63,7 +66,7 @@ function ActionButtons({
               </span>
             )}
           </Button>
-          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
+          <span className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
             {inDraft ? "In donation" : "Add to donation"}
           </span>
         </div>
@@ -85,7 +88,7 @@ function ActionButtons({
               </span>
             )}
           </Button>
-          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
+          <span className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
             {inCart ? "In giving list" : "Add to giving list"}
           </span>
         </div>
@@ -101,7 +104,7 @@ function ActionButtons({
           >
             <Eye className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
           </Button>
-          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
+          <span className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
             Quick View
           </span>
         </div>
@@ -119,7 +122,7 @@ function ActionButtons({
                 <Globe className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
               </a>
             </Button>
-            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
+            <span className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
               Visit Website
             </span>
           </div>
@@ -129,16 +132,18 @@ function ActionButtons({
       <div className="relative group/tip">
         <button
           onClick={onToggleFavorite}
-          className={`${isMobile ? "h-10 w-10" : "h-9 w-9"} flex items-center justify-center rounded-xl border transition-all cursor-pointer ${
-            favorited
-              ? "text-pink-500 bg-pink-50 border-pink-200 hover:bg-pink-100 hover:shadow-md"
-              : "text-slate-600 border-slate-200 bg-white hover:text-pink-500 hover:border-pink-300 hover:bg-pink-50 hover:shadow-md"
+          className={`${isMobile ? "h-10 w-10" : "h-9 w-9"} flex items-center justify-center rounded-xl border transition-all ${
+            !isLoggedIn
+              ? "text-slate-300 border-slate-200 bg-slate-50 cursor-pointer"
+              : favorited
+              ? "text-pink-500 bg-pink-50 border-pink-200 hover:bg-pink-100 hover:shadow-md cursor-pointer"
+              : "text-slate-600 border-slate-200 bg-white hover:text-pink-500 hover:border-pink-300 hover:bg-pink-50 hover:shadow-md cursor-pointer"
           }`}
         >
           <Heart className={`${isMobile ? "h-5 w-5" : "h-4 w-4"} ${favorited ? "fill-current" : ""}`} />
         </button>
-        <span className="absolute bottom-full left-1/2 -translate-x-[60%] mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
-          {favorited ? "Remove from favorites" : "Add to favorites"}
+        <span className="hidden sm:block absolute bottom-full left-1/2 -translate-x-[60%] mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
+          {!isLoggedIn ? "Sign in to save favorites" : favorited ? "Remove from favorites" : "Add to favorites"}
         </span>
       </div>
     </div>
@@ -156,8 +161,11 @@ function NonprofitRow({
   isExpanded: boolean;
   onToggleExpand: () => void;
 }) {
-  const { addToCart, isInCart, toggleFavorite, isFavorite, hasDraft, addToDraft, isInDraft } = useCartFavorites();
+  const { addToCart, isInCart, toggleFavorite, isFavorite, hasDraft, addToDraft, isInDraft, userId } = useCartFavorites();
   const { addToast } = useToast();
+  const pathname = usePathname();
+  const router = useRouter();
+  const isLoggedIn = !!userId;
 
   const inCart = isInCart(nonprofit.id);
   const inDraft = isInDraft(nonprofit.id);
@@ -203,7 +211,14 @@ function NonprofitRow({
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const result = await toggleFavorite({
+
+    // If not logged in, redirect to login with return URL
+    if (!isLoggedIn) {
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    await toggleFavorite({
       nonprofitId: nonprofit.id,
       nonprofit: {
         id: nonprofit.id,
@@ -212,16 +227,16 @@ function NonprofitRow({
         mission: nonprofit.mission || undefined,
       },
     });
-
-    if (!result.success && result.requiresAuth) {
-      addToast("Please sign in to save favorites", "info", 3000);
-    }
   };
 
   return (
     <>
       <tr
-        className="text-sm hover:bg-slate-50 transition-colors sm:cursor-default cursor-pointer"
+        className={`text-sm transition-colors sm:cursor-default cursor-pointer ${
+          isExpanded
+            ? "sm:hover:bg-slate-50 bg-blue-50/50 border-t border-l border-r border-blue-200 rounded-t-lg"
+            : "hover:bg-slate-50"
+        }`}
         onClick={() => {
           // On mobile, clicking the row expands/collapses
           if (window.innerWidth < 640) {
@@ -229,7 +244,7 @@ function NonprofitRow({
           }
         }}
       >
-        <td className="py-3 pl-3 pr-2 sm:pr-4 rounded-l-lg">
+        <td className={`py-3 pl-3 pr-2 sm:pr-4 ${isExpanded ? "sm:rounded-l-lg" : "rounded-l-lg"}`}>
           {/* Desktop: Link to detail page */}
           <Link
             href={`/directory/${nonprofit.id}`}
@@ -310,6 +325,7 @@ function NonprofitRow({
             inDraft={inDraft}
             hasDraft={hasDraft}
             favorited={favorited}
+            isLoggedIn={isLoggedIn}
             onAddToCartOrDraft={handleAddToCartOrDraft}
             onToggleFavorite={handleToggleFavorite}
             onQuickView={onQuickView}
@@ -328,8 +344,8 @@ function NonprofitRow({
       </tr>
       {/* Mobile expanded actions row */}
       {isExpanded && (
-        <tr className="sm:hidden bg-slate-50">
-          <td colSpan={2} className="py-3 px-4">
+        <tr className="sm:hidden bg-blue-50/50 border-b border-l border-r border-blue-200 rounded-b-lg">
+          <td colSpan={2} className="py-3 px-4 rounded-b-lg">
             <ActionButtons
               className="justify-center flex-wrap"
               nonprofit={nonprofit}
@@ -337,6 +353,7 @@ function NonprofitRow({
               inDraft={inDraft}
               hasDraft={hasDraft}
               favorited={favorited}
+              isLoggedIn={isLoggedIn}
               onAddToCartOrDraft={handleAddToCartOrDraft}
               onToggleFavorite={handleToggleFavorite}
               onQuickView={onQuickView}
