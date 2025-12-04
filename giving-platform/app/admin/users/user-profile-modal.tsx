@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Mail, Building2, Globe, Calendar, Shield, UserCheck, Users, Eye } from "lucide-react";
+import { X, Building2, Globe, Calendar, Shield, UserCheck, Users, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
@@ -74,10 +74,10 @@ export function UserProfileModal({ user, onClose }: UserProfileModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200">
-          <h2 className="text-xl font-semibold text-slate-900">User Profile</h2>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+          <h2 className="text-lg font-semibold text-slate-900">User Profile</h2>
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 transition-colors"
@@ -87,141 +87,106 @@ export function UserProfileModal({ user, onClose }: UserProfileModalProps) {
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="px-5 py-4 space-y-4">
           {/* User Avatar & Name */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {user.avatar_url ? (
               <img
                 src={user.avatar_url}
                 alt={fullName}
-                className="h-16 w-16 rounded-full object-cover"
+                className="h-12 w-12 rounded-full object-cover"
               />
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xl font-semibold">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-lg font-semibold">
                 {initials.toUpperCase()}
               </div>
             )}
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">{fullName}</h3>
+              <h3 className="font-semibold text-slate-900">{fullName}</h3>
               <p className="text-sm text-slate-500">{user.email}</p>
-              {role && RoleIcon && (
-                <Badge variant={roleColors[role]} className="mt-1 capitalize">
-                  <RoleIcon className="mr-1 h-3 w-3" />
-                  {role}
-                </Badge>
-              )}
-              {!role && (
-                <Badge variant="secondary" className="mt-1">
-                  Registered User
-                </Badge>
-              )}
             </div>
           </div>
 
-          {/* User Details */}
-          <div className="space-y-4">
-            <h4 className="text-sm font-medium text-slate-700 uppercase tracking-wide">
-              Account Details
-            </h4>
-
-            <div className="grid gap-3">
-              <div className="flex items-start gap-3">
-                <Mail className="h-5 w-5 text-slate-400 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-slate-700">Email</p>
-                  <p className="text-sm text-slate-600">{user.email}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Calendar className="h-5 w-5 text-slate-400 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-slate-700">Joined</p>
-                  <p className="text-sm text-slate-600">{formatDate(user.created_at)}</p>
-                </div>
-              </div>
-
-              {user.approved_at && (
-                <div className="flex items-start gap-3">
-                  <UserCheck className="h-5 w-5 text-slate-400 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-slate-700">Approved</p>
-                    <p className="text-sm text-slate-600">{formatDate(user.approved_at)}</p>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-start gap-3">
-                <Shield className="h-5 w-5 text-slate-400 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-slate-700">Status</p>
-                  <Badge
-                    variant={user.status === "approved" ? "success" : user.status === "pending" ? "warning" : "secondary"}
-                    className="capitalize"
-                  >
-                    {user.status}
-                  </Badge>
-                </div>
-              </div>
+          {/* Details Grid */}
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-slate-400" />
+              <span className="text-slate-600">{formatDate(user.created_at)}</span>
             </div>
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-slate-400" />
+              <Badge
+                variant={user.status === "approved" ? "success" : user.status === "pending" ? "warning" : "secondary"}
+                className="capitalize"
+              >
+                {user.status}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              {role && RoleIcon ? (
+                <>
+                  <RoleIcon className="h-4 w-4 text-slate-400" />
+                  <Badge variant={roleColors[role]} className="capitalize">
+                    {role}
+                  </Badge>
+                </>
+              ) : (
+                <>
+                  <Users className="h-4 w-4 text-slate-400" />
+                  <Badge variant="secondary">Registered</Badge>
+                </>
+              )}
+            </div>
+            {user.approved_at && (
+              <div className="flex items-center gap-2">
+                <UserCheck className="h-4 w-4 text-slate-400" />
+                <span className="text-slate-600">{formatDate(user.approved_at)}</span>
+              </div>
+            )}
           </div>
 
           {/* Organization */}
           {user.organization && (
-            <div className="space-y-4">
-              <h4 className="text-sm font-medium text-slate-700 uppercase tracking-wide">
-                Organization
-              </h4>
-
-              <div className="p-4 bg-slate-50 rounded-lg space-y-3">
-                <div className="flex items-center gap-3">
-                  {user.organization.logo_url ? (
-                    <img
-                      src={user.organization.logo_url}
-                      alt={user.organization.name}
-                      className="h-10 w-10 rounded object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded bg-slate-200 text-slate-500">
-                      <Building2 className="h-5 w-5" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="font-medium text-slate-900">{user.organization.name}</p>
-                    <p className="text-sm text-slate-500">
-                      {orgTypeLabels[user.organization.type] || user.organization.type}
-                    </p>
-                  </div>
+            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+              {user.organization.logo_url ? (
+                <img
+                  src={user.organization.logo_url}
+                  alt={user.organization.name}
+                  className="h-9 w-9 rounded object-cover"
+                />
+              ) : (
+                <div className="flex h-9 w-9 items-center justify-center rounded bg-slate-200 text-slate-500">
+                  <Building2 className="h-4 w-4" />
                 </div>
-
-                {user.organization.website && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Globe className="h-4 w-4 text-slate-400" />
-                    <a
-                      href={user.organization.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      {user.organization.website}
-                    </a>
-                  </div>
-                )}
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-slate-900 text-sm">{user.organization.name}</p>
+                <p className="text-xs text-slate-500">
+                  {orgTypeLabels[user.organization.type] || user.organization.type}
+                </p>
               </div>
+              {user.organization.website && (
+                <a
+                  href={user.organization.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-slate-400 hover:text-blue-600"
+                >
+                  <Globe className="h-4 w-4" />
+                </a>
+              )}
             </div>
           )}
 
-          {/* User ID (for debugging/reference) */}
-          <div className="pt-4 border-t border-slate-100">
-            <p className="text-xs text-slate-400">
-              User ID: <span className="font-mono">{user.id}</span>
-            </p>
-          </div>
+          {/* User ID */}
+          <p className="text-xs text-slate-400 pt-2 border-t border-slate-100">
+            ID: <span className="font-mono">{user.id}</span>
+          </p>
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50 rounded-b-xl">
-          <Button variant="outline" onClick={onClose}>
+        <div className="flex justify-end px-5 py-3 border-t border-slate-200 bg-slate-50 rounded-b-xl">
+          <Button variant="outline" size="sm" onClick={onClose}>
             Close
           </Button>
         </div>
