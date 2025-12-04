@@ -51,9 +51,11 @@ export function PendingInvitations({ isOwner }: PendingInvitationsProps) {
 
   useEffect(() => {
     if (isOwner) {
-      // Use void to handle the promise without triggering lint warning
+      // Fetching data on mount is a legitimate use case for setState in effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void loadInvitations();
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(false);
     }
   }, [isOwner, loadInvitations]);
