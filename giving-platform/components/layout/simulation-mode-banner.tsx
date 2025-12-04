@@ -1,6 +1,6 @@
 "use client";
 
-import { TestTube, X, ChevronDown } from "lucide-react";
+import { TestTube, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
@@ -52,22 +52,22 @@ export function SimulationModeBanner({ enabled, isAdmin }: SimulationModeBannerP
   // Collapsed state - show dot indicator in header position
   if (collapsed) {
     return (
-      <div className="relative" ref={dropdownRef}>
-        {/* Fixed position dot that appears in the header area */}
-        <div className="fixed top-3 left-4 z-50 no-print">
+      <>
+        {/* Fixed position dot - positioned to appear next to logo in header */}
+        <div className="fixed top-[1.125rem] left-[120px] z-[100] no-print" ref={dropdownRef}>
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className="relative flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 shadow-lg transition-all hover:scale-110 group"
+            className="relative flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 hover:bg-amber-600 shadow-lg transition-all hover:scale-110"
             aria-label="Simulation mode active"
           >
-            <TestTube className="h-4 w-4 text-white" />
+            <TestTube className="h-3 w-3 text-white" />
             {/* Pulse animation */}
-            <span className="absolute inset-0 rounded-full bg-amber-400 animate-ping opacity-50" />
+            <span className="absolute inset-0 rounded-full bg-amber-400 animate-ping opacity-40" />
           </button>
 
           {/* Dropdown menu */}
           {showDropdown && (
-            <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden z-50">
+            <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden">
               <div className="p-3 bg-amber-50 border-b border-amber-100">
                 <div className="flex items-center gap-2 text-amber-700">
                   <TestTube className="h-4 w-4" />
@@ -98,7 +98,7 @@ export function SimulationModeBanner({ enabled, isAdmin }: SimulationModeBannerP
             </div>
           )}
         </div>
-      </div>
+      </>
     );
   }
 
