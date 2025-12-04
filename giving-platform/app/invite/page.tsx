@@ -111,7 +111,7 @@ export default function InvitePage() {
                   <p className="text-xs text-slate-500">
                     Think this is a mistake?{" "}
                     <a
-                      href="mailto:hello@donorx.com"
+                      href="mailto:support@jbcre8iv.com"
                       className="text-emerald-600 hover:underline"
                     >
                       Contact us
@@ -169,7 +169,7 @@ export default function InvitePage() {
                   <p className="text-xs text-slate-500 text-center">
                     Don&apos;t have access?{" "}
                     <a
-                      href="mailto:hello@donorx.com"
+                      href="mailto:support@jbcre8iv.com"
                       className="text-emerald-600 hover:underline"
                     >
                       Request an invite
