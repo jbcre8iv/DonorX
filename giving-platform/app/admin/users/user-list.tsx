@@ -10,6 +10,8 @@ import { promoteToTeam, removeFromTeam } from "./actions";
 import { formatDate } from "@/lib/utils";
 import { ViewProfileButton } from "./user-profile-modal";
 
+type UserRole = "owner" | "admin" | "member" | "viewer";
+
 interface Organization {
   id: string;
   name: string;
@@ -24,7 +26,7 @@ interface User {
   first_name: string | null;
   last_name: string | null;
   avatar_url: string | null;
-  role: string | null;
+  role: UserRole | null;
   status: string;
   created_at: string;
   approved_at: string | null;
