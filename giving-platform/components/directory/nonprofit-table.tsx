@@ -25,6 +25,7 @@ function ActionButtons({
   onAddToCartOrDraft,
   onToggleFavorite,
   onQuickView,
+  isMobile = false,
 }: {
   className?: string;
   nonprofit: Nonprofit;
@@ -35,11 +36,12 @@ function ActionButtons({
   onAddToCartOrDraft: (e: React.MouseEvent) => void;
   onToggleFavorite: (e: React.MouseEvent) => void;
   onQuickView?: (nonprofit: Nonprofit) => void;
+  isMobile?: boolean;
 }) {
   return (
     <div className={`flex items-center gap-1 ${className}`}>
       {/* 1. Donate - Primary action */}
-      <Button asChild size="sm" className="h-8">
+      <Button asChild size="sm" className={isMobile ? "h-8 px-6" : "h-8"}>
         <Link href={`/donate?nonprofit=${nonprofit.id}`}>Donate</Link>
       </Button>
       {/* 2. Add to donation/cart - Secondary giving action */}
@@ -329,7 +331,7 @@ function NonprofitRow({
         <tr className="sm:hidden bg-slate-50">
           <td colSpan={2} className="py-3 px-4">
             <ActionButtons
-              className="justify-start flex-wrap"
+              className="justify-center flex-wrap"
               nonprofit={nonprofit}
               inCart={inCart}
               inDraft={inDraft}
@@ -338,6 +340,7 @@ function NonprofitRow({
               onAddToCartOrDraft={handleAddToCartOrDraft}
               onToggleFavorite={handleToggleFavorite}
               onQuickView={onQuickView}
+              isMobile={true}
             />
           </td>
         </tr>
