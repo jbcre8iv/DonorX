@@ -108,16 +108,16 @@ export function UserProfileModal({ user, onClose }: UserProfileModalProps) {
           </div>
 
           {/* Details Grid */}
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-slate-400" />
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="flex items-start gap-2">
+              <Calendar className="h-4 w-4 text-slate-400 mt-0.5" />
               <div>
                 <p className="text-xs text-slate-400">Registered</p>
                 <p className="text-slate-600">{formatDate(user.created_at)}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-slate-400" />
+            <div className="flex items-start gap-2">
+              <Shield className="h-4 w-4 text-slate-400 mt-0.5" />
               <div>
                 <p className="text-xs text-slate-400">Status</p>
                 <Badge
@@ -128,10 +128,10 @@ export function UserProfileModal({ user, onClose }: UserProfileModalProps) {
                 </Badge>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-start gap-2">
               {role && RoleIcon ? (
                 <>
-                  <RoleIcon className="h-4 w-4 text-slate-400" />
+                  <RoleIcon className="h-4 w-4 text-slate-400 mt-0.5" />
                   <div>
                     <p className="text-xs text-slate-400">Role</p>
                     <Badge variant={roleColors[role]} className="capitalize">
@@ -141,7 +141,7 @@ export function UserProfileModal({ user, onClose }: UserProfileModalProps) {
                 </>
               ) : (
                 <>
-                  <Users className="h-4 w-4 text-slate-400" />
+                  <Users className="h-4 w-4 text-slate-400 mt-0.5" />
                   <div>
                     <p className="text-xs text-slate-400">Role</p>
                     <Badge variant="secondary">User</Badge>
@@ -149,8 +149,8 @@ export function UserProfileModal({ user, onClose }: UserProfileModalProps) {
                 </>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              <UserCheck className="h-4 w-4 text-slate-400" />
+            <div className="flex items-start gap-2">
+              <UserCheck className="h-4 w-4 text-slate-400 mt-0.5" />
               <div>
                 <p className="text-xs text-slate-400">Approved</p>
                 <p className="text-slate-600">{user.approved_at ? formatDate(user.approved_at) : "—"}</p>
