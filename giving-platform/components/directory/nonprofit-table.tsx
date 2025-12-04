@@ -231,7 +231,7 @@ function NonprofitRow({
       <tr
         className={`text-sm transition-colors sm:cursor-default cursor-pointer ${
           isExpanded
-            ? "sm:hover:bg-slate-50 bg-blue-50/50 border-t border-l border-r border-blue-200 rounded-t-lg"
+            ? "sm:hover:bg-slate-50 bg-blue-50 shadow-[inset_0_0_0_2px_rgb(147,197,253)]"
             : "hover:bg-slate-50"
         }`}
         onClick={() => {
@@ -241,7 +241,7 @@ function NonprofitRow({
           }
         }}
       >
-        <td className={`py-3 pl-3 pr-2 sm:pr-4 ${isExpanded ? "sm:rounded-l-lg" : "rounded-l-lg"}`}>
+        <td className="py-3 pl-3 pr-2 sm:pr-4">
           {/* Desktop: Link to detail page */}
           <Link
             href={`/directory/${nonprofit.id}`}
@@ -341,8 +341,8 @@ function NonprofitRow({
       </tr>
       {/* Mobile expanded actions row */}
       {isExpanded && (
-        <tr className="sm:hidden bg-blue-50/50 border-b border-l border-r border-blue-200 rounded-b-lg">
-          <td colSpan={2} className="py-3 px-4 rounded-b-lg">
+        <tr className="sm:hidden bg-blue-50 shadow-[inset_0_0_0_2px_rgb(147,197,253)]">
+          <td colSpan={2} className="py-3 px-4">
             <ActionButtons
               className="justify-center flex-wrap"
               nonprofit={nonprofit}
