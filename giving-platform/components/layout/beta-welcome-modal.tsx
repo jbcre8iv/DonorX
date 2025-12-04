@@ -91,9 +91,9 @@ export function BetaWelcomeModal() {
               </div>
 
               {/* AI Features */}
-              <div className="mb-6 p-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl border border-purple-100">
+              <div className="mb-6 p-4 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-100">
                 <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="h-5 w-5 text-purple-600" />
+                  <Sparkles className="h-5 w-5 text-emerald-600" />
                   <h3 className="text-lg font-semibold text-slate-900">
                     AI-Powered Features
                   </h3>
@@ -103,15 +103,15 @@ export function BetaWelcomeModal() {
                 </p>
                 <ul className="space-y-2 text-sm text-slate-600">
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-purple-500 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
                     <span><strong>Smart Search</strong> - Natural language search across nonprofits by cause, location, or mission</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-purple-500 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
                     <span><strong>Personalized Recommendations</strong> - AI suggests nonprofits based on your giving history and interests</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-purple-500 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
                     <span><strong>Impact Summaries</strong> - Generate reports showing the collective impact of your donations</span>
                   </li>
                 </ul>
@@ -159,7 +159,7 @@ export function BetaWelcomeModal() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
-                    <Sparkles className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                    <Sparkles className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="font-medium text-slate-900 text-sm">AI Chatbot</p>
                       <p className="text-xs text-slate-500">Get personalized giving advice</p>
