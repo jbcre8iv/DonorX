@@ -141,7 +141,7 @@ function ActionButtons({
         >
           <Heart className={`${isMobile ? "h-5 w-5" : "h-4 w-4"} ${favorited ? "fill-current" : ""}`} />
         </button>
-        <span className="hidden sm:block absolute bottom-full left-1/2 -translate-x-[60%] mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
+        <span className="hidden sm:block absolute bottom-full right-0 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
           {!isLoggedIn ? "Sign in to save favorites" : favorited ? "Remove from favorites" : "Add to favorites"}
         </span>
       </div>
