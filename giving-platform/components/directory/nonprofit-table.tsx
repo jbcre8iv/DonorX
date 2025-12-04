@@ -2,16 +2,20 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Globe, Eye, Heart, HandHeart, Check, Plus, ChevronDown, CreditCard } from "lucide-react";
+import { Globe, Eye, Heart, HandHeart, Check, Plus, ChevronDown, CreditCard, ArrowUp, ArrowDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { useToast } from "@/components/ui/toast";
 import type { Nonprofit } from "@/types/database";
 
+type SortOption = "name-asc" | "name-desc" | "category" | "recent";
+
 interface NonprofitTableProps {
   nonprofits: Nonprofit[];
   onQuickView?: (nonprofit: Nonprofit) => void;
+  sortBy?: SortOption;
+  onSortChange?: (sort: SortOption) => void;
 }
 
 // Action buttons component - defined outside to avoid recreating during render
@@ -366,7 +370,7 @@ function NonprofitRow({
   );
 }
 
-export function NonprofitTable({ nonprofits, onQuickView }: NonprofitTableProps) {
+export function NonprofitTable({ nonprofits, onQuickView, sortBy, onSortChange }: NonprofitTableProps) {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
 
   if (nonprofits.length === 0) {
@@ -381,13 +385,64 @@ export function NonprofitTable({ nonprofits, onQuickView }: NonprofitTableProps)
     setExpandedId(expandedId === nonprofitId ? null : nonprofitId);
   };
 
+  const handleNameSort = () => {
+    if (!onSortChange) return;
+    onSortChange(sortBy === "name-asc" ? "name-desc" : "name-asc");
+  };
+
+  const handleCategorySort = () => {
+    if (!onSortChange) return;
+    onSortChange("category");
+  };
+
+  const renderSortIcon = (column: "name" | "category") => {
+    if (!onSortChange) return null;
+
+    const isNameSort = column === "name" && (sortBy === "name-asc" || sortBy === "name-desc");
+    const isCategorySort = column === "category" && sortBy === "category";
+
+    if (isNameSort) {
+      return sortBy === "name-asc"
+        ? <ArrowUp className="h-3.5 w-3.5 text-blue-600" />
+        : <ArrowDown className="h-3.5 w-3.5 text-blue-600" />;
+    }
+    if (isCategorySort) {
+      return <ArrowUp className="h-3.5 w-3.5 text-blue-600" />;
+    }
+    return null;
+  };
+
   return (
     <div className="sm:overflow-x-auto overflow-visible">
       <table className="w-full table-fixed sm:table-auto">
         <thead>
           <tr className="border-b border-slate-200 text-left text-sm text-slate-600">
-            <th className="pb-3 pl-3 font-medium">Organization</th>
-            <th className="pb-3 font-medium hidden sm:table-cell">Category</th>
+            <th className="pb-3 pl-3 font-medium">
+              {onSortChange ? (
+                <button
+                  onClick={handleNameSort}
+                  className="flex items-center gap-1.5 hover:text-slate-900 transition-colors"
+                >
+                  Organization
+                  {renderSortIcon("name")}
+                </button>
+              ) : (
+                "Organization"
+              )}
+            </th>
+            <th className="pb-3 font-medium hidden sm:table-cell">
+              {onSortChange ? (
+                <button
+                  onClick={handleCategorySort}
+                  className="flex items-center gap-1.5 hover:text-slate-900 transition-colors"
+                >
+                  Category
+                  {renderSortIcon("category")}
+                </button>
+              ) : (
+                "Category"
+              )}
+            </th>
             <th className="pb-3 font-medium hidden lg:table-cell">Mission</th>
             <th className="pb-3 pr-6 font-medium text-right hidden sm:table-cell">Actions</th>
             <th className="pb-3 sm:hidden w-10"></th>

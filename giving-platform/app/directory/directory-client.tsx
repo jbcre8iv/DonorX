@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, LayoutGrid, List, ChevronDown } from "lucide-react";
+import { Search, LayoutGrid, List, ChevronDown, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
@@ -15,6 +15,15 @@ import type { Nonprofit, Category } from "@/types/database";
 
 const ITEMS_PER_PAGE_GRID = 9;
 const ITEMS_PER_PAGE_TABLE = 25;
+
+type SortOption = "name-asc" | "name-desc" | "category" | "recent";
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: "name-asc", label: "Name (A-Z)" },
+  { value: "name-desc", label: "Name (Z-A)" },
+  { value: "category", label: "Category" },
+  { value: "recent", label: "Recently Added" },
+];
 
 interface DirectoryClientProps {
   initialNonprofits: Nonprofit[];
@@ -39,6 +48,7 @@ export function DirectoryClient({
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(
     initialCategoryId
   );
+  const [sortBy, setSortBy] = React.useState<SortOption>("name-asc");
   const [selectedNonprofit, setSelectedNonprofit] = React.useState<Nonprofit | null>(null);
   const [modalOpen, setModalOpen] = React.useState(false);
   const [currentPage, setCurrentPage] = React.useState(1);
@@ -64,10 +74,10 @@ export function DirectoryClient({
     setSelectedCategory(initialCategoryId);
   }, [initialCategoryId]);
 
-  // Reset to page 1 when filters or view mode change
+  // Reset to page 1 when filters, sort, or view mode change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [search, selectedCategory, viewMode]);
+  }, [search, selectedCategory, sortBy, viewMode]);
 
   // First filter by search only (to determine which categories to show)
   const searchFilteredNonprofits = initialNonprofits.filter((nonprofit) =>
@@ -97,9 +107,35 @@ export function DirectoryClient({
   }, [search, selectedCategory, relevantCategoryIds]);
 
   // Then apply category filter for final results
-  const filteredNonprofits = searchFilteredNonprofits.filter((nonprofit) => {
+  const categoryFilteredNonprofits = searchFilteredNonprofits.filter((nonprofit) => {
     return selectedCategory === null || nonprofit.category_id === selectedCategory;
   });
+
+  // Apply sorting
+  const filteredNonprofits = React.useMemo(() => {
+    const sorted = [...categoryFilteredNonprofits];
+    switch (sortBy) {
+      case "name-asc":
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case "name-desc":
+        return sorted.sort((a, b) => b.name.localeCompare(a.name));
+      case "category":
+        return sorted.sort((a, b) => {
+          const catA = a.category?.name || "";
+          const catB = b.category?.name || "";
+          if (catA === catB) return a.name.localeCompare(b.name);
+          return catA.localeCompare(catB);
+        });
+      case "recent":
+        return sorted.sort((a, b) => {
+          const dateA = new Date(a.created_at || 0).getTime();
+          const dateB = new Date(b.created_at || 0).getTime();
+          return dateB - dateA; // Most recent first
+        });
+      default:
+        return sorted;
+    }
+  }, [categoryFilteredNonprofits, sortBy]);
 
   // Featured section disabled - all nonprofits shown in single list
   // Database column preserved for future use
@@ -171,9 +207,10 @@ export function DirectoryClient({
             </div>
           </div>
 
-          {/* Category Filter - Dropdown */}
-          <div className="flex justify-center max-w-xl mx-auto">
-            <div className="relative w-full">
+          {/* Category Filter and Sort - Dropdowns */}
+          <div className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">
+            {/* Category Filter */}
+            <div className="relative flex-1">
               <select
                 value={selectedCategory || ""}
                 onChange={(e) => setSelectedCategory(e.target.value || null)}
@@ -195,6 +232,23 @@ export function DirectoryClient({
                   <span className="text-xs font-medium">×</span>
                 </button>
               )}
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="relative sm:w-48">
+              <ArrowUpDown className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-9 pr-10 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-0"
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
               <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             </div>
           </div>
@@ -223,6 +277,8 @@ export function DirectoryClient({
                 <NonprofitTable
                   nonprofits={paginatedNonprofits}
                   onQuickView={handleQuickView}
+                  sortBy={sortBy}
+                  onSortChange={setSortBy}
                 />
               )}
               {/* Pagination */}
