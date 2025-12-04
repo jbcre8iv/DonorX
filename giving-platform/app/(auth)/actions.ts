@@ -78,6 +78,7 @@ export async function register(formData: FormData) {
 
     // Create the user profile
     // All users are auto-approved for public donation platform
+    // role is null by default - owners can promote users to team roles later
     // Note: avatar_url can be set later via profile settings
     const { error: userError } = await adminClient.from("users").insert({
       id: authData.user.id,
@@ -85,7 +86,7 @@ export async function register(formData: FormData) {
       first_name: firstName,
       last_name: lastName,
       organization_id: orgData.id,
-      role: "member",
+      role: null,
       status: "approved",
       approved_at: new Date().toISOString(),
     });
