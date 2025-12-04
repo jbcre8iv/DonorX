@@ -86,8 +86,9 @@ export function BetaWelcomeModal() {
   const handleDismiss = () => {
     localStorage.setItem(STORAGE_KEY, "true");
     setOpen(false);
-    // Explicitly reset body overflow after closing
     document.body.style.overflow = "";
+    // Refresh the page to ensure clean state
+    window.location.reload();
   };
 
   // Don't render anything if not open or not mounted
