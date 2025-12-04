@@ -45,6 +45,7 @@ export function BetaTestersClient({ initialTesters }: BetaTestersClientProps) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showInactive, setShowInactive] = useState(false);
+  const [confirmRevoke, setConfirmRevoke] = useState<BetaTester | null>(null);
 
   const handleAddTester = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -76,6 +77,7 @@ export function BetaTestersClient({ initialTesters }: BetaTestersClientProps) {
       setTesters(testers.map(t => t.id === id ? { ...t, is_active: false } : t));
     }
     setLoadingId(null);
+    setConfirmRevoke(null);
   };
 
   const handleRestore = async (id: string) => {
@@ -254,18 +256,12 @@ export function BetaTestersClient({ initialTesters }: BetaTestersClientProps) {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleRevoke(tester.id)}
+                        onClick={() => setConfirmRevoke(tester)}
                         disabled={loadingId === tester.id}
                         className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                       >
-                        {loadingId === tester.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Ban className="h-4 w-4 mr-1" />
-                            Revoke
-                          </>
-                        )}
+                        <Ban className="h-4 w-4 mr-1" />
+                        Revoke
                       </Button>
                     ) : (
                       <Button
@@ -292,6 +288,57 @@ export function BetaTestersClient({ initialTesters }: BetaTestersClientProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Revoke Confirmation Modal */}
+      {confirmRevoke && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-50"
+            onClick={() => setConfirmRevoke(null)}
+          />
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md bg-white rounded-lg shadow-xl p-6">
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">
+              Revoke Beta Access?
+            </h3>
+            <p className="text-sm text-slate-600 mb-4">
+              Are you sure you want to revoke beta access for{" "}
+              <span className="font-medium text-slate-900">{confirmRevoke.email}</span>?
+              {confirmRevoke.name && (
+                <span className="text-slate-500"> ({confirmRevoke.name})</span>
+              )}
+            </p>
+            <p className="text-sm text-slate-500 mb-6">
+              This user will no longer be able to access the platform. You can restore their access later.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmRevoke(null)}
+                disabled={loadingId === confirmRevoke.id}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleRevoke(confirmRevoke.id)}
+                disabled={loadingId === confirmRevoke.id}
+              >
+                {loadingId === confirmRevoke.id ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Revoking...
+                  </>
+                ) : (
+                  <>
+                    <Ban className="h-4 w-4 mr-2" />
+                    Revoke Access
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
