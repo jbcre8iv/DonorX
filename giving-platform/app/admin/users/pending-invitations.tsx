@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Clock, Mail, RotateCcw, X, Loader2, AlertCircle, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,14 +25,21 @@ interface PendingInvitationsProps {
   isOwner: boolean;
 }
 
+// Helper to check if expiring soon - computed outside render
+function checkExpiringSoon(expiresAt: string, referenceTime: number): boolean {
+  const expiresTime = new Date(expiresAt).getTime();
+  return expiresTime - referenceTime < 24 * 60 * 60 * 1000;
+}
+
 export function PendingInvitations({ isOwner }: PendingInvitationsProps) {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [currentTime, setCurrentTime] = useState(() => Date.now());
+  // Store reference time as initial value - stable across renders
+  const [referenceTime] = useState(() => Date.now());
 
-  async function loadInvitations() {
+  const loadInvitations = useCallback(async () => {
     const result = await getPendingInvitations();
     if (result.error) {
       setError(result.error);
@@ -40,15 +47,16 @@ export function PendingInvitations({ isOwner }: PendingInvitationsProps) {
       setInvitations(result.invitations as Invitation[]);
     }
     setLoading(false);
-  }
+  }, []);
 
   useEffect(() => {
     if (isOwner) {
-      loadInvitations();
+      // Use void to handle the promise without triggering lint warning
+      void loadInvitations();
     } else {
       setLoading(false);
     }
-  }, [isOwner]);
+  }, [isOwner, loadInvitations]);
 
   async function handleRevoke(id: string) {
     setActionLoading(id);
@@ -69,7 +77,7 @@ export function PendingInvitations({ isOwner }: PendingInvitationsProps) {
     }
     setActionLoading(null);
     // Reload to get updated expiration
-    loadInvitations();
+    void loadInvitations();
   }
 
   if (!isOwner) {
@@ -115,8 +123,7 @@ export function PendingInvitations({ isOwner }: PendingInvitationsProps) {
 
         <div className="space-y-3">
           {invitations.map((invitation) => {
-            const expiresAt = new Date(invitation.expires_at);
-            const isExpiringSoon = expiresAt.getTime() - currentTime < 24 * 60 * 60 * 1000;
+            const isExpiringSoon = checkExpiringSoon(invitation.expires_at, referenceTime);
             const inviterName = invitation.inviter
               ? `${invitation.inviter.first_name || ""} ${invitation.inviter.last_name || ""}`.trim()
               : "Unknown";
