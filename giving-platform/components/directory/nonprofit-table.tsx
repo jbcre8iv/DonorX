@@ -39,9 +39,9 @@ function ActionButtons({
   isMobile?: boolean;
 }) {
   return (
-    <div className={`flex items-center gap-1 ${className}`}>
+    <div className={`flex items-center ${isMobile ? "gap-2" : "gap-1"} ${className}`}>
       {/* 1. Donate - Primary action */}
-      <Button asChild size="sm" className={isMobile ? "h-8 px-6" : "h-8"}>
+      <Button asChild size="sm" className={isMobile ? "h-10 px-10" : "h-8"}>
         <Link href={`/donate?nonprofit=${nonprofit.id}`}>Donate</Link>
       </Button>
       {/* 2. Add to donation/cart - Secondary giving action */}
@@ -50,16 +50,16 @@ function ActionButtons({
           <Button
             variant={inDraft ? "secondary" : "outline"}
             size="sm"
-            className={`h-9 w-9 p-0 rounded-xl cursor-pointer ${!inDraft ? "text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md" : ""}`}
+            className={`${isMobile ? "h-10 w-10" : "h-9 w-9"} p-0 rounded-xl cursor-pointer ${!inDraft ? "text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md" : ""}`}
             onClick={onAddToCartOrDraft}
             disabled={inDraft}
           >
             {inDraft ? (
-              <Check className="h-4 w-4" />
+              <Check className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
             ) : (
               <span className="flex items-center gap-0.5">
-                <Plus className="h-3 w-3" />
-                <CreditCard className="h-4 w-4" />
+                <Plus className={isMobile ? "h-3.5 w-3.5" : "h-3 w-3"} />
+                <CreditCard className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
               </span>
             )}
           </Button>
@@ -72,16 +72,16 @@ function ActionButtons({
           <Button
             variant={inCart ? "secondary" : "outline"}
             size="sm"
-            className="h-9 w-9 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer"
+            className={`${isMobile ? "h-10 w-10" : "h-9 w-9"} p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer`}
             onClick={onAddToCartOrDraft}
             disabled={inCart}
           >
             {inCart ? (
-              <Check className="h-4 w-4" />
+              <Check className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
             ) : (
               <span className="flex items-center gap-0.5">
-                <Plus className="h-3 w-3" />
-                <HandHeart className="h-4 w-4" />
+                <Plus className={isMobile ? "h-3.5 w-3.5" : "h-3 w-3"} />
+                <HandHeart className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
               </span>
             )}
           </Button>
@@ -96,10 +96,10 @@ function ActionButtons({
           <Button
             variant="outline"
             size="sm"
-            className="h-9 w-9 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer"
+            className={`${isMobile ? "h-10 w-10" : "h-9 w-9"} p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer`}
             onClick={() => onQuickView(nonprofit)}
           >
-            <Eye className="h-4 w-4" />
+            <Eye className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
           </Button>
           <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
             Quick View
@@ -107,16 +107,16 @@ function ActionButtons({
         </div>
       )}
       {/* 4. Website - External link */}
-      <div className="w-9 h-9 flex items-center justify-center">
+      <div className={`${isMobile ? "w-10 h-10" : "w-9 h-9"} flex items-center justify-center`}>
         {nonprofit.website && (
           <div className="relative group/tip">
-            <Button variant="outline" size="sm" className="h-9 w-9 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer" asChild>
+            <Button variant="outline" size="sm" className={`${isMobile ? "h-10 w-10" : "h-9 w-9"} p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer`} asChild>
               <a
                 href={nonprofit.website}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Globe className="h-4 w-4" />
+                <Globe className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
               </a>
             </Button>
             <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
@@ -129,13 +129,13 @@ function ActionButtons({
       <div className="relative group/tip">
         <button
           onClick={onToggleFavorite}
-          className={`h-9 w-9 flex items-center justify-center rounded-xl border transition-all cursor-pointer ${
+          className={`${isMobile ? "h-10 w-10" : "h-9 w-9"} flex items-center justify-center rounded-xl border transition-all cursor-pointer ${
             favorited
               ? "text-pink-500 bg-pink-50 border-pink-200 hover:bg-pink-100 hover:shadow-md"
               : "text-slate-600 border-slate-200 bg-white hover:text-pink-500 hover:border-pink-300 hover:bg-pink-50 hover:shadow-md"
           }`}
         >
-          <Heart className={`h-4 w-4 ${favorited ? "fill-current" : ""}`} />
+          <Heart className={`${isMobile ? "h-5 w-5" : "h-4 w-4"} ${favorited ? "fill-current" : ""}`} />
         </button>
         <span className="absolute bottom-full left-1/2 -translate-x-[60%] mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
           {favorited ? "Remove from favorites" : "Add to favorites"}
