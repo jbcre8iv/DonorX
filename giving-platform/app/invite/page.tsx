@@ -1,25 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lock, Heart, ArrowRight, AlertCircle, CheckCircle, Mail, LogIn } from "lucide-react";
+import { Lock, Heart, ArrowRight, AlertCircle, Mail } from "lucide-react";
 
 export default function InvitePage() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
-  const router = useRouter();
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const handleCheckAccess = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
-    setHasAccess(null);
+    setAccessDenied(false);
 
     try {
       const res = await fetch("/api/check-beta-access", {
@@ -31,15 +28,12 @@ export default function InvitePage() {
       const data = await res.json();
 
       if (data.hasAccess) {
-        setHasAccess(true);
-        // Trigger the welcome modal to show after a short delay
-        // The delay allows the UI to update to show "You have beta access!" first
-        setTimeout(() => {
-          localStorage.setItem("donorx_beta_welcome_trigger", "true");
-          window.dispatchEvent(new Event("betaWelcomeTrigger"));
-        }, 100);
+        // Set trigger for welcome modal to show on home page
+        localStorage.setItem("donorx_beta_welcome_trigger", "true");
+        // Redirect to home page immediately
+        window.location.href = "/";
       } else {
-        setHasAccess(false);
+        setAccessDenied(true);
       }
     } catch {
       setError("Something went wrong. Please try again.");
@@ -68,32 +62,7 @@ export default function InvitePage() {
             <CardTitle className="text-xl">Invite Only</CardTitle>
           </CardHeader>
           <CardContent>
-            {hasAccess === true ? (
-              // Access granted - show login/register options
-              <div className="text-center space-y-4">
-                <div className="flex items-center justify-center gap-2 text-emerald-600">
-                  <CheckCircle className="h-5 w-5" />
-                  <span className="font-medium">You have beta access!</span>
-                </div>
-                <p className="text-sm text-slate-600">
-                  Log in or create an account to continue.
-                </p>
-                <div className="flex flex-col gap-3 pt-2">
-                  <Button asChild className="w-full">
-                    <Link href="/login">
-                      <LogIn className="h-4 w-4 mr-2" />
-                      Log In
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="w-full">
-                    <Link href="/register">
-                      Create Account
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            ) : hasAccess === false ? (
+            {accessDenied ? (
               // Access denied
               <div className="text-center space-y-4">
                 <div className="flex items-center justify-center gap-2 text-amber-600">
@@ -107,7 +76,7 @@ export default function InvitePage() {
                   variant="outline"
                   className="w-full"
                   onClick={() => {
-                    setHasAccess(null);
+                    setAccessDenied(false);
                     setEmail("");
                   }}
                 >

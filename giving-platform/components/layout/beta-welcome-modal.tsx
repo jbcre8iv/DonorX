@@ -30,46 +30,16 @@ export function BetaWelcomeModal() {
       if (!hasSeenWelcome) {
         // Clear the trigger
         localStorage.removeItem(TRIGGER_KEY);
-        // Show modal after 1.5 second delay
-        setTimeout(() => {
-          setOpen(true);
-        }, 1500);
+        // Show modal immediately
+        setOpen(true);
       }
     };
 
-    const checkAndShowModal = () => {
-      const shouldTrigger = localStorage.getItem(TRIGGER_KEY);
-      if (shouldTrigger) {
-        showModalIfNotSeen();
-      }
-    };
-
-    // Check on mount (for page refreshes where trigger was set but modal didn't show)
-    checkAndShowModal();
-
-    // Also listen for storage changes (cross-tab)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === TRIGGER_KEY && e.newValue === "true") {
-        showModalIfNotSeen();
-      }
-    };
-
-    // Custom event for same-tab communication (this is the primary trigger)
-    const handleCustomTrigger = () => {
-      // When event fires, localStorage should already be set
-      // Small delay to ensure localStorage is ready
-      setTimeout(() => {
-        showModalIfNotSeen();
-      }, 50);
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("betaWelcomeTrigger", handleCustomTrigger);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("betaWelcomeTrigger", handleCustomTrigger);
-    };
+    // Check on mount if trigger is set (from redirect after beta access confirmed)
+    const shouldTrigger = localStorage.getItem(TRIGGER_KEY);
+    if (shouldTrigger) {
+      showModalIfNotSeen();
+    }
   }, []);
 
   React.useEffect(() => {
