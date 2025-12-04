@@ -26,12 +26,10 @@ export function BetaWelcomeModal() {
   React.useEffect(() => {
     setMounted(true);
 
-    const checkAndShowModal = () => {
-      const shouldTrigger = localStorage.getItem(TRIGGER_KEY);
+    const showModalIfNotSeen = () => {
       const hasSeenWelcome = localStorage.getItem(STORAGE_KEY);
-
-      if (shouldTrigger && !hasSeenWelcome) {
-        // Clear the trigger immediately
+      if (!hasSeenWelcome) {
+        // Clear the trigger
         localStorage.removeItem(TRIGGER_KEY);
         // Show modal after 1.5 second delay
         setTimeout(() => {
@@ -40,19 +38,30 @@ export function BetaWelcomeModal() {
       }
     };
 
-    // Check on mount
-    checkAndShowModal();
-
-    // Also listen for storage changes (same tab)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === TRIGGER_KEY && e.newValue === "true") {
-        checkAndShowModal();
+    const checkAndShowModal = () => {
+      const shouldTrigger = localStorage.getItem(TRIGGER_KEY);
+      if (shouldTrigger) {
+        showModalIfNotSeen();
       }
     };
 
-    // Custom event for same-tab communication
+    // Check on mount (for page refreshes where trigger was set but modal didn't show)
+    checkAndShowModal();
+
+    // Also listen for storage changes (cross-tab)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === TRIGGER_KEY && e.newValue === "true") {
+        showModalIfNotSeen();
+      }
+    };
+
+    // Custom event for same-tab communication (this is the primary trigger)
     const handleCustomTrigger = () => {
-      checkAndShowModal();
+      // When event fires, localStorage should already be set
+      // Small delay to ensure localStorage is ready
+      setTimeout(() => {
+        showModalIfNotSeen();
+      }, 50);
     };
 
     window.addEventListener("storage", handleStorageChange);

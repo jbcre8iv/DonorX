@@ -32,10 +32,12 @@ export default function InvitePage() {
 
       if (data.hasAccess) {
         setHasAccess(true);
-        // Trigger the welcome modal to show
-        localStorage.setItem("donorx_beta_welcome_trigger", "true");
-        // Dispatch custom event for same-tab communication
-        window.dispatchEvent(new Event("betaWelcomeTrigger"));
+        // Trigger the welcome modal to show after a short delay
+        // The delay allows the UI to update to show "You have beta access!" first
+        setTimeout(() => {
+          localStorage.setItem("donorx_beta_welcome_trigger", "true");
+          window.dispatchEvent(new Event("betaWelcomeTrigger"));
+        }, 100);
       } else {
         setHasAccess(false);
       }
