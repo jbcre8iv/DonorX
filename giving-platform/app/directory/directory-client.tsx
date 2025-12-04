@@ -208,7 +208,7 @@ export function DirectoryClient({
           </div>
 
           {/* Category Filter and Sort - Dropdowns */}
-          <div className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">
+          <div className="flex flex-row gap-3 max-w-xl mx-auto">
             {/* Category Filter */}
             <div className="relative flex-1">
               <select
@@ -236,7 +236,7 @@ export function DirectoryClient({
             </div>
 
             {/* Sort Dropdown */}
-            <div className="relative sm:w-48">
+            <div className="relative flex-1">
               <ArrowUpDown className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <select
                 value={sortBy}
