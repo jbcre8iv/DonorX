@@ -35,8 +35,10 @@ export default function InvitePage() {
         // Trigger the welcome modal to show after a short delay
         // The delay allows the UI to update to show "You have beta access!" first
         setTimeout(() => {
+          console.log("[InvitePage] Setting trigger and dispatching event");
           localStorage.setItem("donorx_beta_welcome_trigger", "true");
           window.dispatchEvent(new Event("betaWelcomeTrigger"));
+          console.log("[InvitePage] Event dispatched");
         }, 100);
       } else {
         setHasAccess(false);
