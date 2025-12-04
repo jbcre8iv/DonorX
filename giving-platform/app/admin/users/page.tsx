@@ -4,8 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { Users, Shield, UserCheck, Clock } from "lucide-react";
 import { RoleSelector } from "./role-selector";
-import { InviteTeamMemberForm } from "./invite-form";
-import { PendingInvitations } from "./pending-invitations";
+import { UserList, RemoveFromTeamButton } from "./user-list";
 
 export const metadata = {
   title: "Team - Admin",
@@ -153,11 +152,8 @@ export default async function AdminUsersPage() {
         </Card>
       </div>
 
-      {/* Invite Team Member Form - Owners only */}
-      {currentUserRole === "owner" && <InviteTeamMemberForm />}
-
-      {/* Pending Invitations - Owners only */}
-      <PendingInvitations isOwner={currentUserRole === "owner"} />
+      {/* Registered Users - Owners can promote to team */}
+      <UserList users={users} isOwner={currentUserRole === "owner"} />
 
       {/* Team Table */}
       <Card>
@@ -223,12 +219,19 @@ export default async function AdminUsersPage() {
                         </td>
                         {currentUserRole === "owner" && (
                           <td className="py-4 text-right">
-                            <RoleSelector
-                              userId={user.id}
-                              currentRole={role}
-                              isCurrentUser={isCurrentUser}
-                              currentUserRole={currentUserRole}
-                            />
+                            <div className="flex items-center justify-end gap-2">
+                              <RoleSelector
+                                userId={user.id}
+                                currentRole={role}
+                                isCurrentUser={isCurrentUser}
+                                currentUserRole={currentUserRole}
+                              />
+                              <RemoveFromTeamButton
+                                userId={user.id}
+                                isCurrentUser={isCurrentUser}
+                                currentRole={role}
+                              />
+                            </div>
                           </td>
                         )}
                       </tr>

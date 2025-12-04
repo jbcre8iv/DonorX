@@ -143,6 +143,117 @@ export async function rejectUser(userId: string) {
 }
 
 /**
+ * Promote a regular user to team member - only owners can promote
+ */
+export async function promoteToTeam(userId: string, role: "admin" | "member" | "viewer") {
+  // Only owners can promote users
+  const ownerCheck = await requireOwner();
+  if ("error" in ownerCheck) {
+    return { error: ownerCheck.error };
+  }
+
+  // Prevent promoting yourself
+  if (userId === ownerCheck.user.id) {
+    return { error: "You cannot promote yourself" };
+  }
+
+  try {
+    const adminClient = createAdminClient();
+
+    // Check user exists
+    const { data: user } = await adminClient
+      .from("users")
+      .select("id, role")
+      .eq("id", userId)
+      .single();
+
+    if (!user) {
+      return { error: "User not found" };
+    }
+
+    // Check if already a team member
+    const teamRoles = ["owner", "admin", "member", "viewer"];
+    if (user.role && teamRoles.includes(user.role)) {
+      return { error: "User is already a team member" };
+    }
+
+    // Update the user's role
+    const { error } = await adminClient
+      .from("users")
+      .update({
+        role,
+        status: "approved",
+        approved_at: new Date().toISOString(),
+        approved_by: ownerCheck.user.id,
+      })
+      .eq("id", userId);
+
+    if (error) {
+      console.error("[promoteToTeam] Error:", error.message);
+      return { error: "Failed to promote user" };
+    }
+
+    revalidatePath("/admin/users");
+    return { success: true };
+  } catch (e) {
+    console.error("[promoteToTeam] Admin client error:", e);
+    return { error: "Failed to promote user" };
+  }
+}
+
+/**
+ * Remove user from team (demote to regular user) - only owners can demote
+ */
+export async function removeFromTeam(userId: string) {
+  // Only owners can demote users
+  const ownerCheck = await requireOwner();
+  if ("error" in ownerCheck) {
+    return { error: ownerCheck.error };
+  }
+
+  // Prevent demoting yourself
+  if (userId === ownerCheck.user.id) {
+    return { error: "You cannot demote yourself" };
+  }
+
+  try {
+    const adminClient = createAdminClient();
+
+    // Check user exists and is not owner
+    const { data: user } = await adminClient
+      .from("users")
+      .select("id, role")
+      .eq("id", userId)
+      .single();
+
+    if (!user) {
+      return { error: "User not found" };
+    }
+
+    if (user.role === "owner") {
+      return { error: "Cannot demote owner" };
+    }
+
+    // Remove team role (set to null)
+    const { error } = await adminClient
+      .from("users")
+      .update({ role: null })
+      .eq("id", userId);
+
+    if (error) {
+      console.error("[removeFromTeam] Error:", error.message);
+      return { error: "Failed to remove from team" };
+    }
+
+    revalidatePath("/admin/users");
+    return { success: true };
+  } catch (e) {
+    console.error("[removeFromTeam] Admin client error:", e);
+    return { error: "Failed to remove from team" };
+  }
+}
+
+/**
  * Delete a rejected user - only owners can delete users
  * This removes both the user record and their auth account
  */
