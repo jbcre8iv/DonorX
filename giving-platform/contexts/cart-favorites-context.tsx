@@ -1083,7 +1083,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       setActiveTab("cart");
       setSidebarOpen(true);
     },
-    [donationDraft, saveDonationDraft]
+    [donationDraft, saveDonationDraft, setActiveTab, setSidebarOpen]
   );
 
   // Remove item from donation draft allocations
