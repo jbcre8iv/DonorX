@@ -55,6 +55,8 @@ interface AllocationBuilderProps {
   sharedRebalanceSuggestion?: SharedRebalanceSuggestion | null;
   onApplySharedRebalance?: () => void;
   onDeclineSharedRebalance?: () => void;
+  // Callback to set shared rebalance suggestion (for syncing adds to sidebar)
+  onSetSharedRebalance?: (suggestion: SharedRebalanceSuggestion | null) => void;
   // Shared removal suggestion from context (synced with sidebar)
   sharedRemovalSuggestion?: SharedRemovalSuggestion | null;
   onApplySharedRemoval?: () => void;
@@ -72,6 +74,7 @@ export function AllocationBuilder({
   sharedRebalanceSuggestion,
   onApplySharedRebalance,
   onDeclineSharedRebalance,
+  onSetSharedRebalance,
   sharedRemovalSuggestion,
   onApplySharedRemoval,
   onDeclineSharedRemoval,
@@ -503,7 +506,8 @@ export function AllocationBuilder({
 
   const handleAddAllocation = (type: "nonprofit" | "category", targetId: string, targetName: string) => {
     // Check max allocation limit (accounting for any pending items in suggestion)
-    const pendingCount = rebalanceSuggestion ? rebalanceSuggestion.newItemNames.length : 0;
+    // Use activeRebalanceSuggestion to account for both local and shared suggestions
+    const pendingCount = activeRebalanceSuggestion ? activeRebalanceSuggestion.newItemNames.length : 0;
     if (allocations.length + pendingCount >= config.features.maxAllocationItems) {
       return;
     }
@@ -517,27 +521,55 @@ export function AllocationBuilder({
     };
 
     // If there are existing allocations (or an existing suggestion), show/update a rebalance suggestion
-    if (allocations.length > 0 || rebalanceSuggestion) {
+    if (allocations.length > 0 || activeRebalanceSuggestion) {
       // If there's already a pending suggestion, add to it
-      if (rebalanceSuggestion) {
+      if (activeRebalanceSuggestion) {
         // Get the existing new items from the suggestion (items not in current allocations)
-        const existingNewItems = rebalanceSuggestion.allocations.filter(
+        const existingNewItems = activeRebalanceSuggestion.allocations.filter(
           (a) => !allocations.some((alloc) => alloc.targetId === a.targetId)
         );
         // Add the new item to the list
         const allNewItems = [...existingNewItems, newAllocation];
         const suggestedAllocations = generateRebalanceSuggestion(allocations, allNewItems);
-        setRebalanceSuggestion({
+        const newSuggestion = {
           allocations: suggestedAllocations,
-          newItemNames: [...rebalanceSuggestion.newItemNames, targetName],
-        });
+          newItemNames: [...activeRebalanceSuggestion.newItemNames, targetName],
+        };
+        // Use shared setter if available (syncs to sidebar), otherwise use local state
+        if (onSetSharedRebalance) {
+          onSetSharedRebalance({
+            allocations: suggestedAllocations.map((a) => ({
+              targetId: a.targetId,
+              targetName: a.targetName,
+              percentage: a.percentage,
+              type: a.type,
+            })),
+            newItemNames: newSuggestion.newItemNames,
+          });
+        } else {
+          setRebalanceSuggestion(newSuggestion);
+        }
       } else {
         // Create a new suggestion with just this item
         const suggestedAllocations = generateRebalanceSuggestion(allocations, [newAllocation]);
-        setRebalanceSuggestion({
+        const newSuggestion = {
           allocations: suggestedAllocations,
           newItemNames: [targetName],
-        });
+        };
+        // Use shared setter if available (syncs to sidebar), otherwise use local state
+        if (onSetSharedRebalance) {
+          onSetSharedRebalance({
+            allocations: suggestedAllocations.map((a) => ({
+              targetId: a.targetId,
+              targetName: a.targetName,
+              percentage: a.percentage,
+              type: a.type,
+            })),
+            newItemNames: newSuggestion.newItemNames,
+          });
+        } else {
+          setRebalanceSuggestion(newSuggestion);
+        }
       }
     } else {
       // First allocation gets 100%
@@ -606,19 +638,19 @@ export function AllocationBuilder({
       return;
     }
 
-    // Check if it's a pending item in the rebalance suggestion
-    if (rebalanceSuggestion) {
-      const isPending = rebalanceSuggestion.allocations.some(
+    // Check if it's a pending item in the rebalance suggestion (local or shared)
+    if (activeRebalanceSuggestion) {
+      const isPending = activeRebalanceSuggestion.allocations.some(
         (a) => a.targetId === targetId && !allocations.some((alloc) => alloc.targetId === a.targetId)
       );
       if (isPending) {
         // Remove this item from the pending suggestion
-        const remainingNewItems = rebalanceSuggestion.allocations.filter(
+        const remainingNewItems = activeRebalanceSuggestion.allocations.filter(
           (a) => a.targetId !== targetId && !allocations.some((alloc) => alloc.targetId === a.targetId)
         );
-        const remainingNewItemNames = rebalanceSuggestion.newItemNames.filter((_, i) => {
+        const remainingNewItemNames = activeRebalanceSuggestion.newItemNames.filter((_, i) => {
           // Find the item index by matching order (new items are at the end of allocations)
-          const newItemsInAllocs = rebalanceSuggestion.allocations.filter(
+          const newItemsInAllocs = activeRebalanceSuggestion.allocations.filter(
             (a) => !allocations.some((alloc) => alloc.targetId === a.targetId)
           );
           return newItemsInAllocs[i]?.targetId !== targetId;
@@ -626,14 +658,31 @@ export function AllocationBuilder({
 
         if (remainingNewItems.length === 0) {
           // No more pending items, clear the suggestion
-          setRebalanceSuggestion(null);
+          if (onSetSharedRebalance) {
+            onSetSharedRebalance(null);
+          } else {
+            setRebalanceSuggestion(null);
+          }
         } else {
           // Regenerate suggestion with remaining items
           const suggestedAllocations = generateRebalanceSuggestion(allocations, remainingNewItems);
-          setRebalanceSuggestion({
+          const newSuggestion = {
             allocations: suggestedAllocations,
             newItemNames: remainingNewItemNames,
-          });
+          };
+          if (onSetSharedRebalance) {
+            onSetSharedRebalance({
+              allocations: suggestedAllocations.map((a) => ({
+                targetId: a.targetId,
+                targetName: a.targetName,
+                percentage: a.percentage,
+                type: a.type,
+              })),
+              newItemNames: newSuggestion.newItemNames,
+            });
+          } else {
+            setRebalanceSuggestion(newSuggestion);
+          }
         }
       }
     }
