@@ -61,6 +61,8 @@ interface AllocationBuilderProps {
   sharedRemovalSuggestion?: SharedRemovalSuggestion | null;
   onApplySharedRemoval?: () => void;
   onDeclineSharedRemoval?: () => void;
+  // Callback to set shared removal suggestion (for syncing removes to sidebar)
+  onSetSharedRemoval?: (suggestion: SharedRemovalSuggestion | null) => void;
 }
 
 export function AllocationBuilder({
@@ -78,6 +80,7 @@ export function AllocationBuilder({
   sharedRemovalSuggestion,
   onApplySharedRemoval,
   onDeclineSharedRemoval,
+  onSetSharedRemoval,
 }: AllocationBuilderProps) {
   const [selectorOpen, setSelectorOpen] = React.useState(false);
   const [detailsItem, setDetailsItem] = React.useState<AllocationItem | null>(null);
@@ -299,11 +302,27 @@ export function AllocationBuilder({
       itemToRemove.percentage
     );
 
-    setRemovalSuggestion({
+    const newSuggestion = {
       allocations: suggestedAllocations,
       removedItemName: itemToRemove.targetName,
       removedPercentage: itemToRemove.percentage,
-    });
+    };
+
+    // Use shared setter if available (syncs to sidebar), otherwise use local state
+    if (onSetSharedRemoval) {
+      onSetSharedRemoval({
+        allocations: suggestedAllocations.map((a) => ({
+          targetId: a.targetId,
+          targetName: a.targetName,
+          percentage: a.percentage,
+          type: a.type,
+        })),
+        removedItemName: newSuggestion.removedItemName,
+        removedPercentage: newSuggestion.removedPercentage,
+      });
+    } else {
+      setRemovalSuggestion(newSuggestion);
+    }
   };
 
   // Generate a smart rebalance suggestion when removing an allocation
