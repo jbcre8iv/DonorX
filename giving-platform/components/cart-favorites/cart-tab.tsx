@@ -98,10 +98,11 @@ export function CartTab() {
       setIsClearingDraft(false);
       // Close sidebar after clearing
       setSidebarOpen(false);
-      // Always redirect to directory if on donate page (even if clearing failed)
-      if (shouldRedirect) {
-        router.push("/directory");
-      }
+    }
+    // Always redirect to directory if on donate page (even if clearing failed)
+    // Do this after the finally block to ensure state updates complete
+    if (shouldRedirect) {
+      router.push("/directory");
     }
   };
 
