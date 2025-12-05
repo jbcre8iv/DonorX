@@ -37,6 +37,12 @@ export interface SharedRebalanceSuggestion {
   newItemNames: string[];
 }
 
+export interface SharedRemovalSuggestion {
+  allocations: { targetId: string; targetName: string; percentage: number; type: "nonprofit" | "category" }[];
+  removedItemName: string;
+  removedPercentage: number;
+}
+
 interface AllocationBuilderProps {
   allocations: AllocationItem[];
   onAllocationsChange: (allocations: AllocationItem[]) => void;
@@ -49,6 +55,10 @@ interface AllocationBuilderProps {
   sharedRebalanceSuggestion?: SharedRebalanceSuggestion | null;
   onApplySharedRebalance?: () => void;
   onDeclineSharedRebalance?: () => void;
+  // Shared removal suggestion from context (synced with sidebar)
+  sharedRemovalSuggestion?: SharedRemovalSuggestion | null;
+  onApplySharedRemoval?: () => void;
+  onDeclineSharedRemoval?: () => void;
 }
 
 export function AllocationBuilder({
@@ -62,6 +72,9 @@ export function AllocationBuilder({
   sharedRebalanceSuggestion,
   onApplySharedRebalance,
   onDeclineSharedRebalance,
+  sharedRemovalSuggestion,
+  onApplySharedRemoval,
+  onDeclineSharedRemoval,
 }: AllocationBuilderProps) {
   const [selectorOpen, setSelectorOpen] = React.useState(false);
   const [detailsItem, setDetailsItem] = React.useState<AllocationItem | null>(null);
@@ -123,6 +136,30 @@ export function AllocationBuilder({
   // Check if we're using the shared suggestion
   const isUsingSharedSuggestion = !!sharedRebalanceSuggestion;
 
+  // Determine which removal suggestion to show:
+  // - Use sharedRemovalSuggestion from context if provided (from sidebar removing items)
+  // - Otherwise use local removalSuggestion (from removing via allocation builder itself)
+  const activeRemovalSuggestion = React.useMemo(() => {
+    if (sharedRemovalSuggestion) {
+      // Convert shared suggestion to local format (add id to each allocation)
+      return {
+        allocations: sharedRemovalSuggestion.allocations.map((a) => ({
+          id: allocations.find((alloc) => alloc.targetId === a.targetId)?.id || crypto.randomUUID(),
+          type: a.type,
+          targetId: a.targetId,
+          targetName: a.targetName,
+          percentage: a.percentage,
+        })),
+        removedItemName: sharedRemovalSuggestion.removedItemName,
+        removedPercentage: sharedRemovalSuggestion.removedPercentage,
+      };
+    }
+    return removalSuggestion;
+  }, [sharedRemovalSuggestion, removalSuggestion, allocations]);
+
+  // Check if we're using the shared removal suggestion
+  const isUsingSharedRemovalSuggestion = !!sharedRemovalSuggestion;
+
   const addSuggestionRef = React.useRef<HTMLDivElement>(null);
   const removalSuggestionRef = React.useRef<HTMLDivElement>(null);
 
@@ -141,14 +178,14 @@ export function AllocationBuilder({
 
   // Reset zoom when selector modal closes (after adding items)
   React.useEffect(() => {
-    if (!selectorOpen && (activeRebalanceSuggestion || removalSuggestion)) {
+    if (!selectorOpen && (activeRebalanceSuggestion || activeRemovalSuggestion)) {
       const isMobile = window.innerWidth < 640;
       if (isMobile) {
         // Small delay to let the modal fully close
         setTimeout(resetViewportZoom, 150);
       }
     }
-  }, [selectorOpen, activeRebalanceSuggestion, removalSuggestion, resetViewportZoom]);
+  }, [selectorOpen, activeRebalanceSuggestion, activeRemovalSuggestion, resetViewportZoom]);
 
   // Auto-scroll to suggestion when it appears (desktop only)
   React.useEffect(() => {
@@ -163,7 +200,7 @@ export function AllocationBuilder({
   }, [activeRebalanceSuggestion, selectorOpen]);
 
   React.useEffect(() => {
-    if (removalSuggestion && removalSuggestionRef.current && !selectorOpen) {
+    if (activeRemovalSuggestion && removalSuggestionRef.current && !selectorOpen) {
       const isMobile = window.innerWidth < 640;
       if (!isMobile) {
         setTimeout(() => {
@@ -171,7 +208,7 @@ export function AllocationBuilder({
         }, 100);
       }
     }
-  }, [removalSuggestion, selectorOpen]);
+  }, [activeRemovalSuggestion, selectorOpen]);
 
   // Get the full nonprofit or category details for the details modal
   const getItemDetails = (item: AllocationItem) => {
@@ -311,7 +348,11 @@ export function AllocationBuilder({
   };
 
   const handleAcceptRemovalRebalance = () => {
-    if (removalSuggestion) {
+    // Use shared context function if using shared suggestion, otherwise handle locally
+    if (isUsingSharedRemovalSuggestion && onApplySharedRemoval) {
+      onApplySharedRemoval();
+      setManuallyAdjustedIds(new Set());
+    } else if (removalSuggestion) {
       onAllocationsChange(removalSuggestion.allocations);
       setRemovalSuggestion(null);
       // Clear manual tracking since AI suggested these values
@@ -320,7 +361,10 @@ export function AllocationBuilder({
   };
 
   const handleDeclineRemovalRebalance = () => {
-    if (removalSuggestion) {
+    // Use shared context function if using shared suggestion, otherwise handle locally
+    if (isUsingSharedRemovalSuggestion && onDeclineSharedRemoval) {
+      onDeclineSharedRemoval();
+    } else if (removalSuggestion) {
       // Just remove the item without rebalancing - keep original percentages
       const originalRemaining = allocations.filter(
         (a) => removalSuggestion.allocations.some((s) => s.id === a.id)
@@ -801,7 +845,7 @@ export function AllocationBuilder({
                 )}
               </div>
               {/* AI Auto-balance button - shown when not at 100% */}
-              {allocations.length > 0 && totalPercentage !== 100 && !activeRebalanceSuggestion && !removalSuggestion && (
+              {allocations.length > 0 && totalPercentage !== 100 && !activeRebalanceSuggestion && !activeRemovalSuggestion && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -892,16 +936,16 @@ export function AllocationBuilder({
           )}
 
           {/* AI Rebalance Suggestion (Removing) */}
-          {removalSuggestion && (
+          {activeRemovalSuggestion && (
             <div ref={removalSuggestionRef} className="p-4 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-4 overflow-hidden max-w-full">
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-emerald-100 flex-shrink-0">
                   <Sparkles className="h-4 w-4 text-emerald-600 animate-pulse" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-emerald-900">Redistribute {removalSuggestion.removedPercentage}%?</h4>
+                  <h4 className="font-medium text-emerald-900">Redistribute {activeRemovalSuggestion.removedPercentage}%?</h4>
                   <p className="text-sm text-emerald-700 mt-1">
-                    Removing <span className="font-medium">{removalSuggestion.removedItemName}</span> frees up {removalSuggestion.removedPercentage}%.
+                    Removing <span className="font-medium">{activeRemovalSuggestion.removedItemName}</span> frees up {activeRemovalSuggestion.removedPercentage}%.
                     Here&apos;s a suggested redistribution:
                   </p>
                 </div>
@@ -909,7 +953,7 @@ export function AllocationBuilder({
 
               {/* Suggested allocation preview */}
               <div className="space-y-2 sm:pl-11">
-                {removalSuggestion.allocations.map((alloc) => {
+                {activeRemovalSuggestion.allocations.map((alloc) => {
                   // Find the original allocation to show the change
                   const original = allocations.find((a) => a.id === alloc.id);
                   const change = original ? alloc.percentage - original.percentage : 0;
@@ -956,7 +1000,7 @@ export function AllocationBuilder({
           )}
 
           {/* Add Button */}
-          {allocations.length < config.features.maxAllocationItems && !activeRebalanceSuggestion && !removalSuggestion && (
+          {allocations.length < config.features.maxAllocationItems && !activeRebalanceSuggestion && !activeRemovalSuggestion && (
             <Button
               variant="outline"
               fullWidth

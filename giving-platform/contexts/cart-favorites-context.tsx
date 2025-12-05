@@ -74,6 +74,13 @@ export interface RebalanceSuggestion {
   newItemNames: string[];
 }
 
+// Removal rebalance suggestion types (shared between sidebar and donate page)
+export interface RemovalRebalanceSuggestion {
+  allocations: DraftAllocation[];
+  removedItemName: string;
+  removedPercentage: number;
+}
+
 // Result type for addToCart operation
 export type AddToCartResult =
   | { success: true }
@@ -134,6 +141,12 @@ interface CartFavoritesContextType {
   applyRebalanceSuggestion: () => Promise<void>;
   declineRebalanceSuggestion: () => Promise<void>;
 
+  // Removal Rebalance Suggestion (shared between sidebar and donate page)
+  removalSuggestion: RemovalRebalanceSuggestion | null;
+  setRemovalSuggestion: (suggestion: RemovalRebalanceSuggestion | null) => void;
+  applyRemovalSuggestion: () => Promise<void>;
+  declineRemovalSuggestion: () => Promise<void>;
+
   // UI State
   isSidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
@@ -170,6 +183,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
   // Shared rebalance suggestion state (synced between sidebar and donate page)
   const [rebalanceSuggestion, setRebalanceSuggestion] = useState<RebalanceSuggestion | null>(null);
+
+  // Shared removal rebalance suggestion state (synced between sidebar and donate page)
+  const [removalSuggestion, setRemovalSuggestion] = useState<RemovalRebalanceSuggestion | null>(null);
 
   // Track when we're doing a local draft operation to ignore our own realtime updates
   const isLocalDraftOperation = useRef(false);
@@ -1265,6 +1281,37 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     setRebalanceSuggestion(null);
   }, []);
 
+  // Apply the shared removal suggestion (updates draft with suggested allocations after item removal)
+  const applyRemovalSuggestion = useCallback(async () => {
+    if (!removalSuggestion || !donationDraft) return;
+
+    await saveDonationDraft({
+      ...donationDraft,
+      allocations: removalSuggestion.allocations,
+    });
+    setRemovalSuggestion(null);
+  }, [removalSuggestion, donationDraft, saveDonationDraft]);
+
+  // Decline the shared removal suggestion (just remove item without rebalancing)
+  const declineRemovalSuggestion = useCallback(async () => {
+    if (!removalSuggestion || !donationDraft) return;
+
+    // Keep original percentages for remaining items
+    const remainingOriginalAllocations = donationDraft.allocations.filter(
+      (a) => removalSuggestion.allocations.some((s) => s.targetId === a.targetId)
+    );
+
+    if (remainingOriginalAllocations.length === 0) {
+      await clearDonationDraft();
+    } else {
+      await saveDonationDraft({
+        ...donationDraft,
+        allocations: remainingOriginalAllocations,
+      });
+    }
+    setRemovalSuggestion(null);
+  }, [removalSuggestion, donationDraft, saveDonationDraft, clearDonationDraft]);
+
   // Helper to check if there's an active draft (even without allocations)
   const hasDraft = donationDraft !== null;
 
@@ -1294,6 +1341,10 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     setRebalanceSuggestion,
     applyRebalanceSuggestion,
     declineRebalanceSuggestion,
+    removalSuggestion,
+    setRemovalSuggestion,
+    applyRemovalSuggestion,
+    declineRemovalSuggestion,
     isSidebarOpen,
     setSidebarOpen,
     activeTab,

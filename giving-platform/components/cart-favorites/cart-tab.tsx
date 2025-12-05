@@ -4,15 +4,8 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, Minus, Plus, Sparkles, Check } from "lucide-react";
-import { useCartFavorites, type CartItem, type DraftAllocation } from "@/contexts/cart-favorites-context";
+import { useCartFavorites, type CartItem, type DraftAllocation, type RemovalRebalanceSuggestion } from "@/contexts/cart-favorites-context";
 import { Button } from "@/components/ui/button";
-
-// Types for removal rebalance suggestion (local to sidebar)
-interface RemovalRebalanceSuggestion {
-  allocations: DraftAllocation[];
-  removedItemName: string;
-  removedPercentage: number;
-}
 
 export function CartTab() {
   const router = useRouter();
@@ -31,6 +24,10 @@ export function CartTab() {
     rebalanceSuggestion,
     applyRebalanceSuggestion,
     declineRebalanceSuggestion,
+    removalSuggestion,
+    setRemovalSuggestion,
+    applyRemovalSuggestion,
+    declineRemovalSuggestion,
   } = useCartFavorites();
 
   const [isClearing, setIsClearing] = useState(false);
@@ -39,9 +36,6 @@ export function CartTab() {
 
   // Track percentage input values as strings to allow empty field during editing
   const [percentageInputs, setPercentageInputs] = useState<Record<string, string>>({});
-
-  // Removal rebalance suggestion state (local - only relevant to sidebar)
-  const [removalSuggestion, setRemovalSuggestion] = useState<RemovalRebalanceSuggestion | null>(null);
 
   // Handle percentage input change - allows empty string during editing
   const handlePercentageInputChange = useCallback((targetId: string, value: string) => {
@@ -171,37 +165,16 @@ export function CartTab() {
     });
   }, [donationDraft, removeFromDraft, generateRemovalRebalanceSuggestion]);
 
-  // Accept removal rebalance suggestion
+  // Accept removal rebalance suggestion - uses shared context function
   const handleAcceptRemovalRebalance = useCallback(async () => {
-    if (!removalSuggestion || !donationDraft) return;
-
-    await saveDonationDraft({
-      ...donationDraft,
-      allocations: removalSuggestion.allocations,
-    });
-    setRemovalSuggestion(null);
+    await applyRemovalSuggestion();
     setPercentageInputs({});
-  }, [removalSuggestion, donationDraft, saveDonationDraft]);
+  }, [applyRemovalSuggestion]);
 
-  // Decline removal rebalance - just remove without rebalancing
+  // Decline removal rebalance - uses shared context function (just removes without rebalancing)
   const handleDeclineRemovalRebalance = useCallback(async () => {
-    if (!removalSuggestion || !donationDraft) return;
-
-    // Keep original percentages for remaining items
-    const remainingOriginalAllocations = donationDraft.allocations.filter(
-      (a) => removalSuggestion.allocations.some((s) => s.targetId === a.targetId)
-    );
-
-    if (remainingOriginalAllocations.length === 0) {
-      await clearDonationDraft();
-    } else {
-      await saveDonationDraft({
-        ...donationDraft,
-        allocations: remainingOriginalAllocations,
-      });
-    }
-    setRemovalSuggestion(null);
-  }, [removalSuggestion, donationDraft, saveDonationDraft, clearDonationDraft]);
+    await declineRemovalSuggestion();
+  }, [declineRemovalSuggestion]);
 
   // Accept add rebalance suggestion - uses shared context function
   const handleAcceptRebalance = useCallback(async () => {
