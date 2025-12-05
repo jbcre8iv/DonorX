@@ -11,6 +11,7 @@ import { NonprofitTable } from "@/components/directory/nonprofit-table";
 import { CategoryTable } from "@/components/directory/category-table";
 import { NonprofitModal } from "@/components/directory/nonprofit-modal";
 import { usePreferences } from "@/hooks/use-preferences";
+import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { smartFilterNonprofit } from "@/lib/smart-search";
 import type { Nonprofit, Category } from "@/types/database";
 
@@ -39,6 +40,7 @@ export function DirectoryClient({
   const searchParams = useSearchParams();
   const categorySlug = searchParams.get("category");
   const { preferences, setPreference, loading: preferencesLoading } = usePreferences();
+  const { isSidebarOpen } = useCartFavorites();
 
   // Find category ID from slug in URL
   const matchedCategory = categorySlug
@@ -199,7 +201,7 @@ export function DirectoryClient({
   );
 
   return (
-    <div className="py-12 overflow-visible">
+    <div className={`py-12 overflow-visible transition-all duration-300 ${isSidebarOpen ? "lg:mr-[28rem]" : ""}`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 overflow-visible">
         {/* Header */}
         <div className="text-center">

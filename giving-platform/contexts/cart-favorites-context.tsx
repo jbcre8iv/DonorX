@@ -1033,14 +1033,26 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     [donationDraft]
   );
 
-  // Add item directly to donation draft allocations
+  // Add item directly to donation draft allocations (creates draft if none exists)
   const addToDraft = useCallback(
     async (item: {
       type: "nonprofit" | "category";
       targetId: string;
       targetName: string;
     }) => {
-      if (!donationDraft) return;
+      // If no draft exists, create one with this item
+      if (!donationDraft) {
+        const newDraft: DonationDraft = {
+          amountCents: 10000000, // $100,000 default
+          frequency: "one-time",
+          allocations: [{ ...item, percentage: 100 }],
+        };
+        await saveDonationDraft(newDraft);
+        // Open the sidebar to show the giving list
+        setActiveTab("cart");
+        setSidebarOpen(true);
+        return;
+      }
 
       // Check if already in draft
       const alreadyInDraft = donationDraft.allocations.some(
@@ -1066,6 +1078,10 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
       // Save the updated draft
       await saveDonationDraft(updatedDraft);
+
+      // Open the sidebar to show the giving list
+      setActiveTab("cart");
+      setSidebarOpen(true);
     },
     [donationDraft, saveDonationDraft]
   );

@@ -15,6 +15,7 @@ export function CartFavoritesSidebar() {
     cartItems,
     favorites,
     userId,
+    hasDraft,
   } = useCartFavorites();
 
   const isLoggedIn = !!userId;
@@ -31,32 +32,23 @@ export function CartFavoritesSidebar() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isSidebarOpen, setSidebarOpen]);
 
-  // Prevent body scroll when sidebar is open
-  useEffect(() => {
-    if (isSidebarOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isSidebarOpen]);
+  // Note: We no longer prevent body scroll so users can continue browsing
 
   if (!isSidebarOpen) return null;
 
   return (
     <>
-      {/* Backdrop */}
+      {/* No backdrop - sidebar slides in alongside content on desktop */}
+      {/* On mobile, show a subtle backdrop that doesn't block interaction */}
       <div
-        className="fixed inset-0 z-40 bg-black/50 transition-opacity"
+        className="fixed inset-0 z-40 bg-black/20 lg:hidden transition-opacity"
         onClick={() => setSidebarOpen(false)}
         aria-hidden="true"
       />
 
-      {/* Sidebar */}
+      {/* Sidebar - fixed position, slides in from right */}
       <div
-        className={`fixed right-0 top-0 z-50 h-full w-full max-w-md bg-white shadow-xl transition-transform duration-300 ease-in-out ${
+        className={`fixed right-0 top-0 z-50 h-full w-full max-w-md bg-white shadow-xl border-l border-slate-200 transition-transform duration-300 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
