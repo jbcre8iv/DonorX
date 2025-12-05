@@ -22,7 +22,7 @@ export interface AllocationItem {
 
 interface RebalanceSuggestion {
   allocations: AllocationItem[];
-  newItemName: string;
+  newItemNames: string[];
 }
 
 interface RemovalRebalanceSuggestion {
@@ -303,9 +303,9 @@ export function AllocationBuilder({
   // Generate a smart rebalance suggestion when adding to existing allocations
   const generateRebalanceSuggestion = (
     currentAllocations: AllocationItem[],
-    newItem: AllocationItem
+    newItems: AllocationItem[]
   ): AllocationItem[] => {
-    const totalItems = currentAllocations.length + 1;
+    const totalItems = currentAllocations.length + newItems.length;
 
     // Calculate equal distribution as base
     const equalPercentage = Math.floor(100 / totalItems);
@@ -318,17 +318,21 @@ export function AllocationBuilder({
       percentage: equalPercentage + (index === 0 ? remainder : 0),
     }));
 
-    // Add the new item with equal percentage
-    rebalanced.push({
-      ...newItem,
-      percentage: equalPercentage,
-    });
+    // Add all new items with equal percentage
+    for (const newItem of newItems) {
+      rebalanced.push({
+        ...newItem,
+        percentage: equalPercentage,
+      });
+    }
 
     return rebalanced;
   };
 
   const handleAddAllocation = (type: "nonprofit" | "category", targetId: string, targetName: string) => {
-    if (allocations.length >= config.features.maxAllocationItems) {
+    // Check max allocation limit (accounting for any pending items in suggestion)
+    const pendingCount = rebalanceSuggestion ? rebalanceSuggestion.newItemNames.length : 0;
+    if (allocations.length + pendingCount >= config.features.maxAllocationItems) {
       return;
     }
 
@@ -340,13 +344,29 @@ export function AllocationBuilder({
       percentage: 0, // Will be set by suggestion or default
     };
 
-    // If there are existing allocations, show a rebalance suggestion
-    if (allocations.length > 0) {
-      const suggestedAllocations = generateRebalanceSuggestion(allocations, newAllocation);
-      setRebalanceSuggestion({
-        allocations: suggestedAllocations,
-        newItemName: targetName,
-      });
+    // If there are existing allocations (or an existing suggestion), show/update a rebalance suggestion
+    if (allocations.length > 0 || rebalanceSuggestion) {
+      // If there's already a pending suggestion, add to it
+      if (rebalanceSuggestion) {
+        // Get the existing new items from the suggestion (items not in current allocations)
+        const existingNewItems = rebalanceSuggestion.allocations.filter(
+          (a) => !allocations.some((alloc) => alloc.targetId === a.targetId)
+        );
+        // Add the new item to the list
+        const allNewItems = [...existingNewItems, newAllocation];
+        const suggestedAllocations = generateRebalanceSuggestion(allocations, allNewItems);
+        setRebalanceSuggestion({
+          allocations: suggestedAllocations,
+          newItemNames: [...rebalanceSuggestion.newItemNames, targetName],
+        });
+      } else {
+        // Create a new suggestion with just this item
+        const suggestedAllocations = generateRebalanceSuggestion(allocations, [newAllocation]);
+        setRebalanceSuggestion({
+          allocations: suggestedAllocations,
+          newItemNames: [targetName],
+        });
+      }
     } else {
       // First allocation gets 100%
       newAllocation.percentage = 100;
@@ -365,25 +385,70 @@ export function AllocationBuilder({
 
   const handleDeclineRebalance = () => {
     if (rebalanceSuggestion) {
-      // Add the new item with a default percentage (10% or remaining)
-      const newItem = rebalanceSuggestion.allocations[rebalanceSuggestion.allocations.length - 1];
-      const defaultPercentage = Math.min(remainingPercentage, 25);
+      // Get all new items from the suggestion (items not in current allocations)
+      const newItems = rebalanceSuggestion.allocations.filter(
+        (a) => !allocations.some((alloc) => alloc.targetId === a.targetId)
+      );
+      // Calculate default percentage for each new item
+      const perItemPercentage = Math.min(Math.floor(remainingPercentage / newItems.length), 25);
+      const defaultPercentage = perItemPercentage > 0 ? perItemPercentage : 10;
+
       onAllocationsChange([
         ...allocations,
-        { ...newItem, percentage: defaultPercentage > 0 ? defaultPercentage : 10 },
+        ...newItems.map((item) => ({ ...item, percentage: defaultPercentage })),
       ]);
       setRebalanceSuggestion(null);
     }
   };
 
   const excludeIds = allocations.map((a) => a.targetId);
-  const includedIds = allocations.map((a) => a.targetId);
+  // Include both existing allocations and pending items from the rebalance suggestion
+  const pendingItemIds = rebalanceSuggestion
+    ? rebalanceSuggestion.allocations
+        .filter((a) => !allocations.some((alloc) => alloc.targetId === a.targetId))
+        .map((a) => a.targetId)
+    : [];
+  const includedIds = [...allocations.map((a) => a.targetId), ...pendingItemIds];
 
   // Handle removal from the selector modal (toggle behavior)
   const handleRemoveFromSelector = (targetId: string) => {
+    // First check if it's in the current allocations
     const allocation = allocations.find((a) => a.targetId === targetId);
     if (allocation) {
       handleRemove(allocation.id);
+      return;
+    }
+
+    // Check if it's a pending item in the rebalance suggestion
+    if (rebalanceSuggestion) {
+      const isPending = rebalanceSuggestion.allocations.some(
+        (a) => a.targetId === targetId && !allocations.some((alloc) => alloc.targetId === a.targetId)
+      );
+      if (isPending) {
+        // Remove this item from the pending suggestion
+        const remainingNewItems = rebalanceSuggestion.allocations.filter(
+          (a) => a.targetId !== targetId && !allocations.some((alloc) => alloc.targetId === a.targetId)
+        );
+        const remainingNewItemNames = rebalanceSuggestion.newItemNames.filter((_, i) => {
+          // Find the item index by matching order (new items are at the end of allocations)
+          const newItemsInAllocs = rebalanceSuggestion.allocations.filter(
+            (a) => !allocations.some((alloc) => alloc.targetId === a.targetId)
+          );
+          return newItemsInAllocs[i]?.targetId !== targetId;
+        });
+
+        if (remainingNewItems.length === 0) {
+          // No more pending items, clear the suggestion
+          setRebalanceSuggestion(null);
+        } else {
+          // Regenerate suggestion with remaining items
+          const suggestedAllocations = generateRebalanceSuggestion(allocations, remainingNewItems);
+          setRebalanceSuggestion({
+            allocations: suggestedAllocations,
+            newItemNames: remainingNewItemNames,
+          });
+        }
+      }
     }
   };
 
@@ -621,7 +686,15 @@ export function AllocationBuilder({
                 <div className="flex-1">
                   <h4 className="font-medium text-emerald-900">AI Suggested Rebalance</h4>
                   <p className="text-sm text-emerald-700 mt-1">
-                    Adding <span className="font-medium">{rebalanceSuggestion.newItemName}</span> to your allocation.
+                    Adding{" "}
+                    {rebalanceSuggestion.newItemNames.map((name, i) => (
+                      <span key={name}>
+                        <span className="font-medium">{name}</span>
+                        {i < rebalanceSuggestion.newItemNames.length - 2 && ", "}
+                        {i === rebalanceSuggestion.newItemNames.length - 2 && " and "}
+                      </span>
+                    ))}{" "}
+                    to your allocation.
                     Here&apos;s a recommended distribution:
                   </p>
                 </div>
@@ -629,28 +702,31 @@ export function AllocationBuilder({
 
               {/* Suggested allocation preview */}
               <div className="space-y-2 pl-11">
-                {rebalanceSuggestion.allocations.map((alloc, index) => (
-                  <div
-                    key={alloc.id}
-                    className={`flex items-center justify-between text-sm py-1.5 px-3 rounded ${
-                      index === rebalanceSuggestion.allocations.length - 1
-                        ? "bg-emerald-100 border border-emerald-200"
-                        : "bg-white/60"
-                    }`}
-                  >
-                    <span className={`truncate mr-2 ${
-                      index === rebalanceSuggestion.allocations.length - 1
-                        ? "font-medium text-emerald-900"
-                        : "text-slate-700"
-                    }`}>
-                      {alloc.targetName}
-                      {index === rebalanceSuggestion.allocations.length - 1 && (
-                        <span className="ml-2 text-xs text-emerald-600">(new)</span>
-                      )}
-                    </span>
-                    <span className="font-medium text-slate-900">{alloc.percentage}%</span>
-                  </div>
-                ))}
+                {rebalanceSuggestion.allocations.map((alloc) => {
+                  const isNewItem = !allocations.some((a) => a.targetId === alloc.targetId);
+                  return (
+                    <div
+                      key={alloc.id}
+                      className={`flex items-center justify-between text-sm py-1.5 px-3 rounded ${
+                        isNewItem
+                          ? "bg-emerald-100 border border-emerald-200"
+                          : "bg-white/60"
+                      }`}
+                    >
+                      <span className={`truncate mr-2 ${
+                        isNewItem
+                          ? "font-medium text-emerald-900"
+                          : "text-slate-700"
+                      }`}>
+                        {alloc.targetName}
+                        {isNewItem && (
+                          <span className="ml-2 text-xs text-emerald-600">(new)</span>
+                        )}
+                      </span>
+                      <span className="font-medium text-slate-900">{alloc.percentage}%</span>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Accept/Decline buttons */}
