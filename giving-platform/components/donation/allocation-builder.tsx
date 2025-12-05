@@ -59,6 +59,34 @@ export function AllocationBuilder({
   // Track which allocations were manually adjusted by the user
   const [manuallyAdjustedIds, setManuallyAdjustedIds] = React.useState<Set<string>>(new Set());
 
+  // Track percentage input values as strings to allow empty field during editing
+  const [percentageInputs, setPercentageInputs] = React.useState<Record<string, string>>({});
+
+  // Sync input values when allocations change externally (e.g., +/- buttons, rebalancing)
+  React.useEffect(() => {
+    // Update any input values that don't match current allocation values
+    // This ensures +/- buttons and rebalancing update the displayed value
+    setPercentageInputs((prev) => {
+      const updated: Record<string, string> = {};
+      let hasChanges = false;
+
+      for (const alloc of allocations) {
+        const currentInput = prev[alloc.id];
+        const allocPercentStr = String(alloc.percentage);
+
+        // Only update if the input value differs from allocation and isn't empty (user is typing)
+        if (currentInput !== undefined && currentInput !== "" && currentInput !== allocPercentStr) {
+          updated[alloc.id] = allocPercentStr;
+          hasChanges = true;
+        } else if (currentInput !== undefined) {
+          updated[alloc.id] = currentInput;
+        }
+      }
+
+      return hasChanges ? updated : prev;
+    });
+  }, [allocations]);
+
   const addSuggestionRef = React.useRef<HTMLDivElement>(null);
   const removalSuggestionRef = React.useRef<HTMLDivElement>(null);
 
@@ -134,6 +162,40 @@ export function AllocationBuilder({
         item.id === id ? { ...item, percentage: clampedPercentage } : item
       )
     );
+  };
+
+  // Handle percentage input change - allows empty string during editing
+  const handlePercentageInputChange = (id: string, value: string) => {
+    // Allow empty string or valid numbers
+    if (value === "" || /^\d*$/.test(value)) {
+      setPercentageInputs((prev) => ({ ...prev, [id]: value }));
+
+      // If it's a valid number, update the actual allocation
+      if (value !== "") {
+        const numValue = parseInt(value, 10);
+        if (!isNaN(numValue)) {
+          handlePercentageChange(id, numValue);
+        }
+      }
+    }
+  };
+
+  // Handle blur - populate 0 if field is empty
+  const handlePercentageInputBlur = (id: string) => {
+    const currentValue = percentageInputs[id];
+    if (currentValue === "" || currentValue === undefined) {
+      // Set to 0 when blurred with empty value
+      handlePercentageChange(id, 0);
+      setPercentageInputs((prev) => ({ ...prev, [id]: "0" }));
+    }
+  };
+
+  // Get the display value for percentage input (use local state if available, otherwise use allocation value)
+  const getPercentageInputValue = (id: string, percentage: number): string => {
+    if (percentageInputs[id] !== undefined) {
+      return percentageInputs[id];
+    }
+    return String(percentage);
   };
 
   const handleRemove = (id: string) => {
@@ -626,17 +688,13 @@ export function AllocationBuilder({
                       </button>
                       <div className="relative w-20 flex-shrink-0">
                         <input
-                          type="number"
-                          value={item.percentage}
-                          onChange={(e) =>
-                            handlePercentageChange(
-                              item.id,
-                              parseInt(e.target.value, 10) || 0
-                            )
-                          }
-                          min={0}
-                          max={100}
-                          className="w-full h-10 rounded-lg border border-slate-200 pl-2 pr-7 text-center text-base font-medium [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={getPercentageInputValue(item.id, item.percentage)}
+                          onChange={(e) => handlePercentageInputChange(item.id, e.target.value)}
+                          onBlur={() => handlePercentageInputBlur(item.id)}
+                          className="w-full h-10 rounded-lg border border-slate-200 pl-2 pr-7 text-center text-base font-medium"
                         />
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">%</span>
                       </div>
