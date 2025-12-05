@@ -26,7 +26,7 @@ function ActionButtons({
   hasDraft,
   favorited,
   isLoggedIn,
-  onSmartDonate,
+  onToggleDonate,
   onToggleFavorite,
   onQuickView,
   isMobile = false,
@@ -37,20 +37,19 @@ function ActionButtons({
   hasDraft: boolean;
   favorited: boolean;
   isLoggedIn: boolean;
-  onSmartDonate: (e: React.MouseEvent) => void;
+  onToggleDonate: (e: React.MouseEvent) => void;
   onToggleFavorite: (e: React.MouseEvent) => void;
   onQuickView?: (nonprofit: Nonprofit) => void;
   isMobile?: boolean;
 }) {
   return (
     <div className={`flex items-center ${isMobile ? "gap-2" : "gap-1"} ${className}`}>
-      {/* Smart Donate Button - creates draft or adds to existing draft, stays on directory */}
+      {/* Toggle Donate Button - adds to or removes from draft */}
       <div className="relative group/tip">
         <Button
           size="sm"
-          className={`${isMobile ? "h-10 px-6" : "h-8"} ${inDraft ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}
-          onClick={onSmartDonate}
-          disabled={inDraft}
+          className={`${isMobile ? "h-10 px-6" : "h-8"} ${inDraft ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
+          onClick={onToggleDonate}
         >
           {inDraft ? (
             <>
@@ -62,7 +61,7 @@ function ActionButtons({
           )}
         </Button>
         <span className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
-          {inDraft ? "Already in donation" : "Add to donation"}
+          {inDraft ? "Remove from donation" : "Add to donation"}
         </span>
       </div>
       {/* Quick View - Learn more */}
@@ -133,23 +132,27 @@ function NonprofitRow({
   isExpanded: boolean;
   onToggleExpand: () => void;
 }) {
-  const { toggleFavorite, isFavorite, hasDraft, addToDraft, isInDraft, userId } = useCartFavorites();
+  const { toggleFavorite, isFavorite, hasDraft, addToDraft, removeFromDraft, isInDraft, userId } = useCartFavorites();
   const { addToast } = useToast();
   const isLoggedIn = !!userId;
 
   const inDraft = isInDraft(nonprofit.id);
   const favorited = isFavorite(nonprofit.id);
 
-  // Smart donate handler - creates draft or adds to existing draft
-  const handleSmartDonate = async (e: React.MouseEvent) => {
+  // Toggle donate handler - adds to draft or removes if already in draft
+  const handleToggleDonate = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!inDraft) {
+    if (inDraft) {
+      await removeFromDraft(nonprofit.id);
+      addToast(`Removed ${nonprofit.name} from your donation`, "info", 3000);
+    } else {
       await addToDraft({
         type: "nonprofit",
         targetId: nonprofit.id,
         targetName: nonprofit.name,
+        logoUrl: nonprofit.logo_url || undefined,
       });
       addToast(`Added ${nonprofit.name} to your donation`, "success", 3000);
     }
@@ -275,20 +278,28 @@ function NonprofitRow({
             hasDraft={hasDraft}
             favorited={favorited}
             isLoggedIn={isLoggedIn}
-            onSmartDonate={handleSmartDonate}
+            onToggleDonate={handleToggleDonate}
             onToggleFavorite={handleToggleFavorite}
             onQuickView={onQuickView}
           />
         </td>
-        {/* Mobile expand button */}
+        {/* Mobile expand/status indicator */}
         <td className="py-3 sm:hidden">
-          <button
-            onClick={onToggleExpand}
-            className="h-8 w-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-            aria-label={isExpanded ? "Hide actions" : "Show actions"}
-          >
-            <ChevronDown className={`h-5 w-5 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-          </button>
+          <div className="flex items-center gap-1">
+            {/* In-draft indicator - visible when collapsed */}
+            {inDraft && !isExpanded && (
+              <div className="h-7 w-7 flex items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                <Check className="h-4 w-4" />
+              </div>
+            )}
+            <button
+              onClick={onToggleExpand}
+              className="h-8 w-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              aria-label={isExpanded ? "Hide actions" : "Show actions"}
+            >
+              <ChevronDown className={`h-5 w-5 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+            </button>
+          </div>
         </td>
       </tr>
       {/* Mobile expanded actions row */}
@@ -302,7 +313,7 @@ function NonprofitRow({
               hasDraft={hasDraft}
               favorited={favorited}
               isLoggedIn={isLoggedIn}
-              onSmartDonate={handleSmartDonate}
+              onToggleDonate={handleToggleDonate}
               onToggleFavorite={handleToggleFavorite}
               onQuickView={onQuickView}
               isMobile={true}

@@ -31,6 +31,7 @@ export function DonateButton({
         type: "nonprofit",
         targetId: nonprofitId,
         targetName: nonprofitName,
+        // Note: logo URL not available in this component - will show initial
       });
       addToast(`Added ${nonprofitName} to your donation`, "success", 3000);
     }

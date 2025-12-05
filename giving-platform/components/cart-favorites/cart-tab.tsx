@@ -49,6 +49,8 @@ export function CartTab() {
       targetId: (item.nonprofitId || item.categoryId)!,
       targetName: item.nonprofit?.name || item.category?.name || "Unknown",
       percentage: index === 0 ? evenPercentage + remainder : evenPercentage,
+      logoUrl: item.nonprofit?.logoUrl,
+      icon: item.category?.icon,
     }));
 
     // Save draft with default amount (will be updated on donate page)
@@ -169,10 +171,20 @@ export function CartTab() {
                 key={allocation.targetId}
                 className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3"
               >
-                {/* Icon placeholder */}
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100">
+                {/* Logo/Icon */}
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 overflow-hidden">
                   {allocation.type === "category" ? (
-                    <Tag className="h-5 w-5 text-slate-400" />
+                    allocation.icon ? (
+                      <span className="text-xl">{allocation.icon}</span>
+                    ) : (
+                      <Tag className="h-5 w-5 text-slate-400" />
+                    )
+                  ) : allocation.logoUrl ? (
+                    <img
+                      src={allocation.logoUrl}
+                      alt={allocation.targetName}
+                      className="h-10 w-10 rounded-lg object-contain"
+                    />
                   ) : (
                     <span className="text-lg font-semibold text-slate-600">
                       {allocation.targetName.charAt(0)}

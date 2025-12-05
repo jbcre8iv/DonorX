@@ -15,23 +15,27 @@ interface NonprofitCardProps {
 }
 
 export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
-  const { toggleFavorite, isFavorite, hasDraft, addToDraft, isInDraft, userId } = useCartFavorites();
+  const { toggleFavorite, isFavorite, hasDraft, addToDraft, removeFromDraft, isInDraft, userId } = useCartFavorites();
   const { addToast } = useToast();
   const isLoggedIn = !!userId;
 
   const inDraft = isInDraft(nonprofit.id);
   const favorited = isFavorite(nonprofit.id);
 
-  // Smart donate handler - creates draft or adds to existing draft
-  const handleSmartDonate = async (e: React.MouseEvent) => {
+  // Toggle donate handler - adds to or removes from draft
+  const handleToggleDonate = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!inDraft) {
+    if (inDraft) {
+      await removeFromDraft(nonprofit.id);
+      addToast(`Removed ${nonprofit.name} from your donation`, "info", 3000);
+    } else {
       await addToDraft({
         type: "nonprofit",
         targetId: nonprofit.id,
         targetName: nonprofit.name,
+        logoUrl: nonprofit.logo_url || undefined,
       });
       addToast(`Added ${nonprofit.name} to your donation`, "success", 3000);
     }
@@ -127,13 +131,12 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
         )}
 
         <div className="mt-4 flex items-center gap-2">
-          {/* Smart Donate Button - creates draft or adds to existing draft, stays on directory */}
+          {/* Toggle Donate Button - adds to or removes from draft */}
           <div className="relative group/btn flex-1">
             <Button
               size="sm"
-              className={`w-full ${inDraft ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}
-              onClick={handleSmartDonate}
-              disabled={inDraft}
+              className={`w-full ${inDraft ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
+              onClick={handleToggleDonate}
             >
               {inDraft ? (
                 <>
@@ -145,7 +148,7 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
               )}
             </Button>
             <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
-              {inDraft ? "Already in donation" : "Add to donation"}
+              {inDraft ? "Remove from donation" : "Add to donation"}
             </span>
           </div>
           {onQuickView && (

@@ -31,21 +31,25 @@ function CategoryRow({
   onToggleExpand: () => void;
   onViewOrgs?: (categoryId: string) => void;
 }) {
-  const { hasDraft, addToDraft, isInDraft } = useCartFavorites();
+  const { hasDraft, addToDraft, removeFromDraft, isInDraft } = useCartFavorites();
   const { addToast } = useToast();
 
   const inDraft = isInDraft(undefined, category.id);
 
-  // Smart donate handler - creates draft or adds to existing draft
-  const handleSmartDonate = async (e: React.MouseEvent) => {
+  // Toggle donate handler - adds to or removes from draft
+  const handleToggleDonate = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!inDraft) {
+    if (inDraft) {
+      await removeFromDraft(category.id);
+      addToast(`Removed ${category.name} from your donation`, "info", 3000);
+    } else {
       await addToDraft({
         type: "category",
         targetId: category.id,
         targetName: category.name,
+        icon: category.icon || undefined,
       });
       addToast(`Added ${category.name} category to your donation`, "success", 3000);
     }
@@ -107,13 +111,12 @@ function CategoryRow({
         {/* Desktop actions - hidden on mobile */}
         <td className="py-3 pr-6 hidden sm:table-cell rounded-r-lg">
           <div className="flex items-center gap-1 justify-end">
-            {/* Smart Donate Button - creates draft or adds to existing draft, stays on directory */}
+            {/* Toggle Donate Button - adds to or removes from draft */}
             <div className="relative group/tip">
               <Button
                 size="sm"
-                className={`h-8 ${inDraft ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}
-                onClick={handleSmartDonate}
-                disabled={inDraft}
+                className={`h-8 ${inDraft ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
+                onClick={handleToggleDonate}
               >
                 {inDraft ? (
                   <>
@@ -125,7 +128,7 @@ function CategoryRow({
                 )}
               </Button>
               <span className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
-                {inDraft ? "Already in donation" : "Add to donation"}
+                {inDraft ? "Remove from donation" : "Add to donation"}
               </span>
             </div>
             {/* View nonprofits in category */}
@@ -144,15 +147,23 @@ function CategoryRow({
             </div>
           </div>
         </td>
-        {/* Mobile expand button */}
+        {/* Mobile expand/status indicator */}
         <td className="py-3 sm:hidden">
-          <button
-            onClick={onToggleExpand}
-            className="h-8 w-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-            aria-label={isExpanded ? "Hide actions" : "Show actions"}
-          >
-            <ChevronDown className={`h-5 w-5 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-          </button>
+          <div className="flex items-center gap-1">
+            {/* In-draft indicator - visible when collapsed */}
+            {inDraft && !isExpanded && (
+              <div className="h-7 w-7 flex items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                <Check className="h-4 w-4" />
+              </div>
+            )}
+            <button
+              onClick={onToggleExpand}
+              className="h-8 w-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              aria-label={isExpanded ? "Hide actions" : "Show actions"}
+            >
+              <ChevronDown className={`h-5 w-5 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+            </button>
+          </div>
         </td>
       </tr>
       {/* Mobile expanded actions row */}
@@ -160,12 +171,11 @@ function CategoryRow({
         <tr className="sm:hidden bg-blue-50 shadow-[inset_0_0_0_2px_rgb(147,197,253)]">
           <td colSpan={2} className="py-3 px-4">
             <div className="flex items-center gap-2 justify-center flex-wrap">
-              {/* Smart Donate Button - creates draft or adds to existing draft */}
+              {/* Toggle Donate Button - adds to or removes from draft */}
               <Button
                 size="sm"
-                className={`h-10 px-6 ${inDraft ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}
-                onClick={handleSmartDonate}
-                disabled={inDraft}
+                className={`h-10 px-6 ${inDraft ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
+                onClick={handleToggleDonate}
               >
                 {inDraft ? (
                   <>

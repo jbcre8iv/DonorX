@@ -17,19 +17,23 @@ interface NonprofitModalProps {
 }
 
 export function NonprofitModal({ nonprofit, open, onClose, onViewFullProfile }: NonprofitModalProps) {
-  const { addToDraft, isInDraft } = useCartFavorites();
+  const { addToDraft, removeFromDraft, isInDraft } = useCartFavorites();
   const { addToast } = useToast();
 
   if (!nonprofit) return null;
 
   const inDraft = isInDraft(nonprofit.id);
 
-  const handleDonate = async () => {
-    if (!inDraft) {
+  const handleToggleDonate = async () => {
+    if (inDraft) {
+      await removeFromDraft(nonprofit.id);
+      addToast(`Removed ${nonprofit.name} from your donation`, "info", 3000);
+    } else {
       await addToDraft({
         type: "nonprofit",
         targetId: nonprofit.id,
         targetName: nonprofit.name,
+        logoUrl: nonprofit.logo_url || undefined,
       });
       addToast(`Added ${nonprofit.name} to your donation`, "success", 3000);
     }
@@ -116,9 +120,8 @@ export function NonprofitModal({ nonprofit, open, onClose, onViewFullProfile }: 
 
       <ModalFooter className="sm:justify-center">
         <Button
-          onClick={handleDonate}
-          disabled={inDraft}
-          className={`w-full sm:w-auto order-1 sm:order-2 ${inDraft ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}
+          onClick={handleToggleDonate}
+          className={`w-full sm:w-auto order-1 sm:order-2 ${inDraft ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
         >
           {inDraft ? (
             <>

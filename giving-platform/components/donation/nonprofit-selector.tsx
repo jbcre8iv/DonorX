@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Search, Building2, Tag, X, Globe, Plus, LayoutGrid, List, Eye, ExternalLink } from "lucide-react";
+import { Search, Building2, Tag, X, Globe, Plus, LayoutGrid, List, Eye, ExternalLink, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,18 +16,23 @@ interface NonprofitSelectorProps {
   open: boolean;
   onClose: () => void;
   onSelect: (type: SelectionType, id: string, name: string) => void;
+  onRemove?: (id: string) => void;
   nonprofits: Nonprofit[];
   categories: Category[];
   excludeIds?: string[];
+  /** IDs of items already in the allocation (shows as "Added" with toggle behavior) */
+  includedIds?: string[];
 }
 
 export function NonprofitSelector({
   open,
   onClose,
   onSelect,
+  onRemove,
   nonprofits,
   categories,
   excludeIds = [],
+  includedIds = [],
 }: NonprofitSelectorProps) {
   const [search, setSearch] = React.useState("");
   const [activeTab, setActiveTab] = React.useState<"nonprofits" | "categories">("nonprofits");
@@ -53,13 +58,26 @@ export function NonprofitSelector({
     };
   }, [open]);
 
+  // Filter nonprofits - exclude those in excludeIds but keep those in includedIds visible
   const filteredNonprofits = nonprofits.filter(
-    (n) => !excludeIds.includes(n.id) && smartFilterNonprofit(n, search)
+    (n) => (!excludeIds.includes(n.id) || includedIds.includes(n.id)) && smartFilterNonprofit(n, search)
   );
 
   const filteredCategories = categories.filter(
-    (c) => !excludeIds.includes(c.id) && smartFilterCategory(c, search)
+    (c) => (!excludeIds.includes(c.id) || includedIds.includes(c.id)) && smartFilterCategory(c, search)
   );
+
+  // Check if an item is already in the allocation
+  const isIncluded = (id: string) => includedIds.includes(id);
+
+  // Handle toggle - add or remove based on current state
+  const handleToggle = (type: SelectionType, id: string, name: string) => {
+    if (isIncluded(id)) {
+      onRemove?.(id);
+    } else {
+      onSelect(type, id, name);
+    }
+  };
 
   const handleSelect = (type: SelectionType, id: string, name: string) => {
     onSelect(type, id, name);
@@ -229,7 +247,7 @@ export function NonprofitSelector({
                           EIN: {nonprofit.ein}
                         </p>
                       )}
-                      {/* Add button that appears on hover */}
+                      {/* Add/Added button */}
                       <div className="mt-3 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {nonprofit.website && (
@@ -247,10 +265,23 @@ export function NonprofitSelector({
                         </div>
                         <Button
                           size="sm"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-600 hover:bg-emerald-700"
+                          className={`transition-opacity ${isIncluded(nonprofit.id) ? "bg-emerald-600 hover:bg-emerald-700" : "opacity-0 group-hover:opacity-100 bg-emerald-600 hover:bg-emerald-700"}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggle("nonprofit", nonprofit.id, nonprofit.name);
+                          }}
                         >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add
+                          {isIncluded(nonprofit.id) ? (
+                            <>
+                              <Check className="h-4 w-4 mr-1" />
+                              Added
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="h-4 w-4 mr-1" />
+                              Add
+                            </>
+                          )}
                         </Button>
                       </div>
                     </CardContent>
@@ -296,14 +327,23 @@ export function NonprofitSelector({
                     </div>
                     {/* Action buttons matching directory table pattern */}
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      {/* Add to allocation - Primary action */}
+                      {/* Toggle allocation - Primary action */}
                       <Button
                         size="sm"
-                        className="h-8"
-                        onClick={() => handleSelect("nonprofit", nonprofit.id, nonprofit.name)}
+                        className={`h-8 ${isIncluded(nonprofit.id) ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
+                        onClick={() => handleToggle("nonprofit", nonprofit.id, nonprofit.name)}
                       >
-                        <Plus className="h-3.5 w-3.5 mr-1" />
-                        Add
+                        {isIncluded(nonprofit.id) ? (
+                          <>
+                            <Check className="h-3.5 w-3.5 mr-1" />
+                            Added
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="h-3.5 w-3.5 mr-1" />
+                            Add
+                          </>
+                        )}
                       </Button>
                       {/* Quick preview */}
                       <Button
@@ -370,10 +410,23 @@ export function NonprofitSelector({
                     <div className="mt-3 flex justify-end">
                       <Button
                         size="sm"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity bg-purple-600 hover:bg-purple-700"
+                        className={`transition-opacity ${isIncluded(category.id) ? "bg-emerald-600 hover:bg-emerald-700" : "opacity-0 group-hover:opacity-100 bg-purple-600 hover:bg-purple-700"}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggle("category", category.id, category.name);
+                        }}
                       >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add
+                        {isIncluded(category.id) ? (
+                          <>
+                            <Check className="h-4 w-4 mr-1" />
+                            Added
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add
+                          </>
+                        )}
                       </Button>
                     </div>
                   </CardContent>
@@ -405,11 +458,20 @@ export function NonprofitSelector({
                   <div className="flex-shrink-0">
                     <Button
                       size="sm"
-                      className="h-8 bg-purple-600 hover:bg-purple-700"
-                      onClick={() => handleSelect("category", category.id, category.name)}
+                      className={`h-8 ${isIncluded(category.id) ? "bg-emerald-600 hover:bg-emerald-700" : "bg-purple-600 hover:bg-purple-700"}`}
+                      onClick={() => handleToggle("category", category.id, category.name)}
                     >
-                      <Plus className="h-3.5 w-3.5 mr-1" />
-                      Add
+                      {isIncluded(category.id) ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 mr-1" />
+                          Added
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-3.5 w-3.5 mr-1" />
+                          Add
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -443,13 +505,25 @@ export function NonprofitSelector({
                 </button>
                 <Button
                   size="sm"
+                  className={isIncluded(previewNonprofit.id) ? "bg-emerald-600 hover:bg-emerald-700" : ""}
                   onClick={() => {
-                    handleSelect("nonprofit", previewNonprofit.id, previewNonprofit.name);
-                    setPreviewNonprofit(null);
+                    handleToggle("nonprofit", previewNonprofit.id, previewNonprofit.name);
+                    if (!isIncluded(previewNonprofit.id)) {
+                      setPreviewNonprofit(null);
+                    }
                   }}
                 >
-                  <Plus className="h-3.5 w-3.5 mr-1" />
-                  Add to Allocation
+                  {isIncluded(previewNonprofit.id) ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 mr-1" />
+                      Added
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Add to Allocation
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

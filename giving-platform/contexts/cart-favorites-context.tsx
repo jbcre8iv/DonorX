@@ -56,6 +56,8 @@ export interface DraftAllocation {
   targetId: string;
   targetName: string;
   percentage: number;
+  logoUrl?: string;
+  icon?: string; // For categories
 }
 
 export interface DonationDraft {
@@ -113,6 +115,8 @@ interface CartFavoritesContextType {
     type: "nonprofit" | "category";
     targetId: string;
     targetName: string;
+    logoUrl?: string;
+    icon?: string;
   }) => Promise<void>;
   removeFromDraft: (targetId: string) => Promise<void>;
   isInDraft: (nonprofitId?: string, categoryId?: string) => boolean;
@@ -1039,6 +1043,8 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       type: "nonprofit" | "category";
       targetId: string;
       targetName: string;
+      logoUrl?: string;
+      icon?: string;
     }) => {
       // Open the sidebar immediately (before async operations)
       setActiveTab("cart");

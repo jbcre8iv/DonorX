@@ -42,6 +42,8 @@ export default function FavoritesPage() {
         type: type as "nonprofit" | "category",
         targetId,
         targetName,
+        logoUrl: item.nonprofit?.logoUrl,
+        icon: item.category?.icon,
       });
       addToast(`Added ${targetName} to your donation`, "success", 3000);
     }

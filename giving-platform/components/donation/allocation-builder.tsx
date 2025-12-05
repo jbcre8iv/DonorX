@@ -377,6 +377,15 @@ export function AllocationBuilder({
   };
 
   const excludeIds = allocations.map((a) => a.targetId);
+  const includedIds = allocations.map((a) => a.targetId);
+
+  // Handle removal from the selector modal (toggle behavior)
+  const handleRemoveFromSelector = (targetId: string) => {
+    const allocation = allocations.find((a) => a.targetId === targetId);
+    if (allocation) {
+      handleRemove(allocation.id);
+    }
+  };
 
   // Color palette for allocation items (matches AI Allocation Advisor colors)
   const getAllocationColor = (index: number) => {
@@ -756,9 +765,11 @@ export function AllocationBuilder({
         open={selectorOpen}
         onClose={() => setSelectorOpen(false)}
         onSelect={handleAddAllocation}
+        onRemove={handleRemoveFromSelector}
         nonprofits={nonprofits}
         categories={categories}
         excludeIds={excludeIds}
+        includedIds={includedIds}
       />
 
       {/* Details Modal */}
