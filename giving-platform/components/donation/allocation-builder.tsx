@@ -193,28 +193,34 @@ export function AllocationBuilder({
     }
   }, [selectorOpen, activeRebalanceSuggestion, activeRemovalSuggestion, resetViewportZoom]);
 
-  // Auto-scroll to suggestion when it appears (desktop only)
+  // Auto-scroll to suggestion when it appears (desktop only), reset zoom on mobile
   React.useEffect(() => {
     if (activeRebalanceSuggestion && addSuggestionRef.current && !selectorOpen) {
       const isMobile = window.innerWidth < 640;
-      if (!isMobile) {
+      if (isMobile) {
+        // Reset zoom on mobile when suggestion appears (e.g., from directory add)
+        setTimeout(resetViewportZoom, 100);
+      } else {
         setTimeout(() => {
           addSuggestionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 100);
       }
     }
-  }, [activeRebalanceSuggestion, selectorOpen]);
+  }, [activeRebalanceSuggestion, selectorOpen, resetViewportZoom]);
 
   React.useEffect(() => {
     if (activeRemovalSuggestion && removalSuggestionRef.current && !selectorOpen) {
       const isMobile = window.innerWidth < 640;
-      if (!isMobile) {
+      if (isMobile) {
+        // Reset zoom on mobile when suggestion appears
+        setTimeout(resetViewportZoom, 100);
+      } else {
         setTimeout(() => {
           removalSuggestionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 100);
       }
     }
-  }, [activeRemovalSuggestion, selectorOpen]);
+  }, [activeRemovalSuggestion, selectorOpen, resetViewportZoom]);
 
   // Get the full nonprofit or category details for the details modal
   const getItemDetails = (item: AllocationItem) => {
