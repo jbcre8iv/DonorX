@@ -358,9 +358,10 @@ export function NonprofitSelector({
                         {/* Mobile: status indicator + chevron */}
                         <div className="flex items-center gap-1 flex-shrink-0 sm:hidden">
                           {inAllocation && !isExpanded && (
-                            <div className="h-7 w-7 flex items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                              <Check className="h-4 w-4" />
-                            </div>
+                            <span className="relative flex h-3 w-3 mr-1">
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500"></span>
+                            </span>
                           )}
                           <div className="h-8 w-8 flex items-center justify-center text-slate-400">
                             <ChevronDown className={`h-5 w-5 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
