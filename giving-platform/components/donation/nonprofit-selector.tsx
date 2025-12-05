@@ -334,19 +334,14 @@ export function NonprofitSelector({
                       <h3 className="font-medium text-slate-900 leading-tight">
                         {nonprofit.name}
                       </h3>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        {nonprofit.category && (
-                          <Badge variant="secondary" className="text-xs">
-                            {nonprofit.category.icon && (
-                              <span className="mr-1">{nonprofit.category.icon}</span>
-                            )}
-                            {nonprofit.category.name}
-                          </Badge>
-                        )}
-                        {nonprofit.ein && (
-                          <span className="text-xs text-slate-400">EIN: {nonprofit.ein}</span>
-                        )}
-                      </div>
+                      {nonprofit.category && (
+                        <Badge variant="secondary" className="text-xs mt-0.5">
+                          {nonprofit.category.icon && (
+                            <span className="mr-1">{nonprofit.category.icon}</span>
+                          )}
+                          {nonprofit.category.name}
+                        </Badge>
+                      )}
                     </div>
                     {/* Action buttons matching directory table pattern */}
                     <div className="flex items-center gap-1 flex-shrink-0">
