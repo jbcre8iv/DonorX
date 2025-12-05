@@ -62,20 +62,28 @@ export function AllocationBuilder({
   const addSuggestionRef = React.useRef<HTMLDivElement>(null);
   const removalSuggestionRef = React.useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to suggestion when it appears
+  // Auto-scroll to suggestion when it appears (desktop only - causes iOS zoom issues on mobile)
   React.useEffect(() => {
     if (rebalanceSuggestion && addSuggestionRef.current) {
-      setTimeout(() => {
-        addSuggestionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 100);
+      // Skip auto-scroll on mobile to prevent iOS Safari zoom issues
+      const isMobile = window.innerWidth < 640;
+      if (!isMobile) {
+        setTimeout(() => {
+          addSuggestionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 100);
+      }
     }
   }, [rebalanceSuggestion]);
 
   React.useEffect(() => {
     if (removalSuggestion && removalSuggestionRef.current) {
-      setTimeout(() => {
-        removalSuggestionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 100);
+      // Skip auto-scroll on mobile to prevent iOS Safari zoom issues
+      const isMobile = window.innerWidth < 640;
+      if (!isMobile) {
+        setTimeout(() => {
+          removalSuggestionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 100);
+      }
     }
   }, [removalSuggestion]);
 
