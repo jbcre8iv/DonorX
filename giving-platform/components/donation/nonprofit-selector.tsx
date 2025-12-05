@@ -324,10 +324,10 @@ export function NonprofitSelector({
                     <div key={nonprofit.id}>
                       {/* Main row */}
                       <div
-                        className={`flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg transition-colors cursor-pointer ${
+                        className={`flex items-center gap-3 py-3 px-2 -mx-2 transition-colors cursor-pointer ${
                           isExpanded
-                            ? "bg-blue-50 shadow-[inset_0_0_0_2px_rgb(147,197,253)]"
-                            : "hover:bg-slate-50"
+                            ? "bg-slate-50 rounded-t-lg"
+                            : "hover:bg-slate-50 rounded-lg"
                         }`}
                         onClick={() => setExpandedId(isExpanded ? null : nonprofit.id)}
                       >
@@ -424,7 +424,7 @@ export function NonprofitSelector({
                       </div>
                       {/* Mobile expanded actions row */}
                       {isExpanded && (
-                        <div className="sm:hidden bg-blue-50 shadow-[inset_0_0_0_2px_rgb(147,197,253)] px-4 py-3 -mx-2 rounded-b-lg flex items-center justify-center gap-2 flex-wrap">
+                        <div className="sm:hidden bg-slate-50 px-4 py-3 -mx-2 rounded-b-lg flex items-center justify-center gap-2 flex-wrap">
                           <Button
                             size="sm"
                             className={`h-10 px-6 ${inAllocation ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
