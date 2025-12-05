@@ -14,18 +14,40 @@ interface NonprofitModalProps {
   open: boolean;
   onClose: () => void;
   onViewFullProfile?: (nonprofitId: string) => void;
+  /** Custom action handler - if provided, overrides the default draft behavior */
+  onAction?: () => void;
+  /** Custom label for the action button (default: "Donate Now" or "Added") */
+  actionLabel?: string;
+  /** Whether the item is already added (for custom action mode) */
+  isAdded?: boolean;
 }
 
-export function NonprofitModal({ nonprofit, open, onClose, onViewFullProfile }: NonprofitModalProps) {
+export function NonprofitModal({
+  nonprofit,
+  open,
+  onClose,
+  onViewFullProfile,
+  onAction,
+  actionLabel,
+  isAdded: externalIsAdded,
+}: NonprofitModalProps) {
   const { addToDraft, removeFromDraft, isInDraft } = useCartFavorites();
   const { addToast } = useToast();
 
   if (!nonprofit) return null;
 
-  const inDraft = isInDraft(nonprofit.id);
+  // Use external isAdded state if provided (custom action mode), otherwise use draft state
+  const isAdded = externalIsAdded !== undefined ? externalIsAdded : isInDraft(nonprofit.id);
 
   const handleToggleDonate = async () => {
-    if (inDraft) {
+    // If custom action is provided, use it
+    if (onAction) {
+      onAction();
+      return;
+    }
+
+    // Default behavior: toggle draft
+    if (isAdded) {
       await removeFromDraft(nonprofit.id);
       addToast(`Removed ${nonprofit.name} from your donation`, "info", 3000);
     } else {
@@ -121,15 +143,15 @@ export function NonprofitModal({ nonprofit, open, onClose, onViewFullProfile }: 
       <ModalFooter className="sm:justify-center">
         <Button
           onClick={handleToggleDonate}
-          className={`w-full sm:w-auto order-1 sm:order-2 ${inDraft ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
+          className={`w-full sm:w-auto order-1 sm:order-2 ${isAdded ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
         >
-          {inDraft ? (
+          {isAdded ? (
             <>
               <Check className="h-4 w-4 mr-1.5" />
               Added
             </>
           ) : (
-            "Donate Now"
+            actionLabel || "Donate Now"
           )}
         </Button>
         {onViewFullProfile ? (
