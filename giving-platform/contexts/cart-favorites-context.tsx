@@ -1285,10 +1285,48 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     await saveDonationDraft(updatedDraft);
   }, [rebalanceSuggestion, donationDraft, saveDonationDraft]);
 
-  // Decline the shared rebalance suggestion (keeps items at 0%)
+  // Decline the shared rebalance suggestion (adds items with default percentage for manual adjustment)
   const declineRebalanceSuggestion = useCallback(async () => {
+    if (!rebalanceSuggestion || !donationDraft) {
+      setRebalanceSuggestion(null);
+      return;
+    }
+
+    // Get the new items from the suggestion (items not in current allocations)
+    const newItems = rebalanceSuggestion.allocations.filter(
+      (a) => !donationDraft.allocations.some((alloc) => alloc.targetId === a.targetId)
+    );
+
+    if (newItems.length === 0) {
+      setRebalanceSuggestion(null);
+      return;
+    }
+
+    // Calculate remaining percentage from current allocations
+    const currentTotal = donationDraft.allocations.reduce((sum, a) => sum + a.percentage, 0);
+    const remainingPercentage = 100 - currentTotal;
+
+    // Calculate default percentage for each new item (similar to allocation-builder logic)
+    const perItemPercentage = Math.min(Math.floor(remainingPercentage / newItems.length), 25);
+    const defaultPercentage = perItemPercentage > 0 ? perItemPercentage : 10;
+
+    // Add new items with default percentage
+    const updatedDraft: DonationDraft = {
+      ...donationDraft,
+      allocations: [
+        ...donationDraft.allocations,
+        ...newItems.map((item) => ({
+          type: item.type,
+          targetId: item.targetId,
+          targetName: item.targetName,
+          percentage: defaultPercentage,
+        })),
+      ],
+    };
+
     setRebalanceSuggestion(null);
-  }, []);
+    await saveDonationDraft(updatedDraft);
+  }, [rebalanceSuggestion, donationDraft, saveDonationDraft]);
 
   // Apply the shared removal suggestion (updates draft with suggested allocations after item removal)
   const applyRemovalSuggestion = useCallback(async () => {
