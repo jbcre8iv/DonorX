@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Search, Building2, Tag, X, Globe, Plus, LayoutGrid, List, Eye, Check } from "lucide-react";
+import { Search, Building2, Tag, X, Globe, Plus, LayoutGrid, List, Eye, Check, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,12 +44,15 @@ export function NonprofitSelector({
   const [previewNonprofit, setPreviewNonprofit] = React.useState<Nonprofit | null>(null);
   // Track items clicked but not yet confirmed (pending in rebalance suggestion)
   const [pendingIds, setPendingIds] = React.useState<string[]>([]);
+  // Track expanded row for mobile list view
+  const [expandedId, setExpandedId] = React.useState<string | null>(null);
 
   // Reset search and pending items when modal closes
   React.useEffect(() => {
     if (!open) {
       setSearch("");
       setPendingIds([]);
+      setExpandedId(null);
     }
   }, [open]);
 
@@ -312,87 +315,155 @@ export function NonprofitSelector({
                 ))}
               </div>
             ) : (
-              /* Table/List view for nonprofits */
+              /* Table/List view for nonprofits - expandable rows on mobile */
               <div className="divide-y divide-slate-100">
-                {filteredNonprofits.map((nonprofit) => (
-                  <div
-                    key={nonprofit.id}
-                    className="group flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg hover:bg-slate-50 transition-colors"
-                  >
-                    {nonprofit.logo_url ? (
-                      <img
-                        src={nonprofit.logo_url}
-                        alt={`${nonprofit.name} logo`}
-                        className="h-10 w-10 rounded-lg object-contain flex-shrink-0 bg-slate-50"
-                      />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600 font-semibold flex-shrink-0">
-                        {nonprofit.name.charAt(0)}
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-medium text-slate-900 leading-tight">
-                        {nonprofit.name}
-                      </h3>
-                      {nonprofit.category && (
-                        <Badge variant="secondary" className="text-xs mt-0.5">
-                          {nonprofit.category.icon && (
-                            <span className="mr-1">{nonprofit.category.icon}</span>
-                          )}
-                          {nonprofit.category.name}
-                        </Badge>
-                      )}
-                    </div>
-                    {/* Action buttons matching directory table pattern */}
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      {/* Toggle allocation - Primary action */}
-                      <Button
-                        size="sm"
-                        className={`h-8 ${isIncluded(nonprofit.id) ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
-                        onClick={() => handleToggle("nonprofit", nonprofit.id, nonprofit.name)}
+                {filteredNonprofits.map((nonprofit) => {
+                  const isExpanded = expandedId === nonprofit.id;
+                  const inAllocation = isIncluded(nonprofit.id);
+                  return (
+                    <div key={nonprofit.id}>
+                      {/* Main row */}
+                      <div
+                        className={`flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg transition-colors cursor-pointer ${
+                          isExpanded
+                            ? "bg-blue-50 shadow-[inset_0_0_0_2px_rgb(147,197,253)]"
+                            : "hover:bg-slate-50"
+                        }`}
+                        onClick={() => setExpandedId(isExpanded ? null : nonprofit.id)}
                       >
-                        {isIncluded(nonprofit.id) ? (
-                          <>
-                            <Check className="h-3.5 w-3.5 mr-1" />
-                            Added
-                          </>
+                        {nonprofit.logo_url ? (
+                          <img
+                            src={nonprofit.logo_url}
+                            alt={`${nonprofit.name} logo`}
+                            className="h-10 w-10 rounded-lg object-contain flex-shrink-0 bg-slate-50"
+                          />
                         ) : (
-                          <>
-                            <Plus className="h-3.5 w-3.5 mr-1" />
-                            Add
-                          </>
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600 font-semibold flex-shrink-0">
+                            {nonprofit.name.charAt(0)}
+                          </div>
                         )}
-                      </Button>
-                      {/* Quick preview */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 w-8 p-0 rounded-lg text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50"
-                        onClick={() => setPreviewNonprofit(nonprofit)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      {/* Website link */}
-                      {nonprofit.website && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0 rounded-lg text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50"
-                          asChild
-                        >
-                          <a
-                            href={nonprofit.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-medium text-slate-900 leading-tight">
+                            {nonprofit.name}
+                          </h3>
+                          {nonprofit.category && (
+                            <Badge variant="secondary" className="text-xs mt-0.5">
+                              {nonprofit.category.icon && (
+                                <span className="mr-1">{nonprofit.category.icon}</span>
+                              )}
+                              {nonprofit.category.name}
+                            </Badge>
+                          )}
+                        </div>
+                        {/* Mobile: status indicator + chevron */}
+                        <div className="flex items-center gap-1 flex-shrink-0 sm:hidden">
+                          {inAllocation && !isExpanded && (
+                            <div className="h-7 w-7 flex items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                              <Check className="h-4 w-4" />
+                            </div>
+                          )}
+                          <div className="h-8 w-8 flex items-center justify-center text-slate-400">
+                            <ChevronDown className={`h-5 w-5 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                          </div>
+                        </div>
+                        {/* Desktop: action buttons */}
+                        <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
+                          <Button
+                            size="sm"
+                            className={`h-8 ${inAllocation ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggle("nonprofit", nonprofit.id, nonprofit.name);
+                            }}
                           >
-                            <Globe className="h-4 w-4" />
-                          </a>
-                        </Button>
+                            {inAllocation ? (
+                              <>
+                                <Check className="h-3.5 w-3.5 mr-1" />
+                                Added
+                              </>
+                            ) : (
+                              <>
+                                <Plus className="h-3.5 w-3.5 mr-1" />
+                                Add
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0 rounded-lg text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewNonprofit(nonprofit);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {nonprofit.website && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 rounded-lg text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50"
+                              asChild
+                            >
+                              <a
+                                href={nonprofit.website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Globe className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      {/* Mobile expanded actions row */}
+                      {isExpanded && (
+                        <div className="sm:hidden bg-blue-50 shadow-[inset_0_0_0_2px_rgb(147,197,253)] px-4 py-3 -mx-2 rounded-b-lg flex items-center justify-center gap-2 flex-wrap">
+                          <Button
+                            size="sm"
+                            className={`h-10 px-6 ${inAllocation ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
+                            onClick={() => handleToggle("nonprofit", nonprofit.id, nonprofit.name)}
+                          >
+                            {inAllocation ? (
+                              <>
+                                <Check className="h-4 w-4 mr-1.5" />
+                                Added
+                              </>
+                            ) : (
+                              "Add"
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-10 w-10 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50"
+                            onClick={() => setPreviewNonprofit(nonprofit)}
+                          >
+                            <Eye className="h-5 w-5" />
+                          </Button>
+                          {nonprofit.website && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-10 w-10 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50"
+                              asChild
+                            >
+                              <a
+                                href={nonprofit.website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Globe className="h-5 w-5" />
+                              </a>
+                            </Button>
+                          )}
+                        </div>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )
           ) : filteredCategories.length === 0 ? (
