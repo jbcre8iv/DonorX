@@ -396,6 +396,15 @@ export function AllocationBuilder({
     }
   };
 
+  // Cancel the removal entirely - dismiss suggestion and keep item in list
+  const handleCancelRemoval = () => {
+    if (onSetSharedRemoval) {
+      onSetSharedRemoval(null);
+    } else {
+      setRemovalSuggestion(null);
+    }
+  };
+
   // AI Auto-balance: Intelligently adjust percentages to reach exactly 100%
   // Respects manually adjusted items by only changing non-manual items first
   const handleAiAutoBalance = () => {
@@ -1005,8 +1014,16 @@ export function AllocationBuilder({
 
           {/* AI Rebalance Suggestion (Removing) */}
           {activeRemovalSuggestion && (
-            <div ref={removalSuggestionRef} className="p-4 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-4 overflow-hidden max-w-full">
-              <div className="flex items-start gap-3">
+            <div ref={removalSuggestionRef} className="p-4 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-4 overflow-hidden max-w-full relative">
+              {/* Cancel/dismiss button */}
+              <button
+                onClick={handleCancelRemoval}
+                className="absolute top-2 right-2 p-1 rounded-full text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 transition-colors"
+                title="Cancel removal"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className="flex items-start gap-3 pr-6">
                 <div className="p-2 rounded-lg bg-emerald-100 flex-shrink-0">
                   <Sparkles className="h-4 w-4 text-emerald-600 animate-pulse" />
                 </div>

@@ -187,6 +187,11 @@ export function CartTab() {
     await declineRebalanceSuggestion();
   }, [declineRebalanceSuggestion]);
 
+  // Cancel removal - dismiss suggestion without removing item
+  const handleCancelRemoval = useCallback(() => {
+    setRemovalSuggestion(null);
+  }, [setRemovalSuggestion]);
+
   // Calculate total percentage for draft allocations
   const totalDraftPercentage = donationDraft?.allocations.reduce(
     (sum, a) => sum + a.percentage,
@@ -517,8 +522,16 @@ export function CartTab() {
 
           {/* AI Rebalance Suggestion (Removing) */}
           {removalSuggestion && (
-            <div className="mt-3 p-3 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-3">
-              <div className="flex items-start gap-2">
+            <div className="mt-3 p-3 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-3 relative">
+              {/* Cancel/dismiss button */}
+              <button
+                onClick={handleCancelRemoval}
+                className="absolute top-2 right-2 p-1 rounded-full text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 transition-colors"
+                title="Cancel removal"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+              <div className="flex items-start gap-2 pr-5">
                 <div className="p-1.5 rounded-lg bg-emerald-100 flex-shrink-0">
                   <Sparkles className="h-3.5 w-3.5 text-emerald-600 animate-pulse" />
                 </div>
