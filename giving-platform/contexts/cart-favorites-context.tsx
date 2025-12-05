@@ -158,7 +158,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   // Track when we're doing a local draft operation to ignore our own realtime updates
   const isLocalDraftOperation = useRef(false);
 
-  const supabase = createClient();
+  // Use ref for supabase client to ensure stability across renders
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
 
   // Load from localStorage
   const loadFromLocalStorage = useCallback(() => {
