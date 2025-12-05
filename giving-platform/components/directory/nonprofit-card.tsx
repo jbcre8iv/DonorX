@@ -22,12 +22,11 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
   const inDraft = isInDraft(nonprofit.id);
   const favorited = isFavorite(nonprofit.id);
 
-  // Smart donate handler - adds to current draft when a donation is in progress
+  // Smart donate handler - creates draft or adds to existing draft
   const handleSmartDonate = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // Only called when hasDraft is true (the Link handles navigation otherwise)
     if (!inDraft) {
       await addToDraft({
         type: "nonprofit",
@@ -128,36 +127,26 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
         )}
 
         <div className="mt-4 flex items-center gap-2">
-          {/* Smart Donate Button - adapts based on whether there's an active draft */}
+          {/* Smart Donate Button - creates draft or adds to existing draft, stays on directory */}
           <div className="relative group/btn flex-1">
-            {hasDraft ? (
-              // Draft active: clicking adds to current donation
-              <Button
-                size="sm"
-                className={`w-full ${inDraft ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}
-                onClick={handleSmartDonate}
-                disabled={inDraft}
-              >
-                {inDraft ? (
-                  <>
-                    <Check className="h-3.5 w-3.5 mr-1.5" />
-                    Added
-                  </>
-                ) : (
-                  "Donate"
-                )}
-              </Button>
-            ) : (
-              // No draft: navigates to donate page
-              <Button asChild size="sm" className="w-full">
-                <Link href={`/donate?nonprofit=${nonprofit.id}`}>Donate</Link>
-              </Button>
-            )}
-            {hasDraft && (
-              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
-                {inDraft ? "Already in donation" : "Add to current donation"}
-              </span>
-            )}
+            <Button
+              size="sm"
+              className={`w-full ${inDraft ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}
+              onClick={handleSmartDonate}
+              disabled={inDraft}
+            >
+              {inDraft ? (
+                <>
+                  <Check className="h-3.5 w-3.5 mr-1.5" />
+                  Added
+                </>
+              ) : (
+                "Donate"
+              )}
+            </Button>
+            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
+              {inDraft ? "Already in donation" : "Add to donation"}
+            </span>
           </div>
           {onQuickView && (
             <div className="relative group/btn">

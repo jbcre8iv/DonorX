@@ -44,37 +44,26 @@ function ActionButtons({
 }) {
   return (
     <div className={`flex items-center ${isMobile ? "gap-2" : "gap-1"} ${className}`}>
-      {/* Smart Donate Button - adapts based on whether there's an active draft */}
-      {/* When draft active: adds to current donation. When no draft: navigates to donate page */}
+      {/* Smart Donate Button - creates draft or adds to existing draft, stays on directory */}
       <div className="relative group/tip">
-        {hasDraft ? (
-          // Draft active: clicking adds to current donation
-          <Button
-            size="sm"
-            className={`${isMobile ? "h-10 px-6" : "h-8"} ${inDraft ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}
-            onClick={onSmartDonate}
-            disabled={inDraft}
-          >
-            {inDraft ? (
-              <>
-                <Check className={`${isMobile ? "h-4 w-4" : "h-3.5 w-3.5"} mr-1.5`} />
-                Added
-              </>
-            ) : (
-              "Donate"
-            )}
-          </Button>
-        ) : (
-          // No draft: navigates to donate page
-          <Button asChild size="sm" className={isMobile ? "h-10 px-10" : "h-8"}>
-            <Link href={`/donate?nonprofit=${nonprofit.id}`}>Donate</Link>
-          </Button>
-        )}
-        {hasDraft && (
-          <span className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
-            {inDraft ? "Already in donation" : "Add to current donation"}
-          </span>
-        )}
+        <Button
+          size="sm"
+          className={`${isMobile ? "h-10 px-6" : "h-8"} ${inDraft ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}
+          onClick={onSmartDonate}
+          disabled={inDraft}
+        >
+          {inDraft ? (
+            <>
+              <Check className={`${isMobile ? "h-4 w-4" : "h-3.5 w-3.5"} mr-1.5`} />
+              Added
+            </>
+          ) : (
+            "Donate"
+          )}
+        </Button>
+        <span className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
+          {inDraft ? "Already in donation" : "Add to donation"}
+        </span>
       </div>
       {/* Quick View - Learn more */}
       {onQuickView && (
@@ -151,12 +140,11 @@ function NonprofitRow({
   const inDraft = isInDraft(nonprofit.id);
   const favorited = isFavorite(nonprofit.id);
 
-  // Smart donate handler - adds to current draft when a donation is in progress
+  // Smart donate handler - creates draft or adds to existing draft
   const handleSmartDonate = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // Only called when hasDraft is true (the Link handles navigation otherwise)
     if (!inDraft) {
       await addToDraft({
         type: "nonprofit",
