@@ -1040,6 +1040,10 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       targetId: string;
       targetName: string;
     }) => {
+      // Open the sidebar immediately (before async operations)
+      setActiveTab("cart");
+      setSidebarOpen(true);
+
       // If no draft exists, create one with this item
       if (!donationDraft) {
         const newDraft: DonationDraft = {
@@ -1048,9 +1052,6 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           allocations: [{ ...item, percentage: 100 }],
         };
         await saveDonationDraft(newDraft);
-        // Open the sidebar to show the giving list
-        setActiveTab("cart");
-        setSidebarOpen(true);
         return;
       }
 
@@ -1078,10 +1079,6 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
       // Save the updated draft
       await saveDonationDraft(updatedDraft);
-
-      // Open the sidebar to show the giving list
-      setActiveTab("cart");
-      setSidebarOpen(true);
     },
     [donationDraft, saveDonationDraft, setActiveTab, setSidebarOpen]
   );
