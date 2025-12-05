@@ -282,12 +282,28 @@ export function DonateClient({
     const draft: DonationDraft = {
       amountCents: amount * 100,
       frequency,
-      allocations: allocations.map((a) => ({
-        type: a.type,
-        targetId: a.targetId,
-        targetName: a.targetName,
-        percentage: a.percentage,
-      })),
+      allocations: allocations.map((a) => {
+        // Look up logo/icon from the nonprofits/categories arrays
+        let logoUrl: string | undefined;
+        let icon: string | undefined;
+
+        if (a.type === "nonprofit") {
+          const nonprofit = nonprofits.find((n) => n.id === a.targetId);
+          logoUrl = nonprofit?.logo_url || undefined;
+        } else {
+          const category = categories.find((c) => c.id === a.targetId);
+          icon = category?.icon || undefined;
+        }
+
+        return {
+          type: a.type,
+          targetId: a.targetId,
+          targetName: a.targetName,
+          percentage: a.percentage,
+          logoUrl,
+          icon,
+        };
+      }),
     };
 
     // Track what we're saving so we don't sync our own changes back
@@ -298,7 +314,7 @@ export function DonateClient({
     });
 
     saveDonationDraft(draft);
-  }, [amount, frequency, allocations, draftLoaded, saveDonationDraft]);
+  }, [amount, frequency, allocations, draftLoaded, saveDonationDraft, nonprofits, categories]);
 
   const handleSaveTemplate = async () => {
     if (!templateName.trim()) {
