@@ -119,6 +119,7 @@ interface CartFavoritesContextType {
     icon?: string;
   }) => Promise<void>;
   removeFromDraft: (targetId: string) => Promise<void>;
+  updateDraftAllocation: (targetId: string, percentage: number) => Promise<void>;
   isInDraft: (nonprofitId?: string, categoryId?: string) => boolean;
 
   // UI State
@@ -1184,6 +1185,27 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     [donationDraft, saveDonationDraft, clearDonationDraft]
   );
 
+  // Update a single allocation's percentage in the draft
+  const updateDraftAllocation = useCallback(
+    async (targetId: string, percentage: number) => {
+      if (!donationDraft) return;
+
+      const clampedPercentage = Math.max(0, Math.min(percentage, 100));
+
+      const updatedAllocations = donationDraft.allocations.map((a) =>
+        a.targetId === targetId ? { ...a, percentage: clampedPercentage } : a
+      );
+
+      const updatedDraft: DonationDraft = {
+        ...donationDraft,
+        allocations: updatedAllocations,
+      };
+
+      await saveDonationDraft(updatedDraft);
+    },
+    [donationDraft, saveDonationDraft]
+  );
+
   // Helper to check if there's an active draft (even without allocations)
   const hasDraft = donationDraft !== null;
 
@@ -1207,6 +1229,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     clearDonationDraft,
     addToDraft,
     removeFromDraft,
+    updateDraftAllocation,
     isInDraft,
     isSidebarOpen,
     setSidebarOpen,

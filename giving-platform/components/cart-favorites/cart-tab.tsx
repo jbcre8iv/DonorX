@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, RefreshCw } from "lucide-react";
+import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, RefreshCw, Minus, Plus, Sparkles } from "lucide-react";
 import { useCartFavorites, type CartItem } from "@/contexts/cart-favorites-context";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
@@ -21,11 +21,81 @@ export function CartTab() {
     saveDonationDraft,
     clearDonationDraft,
     removeFromDraft,
+    updateDraftAllocation,
   } = useCartFavorites();
 
   const [isClearing, setIsClearing] = useState(false);
   const [isClearingDraft, setIsClearingDraft] = useState(false);
   const [quickViewItem, setQuickViewItem] = useState<CartItem | null>(null);
+
+  // Track percentage input values as strings to allow empty field during editing
+  const [percentageInputs, setPercentageInputs] = useState<Record<string, string>>({});
+
+  // Handle percentage input change - allows empty string during editing
+  const handlePercentageInputChange = useCallback((targetId: string, value: string) => {
+    if (value === "" || /^\d*$/.test(value)) {
+      setPercentageInputs((prev) => ({ ...prev, [targetId]: value }));
+
+      if (value !== "") {
+        const numValue = parseInt(value, 10);
+        if (!isNaN(numValue)) {
+          updateDraftAllocation(targetId, numValue);
+        }
+      }
+    }
+  }, [updateDraftAllocation]);
+
+  // Handle blur - populate 0 if field is empty
+  const handlePercentageInputBlur = useCallback((targetId: string) => {
+    const currentValue = percentageInputs[targetId];
+    if (currentValue === "" || currentValue === undefined) {
+      updateDraftAllocation(targetId, 0);
+      setPercentageInputs((prev) => ({ ...prev, [targetId]: "0" }));
+    }
+  }, [percentageInputs, updateDraftAllocation]);
+
+  // Get the display value for percentage input
+  const getPercentageInputValue = useCallback((targetId: string, percentage: number): string => {
+    if (percentageInputs[targetId] !== undefined) {
+      return percentageInputs[targetId];
+    }
+    return String(percentage);
+  }, [percentageInputs]);
+
+  // Handle +/- button clicks
+  const handlePercentageStep = useCallback((targetId: string, currentPercentage: number, step: number) => {
+    const newValue = Math.max(0, Math.min(100, currentPercentage + step));
+    updateDraftAllocation(targetId, newValue);
+    setPercentageInputs((prev) => ({ ...prev, [targetId]: String(newValue) }));
+  }, [updateDraftAllocation]);
+
+  // Auto-balance allocations to 100%
+  const handleAutoBalance = useCallback(async () => {
+    if (!donationDraft || donationDraft.allocations.length === 0) return;
+
+    const count = donationDraft.allocations.length;
+    const evenPercentage = Math.floor(100 / count);
+    const remainder = 100 - evenPercentage * count;
+
+    const balancedAllocations = donationDraft.allocations.map((a, index) => ({
+      ...a,
+      percentage: index === 0 ? evenPercentage + remainder : evenPercentage,
+    }));
+
+    await saveDonationDraft({
+      ...donationDraft,
+      allocations: balancedAllocations,
+    });
+
+    // Clear input cache to show new values
+    setPercentageInputs({});
+  }, [donationDraft, saveDonationDraft]);
+
+  // Calculate total percentage for draft allocations
+  const totalDraftPercentage = donationDraft?.allocations.reduce(
+    (sum, a) => sum + a.percentage,
+    0
+  ) || 0;
 
   const handleProceedToDonate = () => {
     // Store cart items in sessionStorage for the donate page to pick up
@@ -164,71 +234,143 @@ export function CartTab() {
           </div>
         </div>
 
+        {/* Allocation Progress Bar */}
+        <div className="px-4 pb-3 border-b border-slate-200">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs text-slate-500">Allocation</span>
+            <span
+              className={`text-xs font-medium ${
+                totalDraftPercentage === 100
+                  ? "text-emerald-600"
+                  : totalDraftPercentage > 100
+                  ? "text-red-600"
+                  : "text-slate-500"
+              }`}
+            >
+              {totalDraftPercentage}% allocated
+            </span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <div
+              className={`h-full transition-all ${
+                totalDraftPercentage === 100
+                  ? "bg-emerald-600"
+                  : totalDraftPercentage > 100
+                  ? "bg-red-600"
+                  : "bg-blue-600"
+              }`}
+              style={{ width: `${Math.min(totalDraftPercentage, 100)}%` }}
+            />
+          </div>
+          {/* Auto-balance button */}
+          {totalDraftPercentage !== 100 && donationDraft.allocations.length > 0 && (
+            <button
+              onClick={handleAutoBalance}
+              className="mt-2 flex items-center gap-1.5 text-xs text-emerald-600 hover:text-emerald-700 transition-colors"
+            >
+              <Sparkles className="h-3 w-3" />
+              Auto-balance to 100%
+            </button>
+          )}
+        </div>
+
         {/* Allocation Items List */}
         <div className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-2">
+          <div className="space-y-3">
             {donationDraft.allocations.map((allocation) => (
               <div
                 key={allocation.targetId}
-                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3"
+                className="rounded-lg border border-slate-200 bg-white p-3"
               >
-                {/* Logo/Icon */}
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 overflow-hidden">
-                  {allocation.type === "category" ? (
-                    allocation.icon ? (
-                      <span className="text-xl">{allocation.icon}</span>
+                {/* Top row: Logo, Name, Remove button */}
+                <div className="flex items-center gap-3 mb-2">
+                  {/* Logo/Icon */}
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 overflow-hidden">
+                    {allocation.type === "category" ? (
+                      allocation.icon ? (
+                        <span className="text-lg">{allocation.icon}</span>
+                      ) : (
+                        <Tag className="h-4 w-4 text-slate-400" />
+                      )
+                    ) : allocation.logoUrl ? (
+                      <img
+                        src={allocation.logoUrl}
+                        alt={allocation.targetName}
+                        className="h-9 w-9 rounded-lg object-contain"
+                      />
                     ) : (
-                      <Tag className="h-5 w-5 text-slate-400" />
-                    )
-                  ) : allocation.logoUrl ? (
-                    <img
-                      src={allocation.logoUrl}
-                      alt={allocation.targetName}
-                      className="h-10 w-10 rounded-lg object-contain"
-                    />
-                  ) : (
-                    <span className="text-lg font-semibold text-slate-600">
-                      {allocation.targetName.charAt(0)}
-                    </span>
-                  )}
+                      <span className="text-sm font-semibold text-slate-600">
+                        {allocation.targetName.charAt(0)}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Name and dollar amount */}
+                  <div className="min-w-0 flex-1">
+                    <h4 className="truncate text-sm font-medium text-slate-900">
+                      {allocation.targetName}
+                    </h4>
+                    <p className="text-xs text-slate-500">
+                      {formatCurrency(
+                        Math.round((donationDraft.amountCents * allocation.percentage) / 100)
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Remove button */}
+                  <button
+                    onClick={() => removeFromDraft(allocation.targetId)}
+                    className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                    title="Remove from giving list"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
 
-                {/* Name and Type */}
-                <div className="min-w-0 flex-1">
-                  <h4 className="truncate font-medium text-slate-900">
-                    {allocation.targetName}
-                  </h4>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-500 capitalize">
-                      {allocation.type}
-                    </span>
-                    <span className="text-xs text-emerald-600 font-medium">
-                      {allocation.percentage}%
-                    </span>
+                {/* Bottom row: Percentage controls */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handlePercentageStep(allocation.targetId, allocation.percentage, -5)}
+                    disabled={allocation.percentage <= 0}
+                    className="h-7 w-7 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </button>
+                  <div className="relative w-14 flex-shrink-0">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={getPercentageInputValue(allocation.targetId, allocation.percentage)}
+                      onChange={(e) => handlePercentageInputChange(allocation.targetId, e.target.value)}
+                      onBlur={() => handlePercentageInputBlur(allocation.targetId)}
+                      className="w-full h-7 rounded border border-slate-200 pl-1 pr-5 text-center text-sm font-medium"
+                    />
+                    <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">%</span>
+                  </div>
+                  <button
+                    onClick={() => handlePercentageStep(allocation.targetId, allocation.percentage, 5)}
+                    disabled={allocation.percentage >= 100}
+                    className="h-7 w-7 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                  {/* Mini progress bar */}
+                  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-500 transition-all"
+                      style={{ width: `${Math.min(allocation.percentage, 100)}%` }}
+                    />
                   </div>
                 </div>
-
-                {/* Remove button */}
-                <button
-                  onClick={() => removeFromDraft(allocation.targetId)}
-                  className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
-                  title="Remove from giving list"
-                >
-                  <X className="h-4 w-4" />
-                </button>
               </div>
             ))}
           </div>
 
-          {/* Tips */}
-          <div className="mt-4 space-y-2">
-            <p className="text-xs text-slate-400 text-center">
-              Browse the directory to add more nonprofits or categories
-            </p>
-            <p className="text-xs text-slate-400 text-center">
-              You can adjust allocation percentages on the next page
-            </p>
-          </div>
+          {/* Tip */}
+          <p className="mt-4 text-xs text-slate-400 text-center">
+            Browse the directory to add more nonprofits or categories
+          </p>
         </div>
       </div>
     );
