@@ -62,8 +62,31 @@ export function AllocationBuilder({
   const addSuggestionRef = React.useRef<HTMLDivElement>(null);
   const removalSuggestionRef = React.useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to suggestion when it appears
-  // Skip on mobile (causes iOS zoom issues) and when selector modal is open
+  // Reset viewport zoom on iOS - workaround for unexpected zoom behavior
+  const resetViewportZoom = React.useCallback(() => {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+      // Temporarily modify and restore to force zoom reset
+      const content = viewport.getAttribute('content') || '';
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1');
+      setTimeout(() => {
+        viewport.setAttribute('content', content);
+      }, 50);
+    }
+  }, []);
+
+  // Reset zoom when selector modal closes (after adding items)
+  React.useEffect(() => {
+    if (!selectorOpen && (rebalanceSuggestion || removalSuggestion)) {
+      const isMobile = window.innerWidth < 640;
+      if (isMobile) {
+        // Small delay to let the modal fully close
+        setTimeout(resetViewportZoom, 150);
+      }
+    }
+  }, [selectorOpen, rebalanceSuggestion, removalSuggestion, resetViewportZoom]);
+
+  // Auto-scroll to suggestion when it appears (desktop only)
   React.useEffect(() => {
     if (rebalanceSuggestion && addSuggestionRef.current && !selectorOpen) {
       const isMobile = window.innerWidth < 640;
