@@ -512,106 +512,129 @@ export function NonprofitSelector({
           </p>
         </div>
 
-        {/* Preview Panel Overlay */}
+        {/* Preview Panel Overlay - Modal style matching directory */}
         {previewNonprofit && (
-          <div className="absolute inset-0 z-20 bg-white rounded-xl flex flex-col animate-in fade-in slide-in-from-right-4 duration-200">
-            {/* Preview Header */}
-            <div className="sticky top-0 z-10 bg-white border-b border-slate-200 rounded-t-xl p-4">
-              <div className="flex items-center justify-between">
+          <div className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-black/50 rounded-xl animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90%] overflow-y-auto animate-in zoom-in-95 duration-200">
+              {/* Close button - top right */}
+              <div className="flex justify-end p-4 pb-0">
                 <button
                   onClick={() => setPreviewNonprofit(null)}
-                  className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+                  className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
                 >
-                  <X className="h-4 w-4" />
-                  <span className="text-sm font-medium">Back to list</span>
+                  <X className="h-5 w-5" />
                 </button>
-                <Button
-                  size="sm"
-                  className={isIncluded(previewNonprofit.id) ? "bg-emerald-600 hover:bg-emerald-700" : ""}
-                  onClick={() => {
-                    handleToggle("nonprofit", previewNonprofit.id, previewNonprofit.name);
-                    if (!isIncluded(previewNonprofit.id)) {
-                      setPreviewNonprofit(null);
-                    }
-                  }}
-                >
-                  {isIncluded(previewNonprofit.id) ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 mr-1" />
-                      Added
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="h-3.5 w-3.5 mr-1" />
-                      Add to Allocation
-                    </>
-                  )}
-                </Button>
               </div>
-            </div>
 
-            {/* Preview Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="flex items-start gap-4 mb-6">
-                {previewNonprofit.logo_url ? (
-                  <img
-                    src={previewNonprofit.logo_url}
-                    alt={`${previewNonprofit.name} logo`}
-                    className="h-16 w-16 rounded-xl object-contain flex-shrink-0 bg-slate-50"
-                  />
-                ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-slate-100 text-slate-600 font-semibold text-2xl flex-shrink-0">
-                    {previewNonprofit.name.charAt(0)}
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-xl font-semibold text-slate-900">
-                    {previewNonprofit.name}
-                  </h2>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+              {/* Content */}
+              <div className="px-6 pb-6">
+                {/* Logo and Name */}
+                <div className="flex items-start gap-4 mb-6">
+                  {previewNonprofit.logo_url ? (
+                    <img
+                      src={previewNonprofit.logo_url}
+                      alt={`${previewNonprofit.name} logo`}
+                      className="h-16 w-16 rounded-xl object-contain flex-shrink-0 bg-slate-50"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-slate-100 text-slate-600 font-semibold text-2xl flex-shrink-0">
+                      {previewNonprofit.name.charAt(0)}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1 pt-1">
+                    <h2 className="text-xl font-bold text-slate-900">
+                      {previewNonprofit.name}
+                    </h2>
                     {previewNonprofit.category && (
-                      <Badge variant="secondary">
+                      <Badge variant="secondary" className="mt-2">
                         {previewNonprofit.category.icon && (
                           <span className="mr-1">{previewNonprofit.category.icon}</span>
                         )}
                         {previewNonprofit.category.name}
                       </Badge>
                     )}
-                    {previewNonprofit.ein && (
-                      <span className="text-sm text-slate-500">EIN: {previewNonprofit.ein}</span>
-                    )}
                   </div>
                 </div>
-              </div>
 
-              {previewNonprofit.mission && (
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-slate-700 mb-1">Mission</h3>
-                  <p className="text-slate-600">{previewNonprofit.mission}</p>
-                </div>
-              )}
+                {/* Mission */}
+                {previewNonprofit.mission && (
+                  <div className="mb-5">
+                    <h3 className="text-base font-semibold text-slate-900 mb-2">Mission</h3>
+                    <p className="text-slate-600 leading-relaxed">{previewNonprofit.mission}</p>
+                  </div>
+                )}
 
-              {previewNonprofit.description && (
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-slate-700 mb-1">About</h3>
-                  <p className="text-slate-600">{previewNonprofit.description}</p>
-                </div>
-              )}
+                {/* About */}
+                {previewNonprofit.description && (
+                  <div className="mb-5">
+                    <h3 className="text-base font-semibold text-slate-900 mb-2">About</h3>
+                    <p className="text-slate-600 leading-relaxed">{previewNonprofit.description}</p>
+                  </div>
+                )}
 
-              {previewNonprofit.website && (
-                <div className="pt-4 border-t border-slate-100">
+                {/* Website link */}
+                {previewNonprofit.website && (
                   <a
                     href={previewNonprofit.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700"
+                    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6"
                   >
                     <Globe className="h-4 w-4" />
                     Visit Website
-                    <ExternalLink className="h-3 w-3" />
+                    <ExternalLink className="h-3.5 w-3.5" />
                   </a>
+                )}
+
+                {/* Action buttons */}
+                <div className="space-y-3 mt-6">
+                  {/* Primary: Add to Allocation */}
+                  <Button
+                    className={`w-full ${isIncluded(previewNonprofit.id) ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
+                    onClick={() => {
+                      handleToggle("nonprofit", previewNonprofit.id, previewNonprofit.name);
+                      if (!isIncluded(previewNonprofit.id)) {
+                        setPreviewNonprofit(null);
+                      }
+                    }}
+                  >
+                    {isIncluded(previewNonprofit.id) ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Added to Allocation
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add to Allocation
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Secondary: View Full Profile */}
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    asChild
+                  >
+                    <a
+                      href={`/directory/${previewNonprofit.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      View Full Profile
+                    </a>
+                  </Button>
+
+                  {/* Close text button */}
+                  <button
+                    onClick={() => setPreviewNonprofit(null)}
+                    className="w-full text-center text-slate-600 hover:text-slate-900 py-2 text-sm font-medium transition-colors"
+                  >
+                    Close
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         )}
