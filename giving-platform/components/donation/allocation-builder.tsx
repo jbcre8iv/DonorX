@@ -708,12 +708,12 @@ export function AllocationBuilder({
 
           {/* AI Rebalance Suggestion (Adding) */}
           {rebalanceSuggestion && (
-            <div ref={addSuggestionRef} className="p-4 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-4">
+            <div ref={addSuggestionRef} className="p-4 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-4 overflow-hidden max-w-full">
               <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-emerald-100">
+                <div className="p-2 rounded-lg bg-emerald-100 flex-shrink-0">
                   <Sparkles className="h-4 w-4 text-emerald-600 animate-pulse" />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <h4 className="font-medium text-emerald-900">AI Suggested Rebalance</h4>
                   <p className="text-sm text-emerald-700 mt-1">
                     Adding{" "}
@@ -731,7 +731,7 @@ export function AllocationBuilder({
               </div>
 
               {/* Suggested allocation preview */}
-              <div className="space-y-2 pl-11">
+              <div className="space-y-2 sm:pl-11">
                 {rebalanceSuggestion.allocations.map((alloc) => {
                   const isNewItem = !allocations.some((a) => a.targetId === alloc.targetId);
                   return (
@@ -760,7 +760,7 @@ export function AllocationBuilder({
               </div>
 
               {/* Accept/Decline buttons */}
-              <div className="flex gap-3 pl-11">
+              <div className="flex gap-3 sm:pl-11">
                 <Button
                   onClick={handleAcceptRebalance}
                   size="sm"
@@ -784,12 +784,12 @@ export function AllocationBuilder({
 
           {/* AI Rebalance Suggestion (Removing) */}
           {removalSuggestion && (
-            <div ref={removalSuggestionRef} className="p-4 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-4">
+            <div ref={removalSuggestionRef} className="p-4 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-4 overflow-hidden max-w-full">
               <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-emerald-100">
+                <div className="p-2 rounded-lg bg-emerald-100 flex-shrink-0">
                   <Sparkles className="h-4 w-4 text-emerald-600 animate-pulse" />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <h4 className="font-medium text-emerald-900">Redistribute {removalSuggestion.removedPercentage}%?</h4>
                   <p className="text-sm text-emerald-700 mt-1">
                     Removing <span className="font-medium">{removalSuggestion.removedItemName}</span> frees up {removalSuggestion.removedPercentage}%.
@@ -799,7 +799,7 @@ export function AllocationBuilder({
               </div>
 
               {/* Suggested allocation preview */}
-              <div className="space-y-2 pl-11">
+              <div className="space-y-2 sm:pl-11">
                 {removalSuggestion.allocations.map((alloc) => {
                   // Find the original allocation to show the change
                   const original = allocations.find((a) => a.id === alloc.id);
@@ -824,7 +824,7 @@ export function AllocationBuilder({
               </div>
 
               {/* Accept/Decline buttons */}
-              <div className="flex gap-3 pl-11">
+              <div className="flex gap-3 sm:pl-11">
                 <Button
                   onClick={handleAcceptRemovalRebalance}
                   size="sm"
