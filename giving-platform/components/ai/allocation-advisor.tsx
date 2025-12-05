@@ -7,6 +7,8 @@ import { Sparkles, Loader2, Lightbulb, PieChart, ArrowRight, X, ChevronDown, Log
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
+import { useCartFavorites } from "@/contexts/cart-favorites-context";
+import { useToast } from "@/components/ui/toast";
 
 export interface Allocation {
   name: string;
@@ -47,6 +49,9 @@ export function AllocationAdvisor({
   // Use external amount if provided, otherwise allow manual input
   const hasExternalAmount = externalAmount !== undefined && externalAmount > 0;
   const pathname = usePathname();
+  const { userId } = useCartFavorites();
+  const { addToast } = useToast();
+  const isLoggedIn = !!userId;
   const [goals, setGoals] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStrategy, setLoadingStrategy] = useState<string | null>(null);
@@ -59,6 +64,15 @@ export function AllocationAdvisor({
   const currentAmount = hasExternalAmount ? externalAmount : 0;
 
   const getAdvice = async (strategy?: string) => {
+    // Check if user is logged in first
+    if (!isLoggedIn) {
+      addToast("Sign in to get AI allocation advice", "info", 4000, {
+        label: "Sign in",
+        href: `/login?redirect=${encodeURIComponent(pathname)}`,
+      });
+      return;
+    }
+
     if (!currentAmount || currentAmount <= 0) {
       setError("Please set a donation amount above");
       return;
