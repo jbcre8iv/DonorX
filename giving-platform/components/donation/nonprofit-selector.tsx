@@ -514,7 +514,7 @@ export function NonprofitSelector({
 
         {/* Preview Panel Overlay */}
         {previewNonprofit && (
-          <div className="absolute inset-0 bg-white rounded-xl flex flex-col animate-in fade-in slide-in-from-right-4 duration-200">
+          <div className="absolute inset-0 z-20 bg-white rounded-xl flex flex-col animate-in fade-in slide-in-from-right-4 duration-200">
             {/* Preview Header */}
             <div className="sticky top-0 z-10 bg-white border-b border-slate-200 rounded-t-xl p-4">
               <div className="flex items-center justify-between">
