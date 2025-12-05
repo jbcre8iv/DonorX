@@ -322,7 +322,7 @@ export function CartTab() {
               className="flex-1 bg-emerald-600 hover:bg-emerald-700"
               size="sm"
             >
-              Continue
+              Finalize Donation
               <ArrowRight className="ml-1.5 h-4 w-4" />
             </Button>
             <Button

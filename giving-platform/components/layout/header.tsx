@@ -22,7 +22,7 @@ const navLinks = [
 
 // Giving List button component to avoid hook issues
 function GivingListButton() {
-  const { cartItems, setSidebarOpen, hasDraft } = useCartFavorites();
+  const { cartItems, isSidebarOpen, setSidebarOpen, hasDraft } = useCartFavorites();
   const [isAnimating, setIsAnimating] = React.useState(false);
   const prevCountRef = React.useRef(cartItems.length);
 
@@ -38,7 +38,7 @@ function GivingListButton() {
 
   return (
     <button
-      onClick={() => setSidebarOpen(true)}
+      onClick={() => setSidebarOpen(!isSidebarOpen)}
       className={cn(
         "relative rounded-lg p-2 md:p-2.5 transition-colors",
         hasDraft
