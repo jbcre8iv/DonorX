@@ -242,6 +242,67 @@ export async function loadTemplates(): Promise<LoadTemplatesResult> {
   }
 }
 
+export async function loadTemplateById(templateId: string): Promise<SaveTemplateResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "You must be logged in to load templates" };
+  }
+
+  try {
+    const { data: template, error: templateError } = await supabase
+      .from("donation_templates")
+      .select(`
+        id,
+        name,
+        description,
+        amount_cents,
+        frequency,
+        created_at,
+        updated_at,
+        donation_template_items (
+          type,
+          target_id,
+          target_name,
+          percentage
+        )
+      `)
+      .eq("id", templateId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (templateError || !template) {
+      console.error("Failed to load template:", templateError);
+      return { success: false, error: "Template not found or access denied" };
+    }
+
+    const formattedTemplate: DonationTemplate = {
+      id: template.id as string,
+      name: template.name as string,
+      description: template.description as string | undefined,
+      amountCents: template.amount_cents as number | undefined,
+      frequency: template.frequency as DonationFrequency | undefined,
+      items: ((template.donation_template_items as Array<Record<string, unknown>>) || []).map((item) => ({
+        type: item.type as "nonprofit" | "category",
+        targetId: item.target_id as string,
+        targetName: item.target_name as string,
+        percentage: item.percentage as number,
+      })),
+      createdAt: template.created_at as string,
+      updatedAt: template.updated_at as string,
+    };
+
+    return { success: true, template: formattedTemplate };
+  } catch (error) {
+    console.error("Load template by ID error:", error);
+    return { success: false, error: "Failed to load template" };
+  }
+}
+
 export async function updateTemplate(
   templateId: string,
   name: string,

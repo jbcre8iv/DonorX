@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, Lock, AlertCircle, RefreshCw, Save, FolderOpen, Trash2, X, LogIn, Pencil, Check } from "lucide-react";
+import { ArrowLeft, Lock, AlertCircle, RefreshCw, Save, FolderOpen, Trash2, X, LogIn, Pencil, Check, Layers, Building2, Tag, DollarSign, Heart, ChevronDown } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,8 +12,8 @@ import { AmountInput } from "@/components/donation/amount-input";
 import { AllocationBuilder, type AllocationItem } from "@/components/donation/allocation-builder";
 import { FrequencySelector, type DonationFrequency } from "@/components/donation/frequency-selector";
 import { type Allocation as AIAllocation } from "@/components/ai/allocation-advisor";
-import { formatCurrency } from "@/lib/utils";
-import { createCheckoutSession, saveTemplate, updateTemplate, loadTemplates, deleteTemplate, renameTemplate, clearDraft, type AllocationInput, type DonationTemplate, type TemplateItem, type SaveTemplateResult } from "./actions";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { createCheckoutSession, saveTemplate, updateTemplate, loadTemplates, deleteTemplate, renameTemplate, type AllocationInput, type DonationTemplate, type TemplateItem, type SaveTemplateResult } from "./actions";
 import { useCartFavorites, type DraftAllocation, type DonationDraft } from "@/contexts/cart-favorites-context";
 import { useToast } from "@/components/ui/toast";
 import type { Nonprofit, Category } from "@/types/database";
@@ -29,6 +29,7 @@ interface DonateClientProps {
   nonprofits: Nonprofit[];
   categories: Category[];
   preselectedNonprofitId?: string;
+  initialTemplate?: DonationTemplate;
   isAuthenticated?: boolean;
 }
 
@@ -36,6 +37,7 @@ export function DonateClient({
   nonprofits,
   categories,
   preselectedNonprofitId,
+  initialTemplate,
   isAuthenticated = false,
 }: DonateClientProps) {
   const router = useRouter();
@@ -56,14 +58,37 @@ export function DonateClient({
   const [frequency, setFrequency] = React.useState<DonationFrequency>("one-time");
   const [allocations, setAllocations] = React.useState<AllocationItem[]>([]);
 
-  // Initialize allocations from preselected nonprofit, cart, or draft
+  // Initialize allocations from template, cart, preselected nonprofit, or draft
   React.useEffect(() => {
     // Only run once on mount
     if (draftLoaded) return;
 
+    // Highest priority: initialTemplate from URL parameter (from "Use Template" button)
+    if (initialTemplate && initialTemplate.items.length > 0) {
+      const templateAllocations: AllocationItem[] = initialTemplate.items.map((item) => ({
+        id: crypto.randomUUID(),
+        type: item.type,
+        targetId: item.targetId,
+        targetName: item.targetName,
+        percentage: item.percentage,
+      }));
+      setAllocations(templateAllocations);
+
+      // Load amount and frequency if saved with template
+      if (initialTemplate.amountCents) {
+        setAmount(initialTemplate.amountCents / 100);
+      }
+      if (initialTemplate.frequency) {
+        setFrequency(initialTemplate.frequency);
+      }
+
+      setDraftLoaded(true);
+      return;
+    }
+
     const fromCart = searchParams.get("from") === "cart";
 
-    // If coming from cart, load items from sessionStorage (highest priority)
+    // If coming from cart, load items from sessionStorage (second priority)
     if (fromCart) {
       try {
         const cartData = sessionStorage.getItem("donorx_cart_checkout");
@@ -99,7 +124,7 @@ export function DonateClient({
       }
     }
 
-    // Check for preselected nonprofit (second priority)
+    // Check for preselected nonprofit (third priority)
     if (preselectedNonprofitId) {
       const nonprofit = nonprofits.find((n) => n.id === preselectedNonprofitId);
       if (nonprofit) {
@@ -117,7 +142,7 @@ export function DonateClient({
       }
     }
 
-    // Otherwise, restore from draft if available
+    // Otherwise, restore from draft if available (lowest priority)
     if (donationDraft && donationDraft.allocations.length > 0) {
       setAmount(donationDraft.amountCents / 100);
       setFrequency(donationDraft.frequency);
@@ -134,7 +159,7 @@ export function DonateClient({
     }
 
     setDraftLoaded(true);
-  }, [preselectedNonprofitId, nonprofits, searchParams, donationDraft, draftLoaded]);
+  }, [preselectedNonprofitId, nonprofits, searchParams, donationDraft, draftLoaded, initialTemplate]);
 
   // Redirect when draft is cleared externally (e.g., from "Clear & Start Over" on another device)
   // Only redirect if the allocations were originally loaded from a draft
@@ -221,6 +246,17 @@ export function DonateClient({
   const [editingTemplateId, setEditingTemplateId] = React.useState<string | null>(null);
   const [editingTemplateName, setEditingTemplateName] = React.useState("");
   const [isRenaming, setIsRenaming] = React.useState(false);
+  const [expandedTemplateId, setExpandedTemplateId] = React.useState<string | null>(null);
+
+  // Color palette for allocation bar
+  const allocationColors = [
+    "bg-blue-500",
+    "bg-emerald-500",
+    "bg-purple-500",
+    "bg-amber-500",
+    "bg-rose-500",
+    "bg-cyan-500",
+  ];
 
   // Load templates on mount
   React.useEffect(() => {
@@ -1031,102 +1067,164 @@ export function DonateClient({
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {templates.map((template) => (
-                    <div
-                      key={template.id}
-                      className="rounded-lg border border-slate-200 p-4 hover:border-slate-300 transition-colors"
-                    >
-                      {/* Template Header */}
-                      <div className="flex items-start justify-between gap-2">
-                        {editingTemplateId === template.id ? (
-                          <div className="flex items-center gap-2 flex-1">
-                            <input
-                              type="text"
-                              value={editingTemplateName}
-                              onChange={(e) => setEditingTemplateName(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") handleSaveRename();
-                                if (e.key === "Escape") handleCancelRename();
-                              }}
-                              className="flex-1 px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              autoFocus
-                              disabled={isRenaming}
-                            />
-                            <button
-                              onClick={handleSaveRename}
-                              disabled={isRenaming || !editingTemplateName.trim()}
-                              className="rounded p-1.5 text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
-                              title="Save"
-                            >
-                              <Check className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={handleCancelRename}
-                              disabled={isRenaming}
-                              className="rounded p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"
-                              title="Cancel"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <h4 className="font-medium text-slate-900 flex-1">
-                              {template.name}
-                            </h4>
-                            <button
-                              onClick={() => handleStartRename(template)}
-                              className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors flex-shrink-0"
-                              title="Rename template"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTemplate(template.id)}
-                              className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors flex-shrink-0"
-                              title="Delete template"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Description */}
-                      {template.description && (
-                        <p className="text-sm text-slate-500 mt-1">
-                          {template.description}
-                        </p>
-                      )}
-
-                      {/* Badges */}
-                      <div className="flex flex-wrap gap-1.5 mt-3">
-                        <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">
-                          {template.items.length} item{template.items.length !== 1 ? "s" : ""}
-                        </span>
-                        {template.amountCents && (
-                          <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded">
-                            {formatCurrency(template.amountCents)}
-                          </span>
-                        )}
-                        {template.frequency && (
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded capitalize">
-                            {template.frequency === "one-time" ? "One-time" : template.frequency}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Load Button - Full width on mobile */}
-                      <Button
-                        size="sm"
-                        className="w-full mt-3"
-                        onClick={() => handleLoadTemplate(template)}
+                <div className="space-y-4">
+                  {templates.map((template) => {
+                    const isExpanded = expandedTemplateId === template.id;
+                    return (
+                      <div
+                        key={template.id}
+                        className="rounded-lg border border-slate-200 overflow-hidden hover:border-slate-300 transition-colors"
                       >
-                        Load Template
-                      </Button>
-                    </div>
-                  ))}
+                        {/* Header with icon and name */}
+                        <div className="p-4 pb-3">
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 flex-shrink-0">
+                              <Layers className="h-5 w-5 text-emerald-700" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              {editingTemplateId === template.id ? (
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={editingTemplateName}
+                                    onChange={(e) => setEditingTemplateName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") handleSaveRename();
+                                      if (e.key === "Escape") handleCancelRename();
+                                    }}
+                                    className="flex-1 px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    autoFocus
+                                    disabled={isRenaming}
+                                  />
+                                  <button
+                                    onClick={handleSaveRename}
+                                    disabled={isRenaming || !editingTemplateName.trim()}
+                                    className="rounded p-1.5 text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+                                    title="Save"
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    onClick={handleCancelRename}
+                                    disabled={isRenaming}
+                                    className="rounded p-1.5 text-slate-400 hover:bg-slate-100 transition-colors"
+                                    title="Cancel"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-start justify-between gap-2">
+                                  <h4 className="font-medium text-slate-900">{template.name}</h4>
+                                  <div className="flex items-center gap-1 flex-shrink-0">
+                                    <button
+                                      onClick={() => handleStartRename(template)}
+                                      className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                                      title="Rename template"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteTemplate(template.id)}
+                                      className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                                      title="Delete template"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                              {template.description && (
+                                <p className="text-xs text-slate-500 mt-0.5">{template.description}</p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Amount & Frequency badges */}
+                          {(template.amountCents || template.frequency) && (
+                            <div className="flex flex-wrap gap-2 mt-3 ml-[52px]">
+                              {template.amountCents && (
+                                <Badge variant="outline" className="text-emerald-700 border-emerald-200 bg-emerald-50">
+                                  <DollarSign className="h-3 w-3 mr-1" />
+                                  {formatCurrency(template.amountCents)}
+                                </Badge>
+                              )}
+                              {template.frequency && (
+                                <Badge variant="outline" className="text-blue-700 border-blue-200 bg-blue-50">
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  {template.frequency === "one-time" ? "One-time" : template.frequency}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Collapsible Allocation Section */}
+                          <div className="mt-3 ml-[52px]">
+                            <button
+                              onClick={() => setExpandedTemplateId(isExpanded ? null : template.id)}
+                              className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"
+                            >
+                              <ChevronDown
+                                className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                              />
+                              <span>
+                                {template.items.length} allocation{template.items.length !== 1 ? "s" : ""}
+                              </span>
+                            </button>
+
+                            {isExpanded && (
+                              <div className="mt-3 space-y-2">
+                                {template.items.map((item, index) => (
+                                  <div key={`${template.id}-${item.targetId}-${index}`} className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                      {item.type === "nonprofit" ? (
+                                        <Building2 className="h-3 w-3 text-slate-400 flex-shrink-0" />
+                                      ) : (
+                                        <Tag className="h-3 w-3 text-slate-400 flex-shrink-0" />
+                                      )}
+                                      <span className="text-sm text-slate-600 truncate">
+                                        {item.targetName}
+                                      </span>
+                                    </div>
+                                    <span className="text-sm font-medium text-slate-900 flex-shrink-0">
+                                      {item.percentage}%
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Progress Bar - always visible */}
+                            <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-slate-100">
+                              {template.items.map((item, index) => (
+                                <div
+                                  key={`bar-${template.id}-${item.targetId}-${index}`}
+                                  className={allocationColors[index % allocationColors.length]}
+                                  style={{ width: `${item.percentage}%` }}
+                                />
+                              ))}
+                            </div>
+
+                            <p className="text-xs text-slate-400 mt-2">
+                              Last updated {formatDate(template.updatedAt)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="px-4 pb-4 flex gap-2">
+                          <Button
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => handleLoadTemplate(template)}
+                          >
+                            <Heart className="mr-2 h-4 w-4" />
+                            Use Template
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
