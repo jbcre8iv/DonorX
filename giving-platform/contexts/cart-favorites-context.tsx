@@ -114,6 +114,7 @@ interface CartFavoritesContextType {
     targetId: string;
     targetName: string;
   }) => Promise<void>;
+  removeFromDraft: (targetId: string) => Promise<void>;
   isInDraft: (nonprofitId?: string, categoryId?: string) => boolean;
 
   // UI State
@@ -1069,6 +1070,43 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     [donationDraft, saveDonationDraft]
   );
 
+  // Remove item from donation draft allocations
+  const removeFromDraft = useCallback(
+    async (targetId: string) => {
+      if (!donationDraft) return;
+
+      // Filter out the allocation
+      const filteredAllocations = donationDraft.allocations.filter(
+        (a) => a.targetId !== targetId
+      );
+
+      // If no allocations left, clear the draft entirely
+      if (filteredAllocations.length === 0) {
+        await clearDonationDraft();
+        return;
+      }
+
+      // Redistribute percentages evenly among remaining allocations
+      const count = filteredAllocations.length;
+      const evenPercentage = Math.floor(100 / count);
+      const remainder = 100 - evenPercentage * count;
+
+      const redistributedAllocations = filteredAllocations.map((a, index) => ({
+        ...a,
+        percentage: index === 0 ? evenPercentage + remainder : evenPercentage,
+      }));
+
+      const updatedDraft: DonationDraft = {
+        ...donationDraft,
+        allocations: redistributedAllocations,
+      };
+
+      // Save the updated draft
+      await saveDonationDraft(updatedDraft);
+    },
+    [donationDraft, saveDonationDraft, clearDonationDraft]
+  );
+
   // Helper to check if there's an active draft (even without allocations)
   const hasDraft = donationDraft !== null;
 
@@ -1091,6 +1129,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     saveDonationDraft,
     clearDonationDraft,
     addToDraft,
+    removeFromDraft,
     isInDraft,
     isSidebarOpen,
     setSidebarOpen,

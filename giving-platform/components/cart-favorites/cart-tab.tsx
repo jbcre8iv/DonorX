@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, AlertCircle, RefreshCw } from "lucide-react";
+import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, RefreshCw } from "lucide-react";
 import { useCartFavorites, type CartItem } from "@/contexts/cart-favorites-context";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
@@ -20,6 +20,7 @@ export function CartTab() {
     hasDraft,
     saveDonationDraft,
     clearDonationDraft,
+    removeFromDraft,
   } = useCartFavorites();
 
   const [isClearing, setIsClearing] = useState(false);
@@ -109,79 +110,106 @@ export function CartTab() {
       ? donationDraft.frequency.charAt(0).toUpperCase() + donationDraft.frequency.slice(1)
       : "";
 
-  // If there's an active draft, show the active donation banner
+  // If there's an active draft, show "Your Giving List" with allocation items
   if (hasDraft && donationDraft) {
     return (
       <div className="flex h-full flex-col">
-        {/* Active Donation Banner */}
-        <div className="border-b border-emerald-200 bg-emerald-50 p-4">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="flex-shrink-0 rounded-full bg-emerald-100 p-2">
-              <AlertCircle className="h-5 w-5 text-emerald-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-emerald-900">
-                Active Donation in Progress
-              </h3>
-              <p className="text-sm text-emerald-700 mt-1">
-                You have an incomplete donation. Continue where you left off or start fresh.
-              </p>
-            </div>
+        {/* Header with Summary */}
+        <div className="border-b border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+              <HandHeart className="h-5 w-5 text-emerald-600" />
+              Your Giving List
+            </h3>
+            <span className="text-sm text-slate-500">
+              {donationDraft.allocations.length} item{donationDraft.allocations.length !== 1 ? "s" : ""}
+            </span>
           </div>
 
-          {/* Draft Summary */}
-          <div className="rounded-lg bg-white border border-emerald-200 p-3 mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-slate-700">Amount</span>
-              <span className="font-bold text-slate-900">
-                {formatCurrency(donationDraft.amountCents)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-slate-700">Frequency</span>
-              <span className="flex items-center text-sm font-medium text-slate-900">
-                {donationDraft.frequency !== "one-time" && (
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                )}
-                {frequencyLabel}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-700">Allocations</span>
-              <span className="text-sm text-slate-900">
-                {donationDraft.allocations.length} item{donationDraft.allocations.length !== 1 ? "s" : ""}
-              </span>
-            </div>
+          {/* Donation Summary */}
+          <div className="flex items-center gap-4 text-sm text-slate-600 mb-4">
+            <span className="font-medium">
+              {formatCurrency(donationDraft.amountCents)}
+            </span>
+            <span className="flex items-center">
+              {donationDraft.frequency !== "one-time" && (
+                <RefreshCw className="h-3 w-3 mr-1" />
+              )}
+              {frequencyLabel}
+            </span>
           </div>
 
           {/* Action Buttons */}
-          <div className="space-y-2">
+          <div className="flex gap-2">
             <Button
               onClick={handleContinueDonation}
-              className="w-full bg-emerald-600 hover:bg-emerald-700"
-              size="lg"
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+              size="sm"
             >
-              Continue Donation
-              <ArrowRight className="ml-2 h-4 w-4" />
+              Continue
+              <ArrowRight className="ml-1.5 h-4 w-4" />
             </Button>
             <Button
               variant="outline"
               onClick={handleClearDraftAndStartOver}
               disabled={isClearingDraft}
-              className="w-full border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+              size="sm"
+              className="text-slate-600"
             >
-              {isClearingDraft ? "Clearing..." : "Clear & Start Over"}
+              {isClearingDraft ? "Clearing..." : "Clear"}
             </Button>
           </div>
         </div>
 
-        {/* Blocked State Message */}
-        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-          <div className="mb-4 rounded-full bg-slate-100 p-4">
-            <HandHeart className="h-8 w-8 text-slate-300" />
+        {/* Allocation Items List */}
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-2">
+            {donationDraft.allocations.map((allocation) => (
+              <div
+                key={allocation.targetId}
+                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3"
+              >
+                {/* Icon placeholder */}
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100">
+                  {allocation.type === "category" ? (
+                    <Tag className="h-5 w-5 text-slate-400" />
+                  ) : (
+                    <span className="text-lg font-semibold text-slate-600">
+                      {allocation.targetName.charAt(0)}
+                    </span>
+                  )}
+                </div>
+
+                {/* Name and Type */}
+                <div className="min-w-0 flex-1">
+                  <h4 className="truncate font-medium text-slate-900">
+                    {allocation.targetName}
+                  </h4>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500 capitalize">
+                      {allocation.type}
+                    </span>
+                    <span className="text-xs text-emerald-600 font-medium">
+                      {allocation.percentage}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Remove button */}
+                <button
+                  onClick={() => removeFromDraft(allocation.targetId)}
+                  className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                  title="Remove from giving list"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
           </div>
-          <p className="text-sm text-slate-500 max-w-[200px]">
-            Clear your active donation above to add new items to your giving list.
+
+          {/* Tip about adding more */}
+          <p className="mt-4 text-xs text-slate-400 text-center">
+            Browse the directory to add more nonprofits or categories
           </p>
         </div>
       </div>
