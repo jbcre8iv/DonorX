@@ -1101,9 +1101,12 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       logoUrl?: string;
       icon?: string;
     }) => {
-      // Open the sidebar immediately (before async operations)
+      // Open the sidebar immediately on desktop only (don't interrupt mobile browsing)
+      // 1024px is the lg breakpoint in Tailwind
       setActiveTab("cart");
-      setSidebarOpen(true);
+      if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+        setSidebarOpen(true);
+      }
 
       // If no draft exists, create one with this item
       if (!donationDraft) {
