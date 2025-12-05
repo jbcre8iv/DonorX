@@ -62,10 +62,10 @@ export function AllocationBuilder({
   const addSuggestionRef = React.useRef<HTMLDivElement>(null);
   const removalSuggestionRef = React.useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to suggestion when it appears (desktop only - causes iOS zoom issues on mobile)
+  // Auto-scroll to suggestion when it appears
+  // Skip on mobile (causes iOS zoom issues) and when selector modal is open
   React.useEffect(() => {
-    if (rebalanceSuggestion && addSuggestionRef.current) {
-      // Skip auto-scroll on mobile to prevent iOS Safari zoom issues
+    if (rebalanceSuggestion && addSuggestionRef.current && !selectorOpen) {
       const isMobile = window.innerWidth < 640;
       if (!isMobile) {
         setTimeout(() => {
@@ -73,11 +73,10 @@ export function AllocationBuilder({
         }, 100);
       }
     }
-  }, [rebalanceSuggestion]);
+  }, [rebalanceSuggestion, selectorOpen]);
 
   React.useEffect(() => {
-    if (removalSuggestion && removalSuggestionRef.current) {
-      // Skip auto-scroll on mobile to prevent iOS Safari zoom issues
+    if (removalSuggestion && removalSuggestionRef.current && !selectorOpen) {
       const isMobile = window.innerWidth < 640;
       if (!isMobile) {
         setTimeout(() => {
@@ -85,7 +84,7 @@ export function AllocationBuilder({
         }, 100);
       }
     }
-  }, [removalSuggestion]);
+  }, [removalSuggestion, selectorOpen]);
 
   // Get the full nonprofit or category details for the details modal
   const getItemDetails = (item: AllocationItem) => {
