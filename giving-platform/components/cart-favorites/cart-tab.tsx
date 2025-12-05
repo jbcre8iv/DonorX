@@ -424,7 +424,7 @@ export function CartTab() {
                       value={getPercentageInputValue(allocation.targetId, allocation.percentage)}
                       onChange={(e) => handlePercentageInputChange(allocation.targetId, e.target.value)}
                       onBlur={() => handlePercentageInputBlur(allocation.targetId)}
-                      className="w-full h-7 rounded border border-slate-200 pl-1 pr-5 text-center text-sm font-medium"
+                      className="w-full h-7 rounded border border-slate-200 pl-1 pr-5 text-center text-base font-medium"
                     />
                     <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">%</span>
                   </div>
