@@ -3,10 +3,9 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, RefreshCw, Minus, Plus, Sparkles } from "lucide-react";
+import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, Minus, Plus, Sparkles } from "lucide-react";
 import { useCartFavorites, type CartItem } from "@/contexts/cart-favorites-context";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/utils";
 
 export function CartTab() {
   const router = useRouter();
@@ -176,39 +175,19 @@ export function CartTab() {
     }
   };
 
-  // Get frequency label for draft display
-  const frequencyLabel = donationDraft?.frequency === "one-time"
-    ? "One-time"
-    : donationDraft?.frequency
-      ? donationDraft.frequency.charAt(0).toUpperCase() + donationDraft.frequency.slice(1)
-      : "";
-
   // If there's an active draft, show "Your Giving List" with allocation items
   if (hasDraft && donationDraft) {
     return (
       <div className="flex h-full flex-col">
         {/* Header with Summary */}
         <div className="border-b border-slate-200 bg-white p-4">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-slate-900 flex items-center gap-2">
               <HandHeart className="h-5 w-5 text-emerald-600" />
               Your Giving List
             </h3>
             <span className="text-sm text-slate-500">
               {donationDraft.allocations.length} item{donationDraft.allocations.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-
-          {/* Donation Summary */}
-          <div className="flex items-center gap-4 text-sm text-slate-600 mb-4">
-            <span className="font-medium">
-              {formatCurrency(donationDraft.amountCents)}
-            </span>
-            <span className="flex items-center">
-              {donationDraft.frequency !== "one-time" && (
-                <RefreshCw className="h-3 w-3 mr-1" />
-              )}
-              {frequencyLabel}
             </span>
           </div>
 
@@ -305,15 +284,13 @@ export function CartTab() {
                     )}
                   </div>
 
-                  {/* Name and dollar amount */}
+                  {/* Name and type */}
                   <div className="min-w-0 flex-1">
                     <h4 className="truncate text-sm font-medium text-slate-900">
                       {allocation.targetName}
                     </h4>
-                    <p className="text-xs text-slate-500">
-                      {formatCurrency(
-                        Math.round((donationDraft.amountCents * allocation.percentage) / 100)
-                      )}
+                    <p className="text-xs text-slate-500 capitalize">
+                      {allocation.type}
                     </p>
                   </div>
 
