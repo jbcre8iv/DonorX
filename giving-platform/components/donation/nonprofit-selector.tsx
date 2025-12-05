@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Search, Building2, Tag, X, Globe, Plus, LayoutGrid, List, Eye } from "lucide-react";
+import { Search, Building2, Tag, X, Globe, Plus, LayoutGrid, List, Eye, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ export function NonprofitSelector({
   const [search, setSearch] = React.useState("");
   const [activeTab, setActiveTab] = React.useState<"nonprofits" | "categories">("nonprofits");
   const [viewMode, setViewMode] = React.useState<"grid" | "table">("table");
+  const [previewNonprofit, setPreviewNonprofit] = React.useState<Nonprofit | null>(null);
 
   // Reset search when modal closes
   React.useEffect(() => {
@@ -304,6 +305,15 @@ export function NonprofitSelector({
                         <Plus className="h-3.5 w-3.5 mr-1" />
                         Add
                       </Button>
+                      {/* Quick preview */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 rounded-lg text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50"
+                        onClick={() => setPreviewNonprofit(nonprofit)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       {/* Website link */}
                       {nonprofit.website && (
                         <Button
@@ -417,6 +427,98 @@ export function NonprofitSelector({
             }
           </p>
         </div>
+
+        {/* Preview Panel Overlay */}
+        {previewNonprofit && (
+          <div className="absolute inset-0 bg-white rounded-xl flex flex-col animate-in fade-in slide-in-from-right-4 duration-200">
+            {/* Preview Header */}
+            <div className="sticky top-0 z-10 bg-white border-b border-slate-200 rounded-t-xl p-4">
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => setPreviewNonprofit(null)}
+                  className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                  <span className="text-sm font-medium">Back to list</span>
+                </button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    handleSelect("nonprofit", previewNonprofit.id, previewNonprofit.name);
+                    setPreviewNonprofit(null);
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Add to Allocation
+                </Button>
+              </div>
+            </div>
+
+            {/* Preview Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="flex items-start gap-4 mb-6">
+                {previewNonprofit.logo_url ? (
+                  <img
+                    src={previewNonprofit.logo_url}
+                    alt={`${previewNonprofit.name} logo`}
+                    className="h-16 w-16 rounded-xl object-contain flex-shrink-0 bg-slate-50"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-slate-100 text-slate-600 font-semibold text-2xl flex-shrink-0">
+                    {previewNonprofit.name.charAt(0)}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-xl font-semibold text-slate-900">
+                    {previewNonprofit.name}
+                  </h2>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {previewNonprofit.category && (
+                      <Badge variant="secondary">
+                        {previewNonprofit.category.icon && (
+                          <span className="mr-1">{previewNonprofit.category.icon}</span>
+                        )}
+                        {previewNonprofit.category.name}
+                      </Badge>
+                    )}
+                    {previewNonprofit.ein && (
+                      <span className="text-sm text-slate-500">EIN: {previewNonprofit.ein}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {previewNonprofit.mission && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-slate-700 mb-1">Mission</h3>
+                  <p className="text-slate-600">{previewNonprofit.mission}</p>
+                </div>
+              )}
+
+              {previewNonprofit.description && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-slate-700 mb-1">About</h3>
+                  <p className="text-slate-600">{previewNonprofit.description}</p>
+                </div>
+              )}
+
+              {previewNonprofit.website && (
+                <div className="pt-4 border-t border-slate-100">
+                  <a
+                    href={previewNonprofit.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    <Globe className="h-4 w-4" />
+                    Visit Website
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
