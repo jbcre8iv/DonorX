@@ -8,7 +8,7 @@ import { useToast } from "@/components/ui/toast";
 interface DonateButtonProps {
   nonprofitId: string;
   nonprofitName: string;
-  size?: "default" | "sm" | "lg";
+  size?: "sm" | "md" | "lg" | "icon";
   className?: string;
   variant?: "default" | "outline" | "ghost";
 }
@@ -16,7 +16,7 @@ interface DonateButtonProps {
 export function DonateButton({
   nonprofitId,
   nonprofitName,
-  size = "default",
+  size = "md",
   className = "",
   variant = "default",
 }: DonateButtonProps) {
