@@ -1140,11 +1140,11 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         setSidebarOpen(true);
       }
 
-      // If no draft exists, create one with this item
-      if (!donationDraft) {
+      // If no draft exists or draft has no allocations, create/update with this item at 100%
+      if (!donationDraft || donationDraft.allocations.length === 0) {
         const newDraft: DonationDraft = {
-          amountCents: 10000000, // $100,000 default
-          frequency: "one-time",
+          amountCents: donationDraft?.amountCents ?? 10000000, // $100,000 default
+          frequency: donationDraft?.frequency ?? "one-time",
           allocations: [{ ...item, percentage: 100 }],
         };
         await saveDonationDraft(newDraft);
@@ -1160,7 +1160,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       // Create the new item
       const newItem: DraftAllocation = { ...item, percentage: 0 };
 
-      // Get existing items with percentage > 0 (the ones that will be rebalanced)
+      // Get existing items (the ones that will be rebalanced)
       const existingItems = donationDraft.allocations;
 
       // Check if there's already a pending suggestion and add to it
