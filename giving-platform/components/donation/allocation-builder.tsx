@@ -87,6 +87,43 @@ export function AllocationBuilder({
     });
   }, [allocations]);
 
+  // Detect externally added items (e.g., from sidebar) and show rebalance suggestion
+  React.useEffect(() => {
+    // Skip if there's already a suggestion showing
+    if (rebalanceSuggestion || removalSuggestion) {
+      return;
+    }
+
+    // Check for items at 0% when there are items with percentage > 0
+    // This indicates newly added items that need rebalancing
+    const itemsWithPercentage = allocations.filter((a) => a.percentage > 0);
+    const itemsAtZero = allocations.filter((a) => a.percentage === 0);
+
+    // If there are items at 0% AND items with percentage, show suggestion
+    if (itemsAtZero.length > 0 && itemsWithPercentage.length > 0) {
+      // Generate suggestion inline to avoid function ordering issues
+      const totalItems = itemsWithPercentage.length + itemsAtZero.length;
+      const equalPercentage = Math.floor(100 / totalItems);
+      const remainder = 100 - (equalPercentage * totalItems);
+
+      const suggestedAllocations: AllocationItem[] = [
+        ...itemsWithPercentage.map((alloc, index) => ({
+          ...alloc,
+          percentage: equalPercentage + (index === 0 ? remainder : 0),
+        })),
+        ...itemsAtZero.map((item) => ({
+          ...item,
+          percentage: equalPercentage,
+        })),
+      ];
+
+      setRebalanceSuggestion({
+        allocations: suggestedAllocations,
+        newItemNames: itemsAtZero.map((item) => item.targetName),
+      });
+    }
+  }, [allocations, rebalanceSuggestion, removalSuggestion]);
+
   const addSuggestionRef = React.useRef<HTMLDivElement>(null);
   const removalSuggestionRef = React.useRef<HTMLDivElement>(null);
 

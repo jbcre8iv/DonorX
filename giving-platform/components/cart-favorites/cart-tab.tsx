@@ -277,29 +277,28 @@ export function CartTab() {
       return;
     }
 
-    const prevAllocations = prevAllocationsRef.current;
     const currentAllocations = donationDraft.allocations;
 
-    // Skip if this is the first load or if there's already a suggestion showing
-    if (prevAllocations === null || rebalanceSuggestion || removalSuggestion) {
+    // Skip if there's already a suggestion showing
+    if (rebalanceSuggestion || removalSuggestion) {
       prevAllocationsRef.current = currentAllocations;
       return;
     }
 
-    // Find newly added items
-    const newItems = currentAllocations.filter(
-      (current) => !prevAllocations.some((prev) => prev.targetId === current.targetId)
-    );
+    // Check for items at 0% when there are items with percentage > 0
+    // This indicates newly added items that need rebalancing
+    const itemsWithPercentage = currentAllocations.filter((a) => a.percentage > 0);
+    const itemsAtZero = currentAllocations.filter((a) => a.percentage === 0);
 
-    // If new items were added and there were existing items, show suggestion
-    if (newItems.length > 0 && prevAllocations.length > 0) {
+    // If there are items at 0% AND items with percentage, show suggestion
+    if (itemsAtZero.length > 0 && itemsWithPercentage.length > 0) {
       const suggestedAllocations = generateRebalanceSuggestion(
-        prevAllocations,
-        newItems
+        itemsWithPercentage,
+        itemsAtZero
       );
       setRebalanceSuggestion({
         allocations: suggestedAllocations,
-        newItemNames: newItems.map((item) => item.targetName),
+        newItemNames: itemsAtZero.map((item) => item.targetName),
       });
     }
 

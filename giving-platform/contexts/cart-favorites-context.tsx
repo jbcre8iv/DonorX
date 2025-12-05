@@ -1126,20 +1126,10 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       );
       if (alreadyInDraft) return;
 
-      // Add new allocation and redistribute percentages evenly
-      const newAllocations = [...donationDraft.allocations, { ...item, percentage: 0 }];
-      const count = newAllocations.length;
-      const evenPercentage = Math.floor(100 / count);
-      const remainder = 100 - evenPercentage * count;
-
-      const redistributedAllocations = newAllocations.map((a, index) => ({
-        ...a,
-        percentage: index === 0 ? evenPercentage + remainder : evenPercentage,
-      }));
-
+      // Add new allocation with 0% - the sidebar will show a rebalance suggestion
       const updatedDraft: DonationDraft = {
         ...donationDraft,
-        allocations: redistributedAllocations,
+        allocations: [...donationDraft.allocations, { ...item, percentage: 0 }],
       };
 
       // Save the updated draft
