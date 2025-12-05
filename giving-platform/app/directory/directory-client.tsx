@@ -145,15 +145,27 @@ export function DirectoryClient({
   // const featuredNonprofits = filteredNonprofits.filter((n) => n.featured);
   // const otherNonprofits = filteredNonprofits.filter((n) => !n.featured);
 
-  // Filter categories by search (for categories view)
+  // Filter and sort categories by search (for categories view)
   const filteredCategoriesForView = React.useMemo(() => {
-    if (!search.trim()) return categories;
-    const searchLower = search.toLowerCase();
-    return categories.filter((c) =>
-      c.name.toLowerCase().includes(searchLower) ||
-      c.description?.toLowerCase().includes(searchLower)
-    );
-  }, [categories, search]);
+    let filtered = categories;
+    if (search.trim()) {
+      const searchLower = search.toLowerCase();
+      filtered = categories.filter((c) =>
+        c.name.toLowerCase().includes(searchLower) ||
+        c.description?.toLowerCase().includes(searchLower)
+      );
+    }
+    // Apply sorting
+    const sorted = [...filtered];
+    switch (sortBy) {
+      case "name-asc":
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case "name-desc":
+        return sorted.sort((a, b) => b.name.localeCompare(a.name));
+      default:
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+    }
+  }, [categories, search, sortBy]);
 
   // Get nonprofit count per category
   const nonprofitCountByCategory = React.useMemo(() => {
@@ -261,10 +273,10 @@ export function DirectoryClient({
             </div>
           </div>
 
-          {/* Category Filter and Sort - Dropdowns (only for nonprofits view) */}
-          {browseMode === "nonprofits" && (
-            <div className="flex flex-row gap-3 max-w-xl mx-auto">
-              {/* Category Filter - wider on mobile to prevent truncation */}
+          {/* Filter and Sort - Dropdowns */}
+          <div className="flex flex-row gap-3 max-w-xl mx-auto">
+            {/* Category Filter - only for nonprofits view */}
+            {browseMode === "nonprofits" && (
               <div className="relative flex-[3] sm:flex-1">
                 <select
                   value={selectedCategory || ""}
@@ -289,38 +301,38 @@ export function DirectoryClient({
                 )}
                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               </div>
+            )}
 
-              {/* Sort Dropdown - narrower on mobile */}
-              <div className="relative flex-[2] sm:flex-1">
-                <ArrowUpDown className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                {/* Mobile: short labels */}
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="sm:hidden flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-9 pr-10 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-0"
-                >
-                  {SORT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.shortLabel}
-                    </option>
-                  ))}
-                </select>
-                {/* Desktop: full labels */}
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="hidden sm:flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-9 pr-10 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-0"
-                >
-                  {SORT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              </div>
+            {/* Sort Dropdown - shows for both views */}
+            <div className={`relative ${browseMode === "nonprofits" ? "flex-[2] sm:flex-1" : "flex-1"}`}>
+              <ArrowUpDown className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              {/* Mobile: short labels */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="sm:hidden flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-9 pr-10 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-0"
+              >
+                {SORT_OPTIONS.filter(opt => browseMode === "nonprofits" || opt.value === "name-asc" || opt.value === "name-desc").map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.shortLabel}
+                  </option>
+                ))}
+              </select>
+              {/* Desktop: full labels */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="hidden sm:flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-9 pr-10 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-0"
+              >
+                {SORT_OPTIONS.filter(opt => browseMode === "nonprofits" || opt.value === "name-asc" || opt.value === "name-desc").map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             </div>
-          )}
+          </div>
 
           {/* Results count */}
           <p className="text-center text-sm text-slate-500">
