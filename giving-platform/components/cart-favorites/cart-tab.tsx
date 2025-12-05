@@ -330,7 +330,7 @@ export function CartTab() {
                 {/* Bottom row: Percentage controls */}
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => handlePercentageStep(allocation.targetId, allocation.percentage, -5)}
+                    onClick={() => handlePercentageStep(allocation.targetId, allocation.percentage, -1)}
                     disabled={allocation.percentage <= 0}
                     className="h-7 w-7 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -349,7 +349,7 @@ export function CartTab() {
                     <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">%</span>
                   </div>
                   <button
-                    onClick={() => handlePercentageStep(allocation.targetId, allocation.percentage, 5)}
+                    onClick={() => handlePercentageStep(allocation.targetId, allocation.percentage, 1)}
                     disabled={allocation.percentage >= 100}
                     className="h-7 w-7 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >

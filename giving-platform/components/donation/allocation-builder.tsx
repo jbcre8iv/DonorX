@@ -680,7 +680,7 @@ export function AllocationBuilder({
                   <div className="flex items-center gap-3 pl-13">
                     <div className="flex items-center gap-2 flex-1">
                       <button
-                        onClick={() => handlePercentageChange(item.id, item.percentage - 5)}
+                        onClick={() => handlePercentageChange(item.id, item.percentage - 1)}
                         className="h-10 w-10 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={item.percentage <= 0}
                       >
@@ -699,7 +699,7 @@ export function AllocationBuilder({
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">%</span>
                       </div>
                       <button
-                        onClick={() => handlePercentageChange(item.id, item.percentage + 5)}
+                        onClick={() => handlePercentageChange(item.id, item.percentage + 1)}
                         className="h-10 w-10 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={item.percentage >= 100}
                       >
