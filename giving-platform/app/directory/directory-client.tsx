@@ -274,6 +274,8 @@ export function DirectoryClient({
           </div>
 
           {/* Filter and Sort - Dropdowns */}
+          {/* Show filter row if: nonprofits view (category filter) OR grid view (sort dropdown) */}
+          {(browseMode === "nonprofits" || viewMode === "grid") && (
           <div className="flex flex-row gap-3 max-w-xl mx-auto">
             {/* Category Filter - only for nonprofits view */}
             {browseMode === "nonprofits" && (
@@ -303,7 +305,8 @@ export function DirectoryClient({
               </div>
             )}
 
-            {/* Sort Dropdown - shows for both views */}
+            {/* Sort Dropdown - only shows in grid view (table view uses column headers) */}
+            {viewMode === "grid" && (
             <div className={`relative ${browseMode === "nonprofits" ? "flex-[2] sm:flex-1" : "flex-1"}`}>
               <ArrowUpDown className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               {/* Mobile: short labels */}
@@ -332,7 +335,9 @@ export function DirectoryClient({
               </select>
               <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             </div>
+            )}
           </div>
+          )}
 
           {/* Results count */}
           <p className="text-center text-sm text-slate-500">
@@ -390,6 +395,8 @@ export function DirectoryClient({
                 <CategoryTable
                   categories={paginatedCategories}
                   nonprofitCounts={nonprofitCountByCategory}
+                  sortBy={sortBy}
+                  onSortChange={setSortBy}
                 />
                 {/* Pagination */}
                 {totalPages > 1 && (

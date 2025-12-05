@@ -2,15 +2,19 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { HandHeart, Check, Plus, ChevronDown, CreditCard } from "lucide-react";
+import { HandHeart, Check, Plus, ChevronDown, CreditCard, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { useToast } from "@/components/ui/toast";
 import type { Category } from "@/types/database";
 
+type SortOption = "name-asc" | "name-desc" | "category" | "recent";
+
 interface CategoryTableProps {
   categories: Category[];
   nonprofitCounts: Record<string, number>;
+  sortBy?: SortOption;
+  onSortChange?: (sort: SortOption) => void;
 }
 
 function CategoryRow({
@@ -265,7 +269,7 @@ function CategoryRow({
   );
 }
 
-export function CategoryTable({ categories, nonprofitCounts }: CategoryTableProps) {
+export function CategoryTable({ categories, nonprofitCounts, sortBy, onSortChange }: CategoryTableProps) {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
 
   if (categories.length === 0) {
@@ -280,12 +284,40 @@ export function CategoryTable({ categories, nonprofitCounts }: CategoryTableProp
     setExpandedId(expandedId === categoryId ? null : categoryId);
   };
 
+  const handleNameSort = () => {
+    if (!onSortChange) return;
+    onSortChange(sortBy === "name-asc" ? "name-desc" : "name-asc");
+  };
+
+  const renderSortIcon = () => {
+    if (!onSortChange) return null;
+    const isNameSort = sortBy === "name-asc" || sortBy === "name-desc";
+    if (isNameSort) {
+      return sortBy === "name-asc"
+        ? <ArrowUp className="h-3.5 w-3.5 text-blue-600" />
+        : <ArrowDown className="h-3.5 w-3.5 text-blue-600" />;
+    }
+    return null;
+  };
+
   return (
     <div className="sm:overflow-x-auto overflow-visible">
       <table className="w-full table-fixed sm:table-auto">
         <thead>
           <tr className="border-b border-slate-200 text-left text-sm text-slate-600">
-            <th className="pb-3 pl-3 font-medium">Category</th>
+            <th className="pb-3 pl-3 font-medium">
+              {onSortChange ? (
+                <button
+                  onClick={handleNameSort}
+                  className="flex items-center gap-1.5 hover:text-slate-900 transition-colors"
+                >
+                  Category
+                  {renderSortIcon()}
+                </button>
+              ) : (
+                "Category"
+              )}
+            </th>
             <th className="pb-3 font-medium hidden lg:table-cell">Description</th>
             <th className="pb-3 pr-6 font-medium text-right hidden sm:table-cell">Actions</th>
             <th className="pb-3 sm:hidden w-10"></th>
