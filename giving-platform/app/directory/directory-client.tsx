@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, LayoutGrid, List, ChevronDown, ArrowUpDown } from "lucide-react";
+import { Search, LayoutGrid, List, ChevronDown, ArrowUpDown, Building2, Tags } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { NonprofitCard } from "@/components/directory/nonprofit-card";
 import { NonprofitTable } from "@/components/directory/nonprofit-table";
+import { CategoryTable } from "@/components/directory/category-table";
 import { NonprofitModal } from "@/components/directory/nonprofit-modal";
 import { usePreferences } from "@/hooks/use-preferences";
 import { smartFilterNonprofit } from "@/lib/smart-search";
@@ -17,6 +18,7 @@ const ITEMS_PER_PAGE_GRID = 9;
 const ITEMS_PER_PAGE_TABLE = 25;
 
 type SortOption = "name-asc" | "name-desc" | "category" | "recent";
+type BrowseMode = "nonprofits" | "categories";
 
 const SORT_OPTIONS: { value: SortOption; label: string; shortLabel: string }[] = [
   { value: "name-asc", label: "Name (A-Z)", shortLabel: "A-Z" },
@@ -52,6 +54,7 @@ export function DirectoryClient({
   const [selectedNonprofit, setSelectedNonprofit] = React.useState<Nonprofit | null>(null);
   const [modalOpen, setModalOpen] = React.useState(false);
   const [currentPage, setCurrentPage] = React.useState(1);
+  const [browseMode, setBrowseMode] = React.useState<BrowseMode>("nonprofits");
 
   // View mode is now managed by preferences hook
   const viewMode = preferences.directory_view_mode || "grid";
@@ -74,10 +77,10 @@ export function DirectoryClient({
     setSelectedCategory(initialCategoryId);
   }, [initialCategoryId]);
 
-  // Reset to page 1 when filters, sort, or view mode change
+  // Reset to page 1 when filters, sort, view mode, or browse mode change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [search, selectedCategory, sortBy, viewMode]);
+  }, [search, selectedCategory, sortBy, viewMode, browseMode]);
 
   // First filter by search only (to determine which categories to show)
   const searchFilteredNonprofits = initialNonprofits.filter((nonprofit) =>
@@ -142,10 +145,37 @@ export function DirectoryClient({
   // const featuredNonprofits = filteredNonprofits.filter((n) => n.featured);
   // const otherNonprofits = filteredNonprofits.filter((n) => !n.featured);
 
+  // Filter categories by search (for categories view)
+  const filteredCategoriesForView = React.useMemo(() => {
+    if (!search.trim()) return categories;
+    const searchLower = search.toLowerCase();
+    return categories.filter((c) =>
+      c.name.toLowerCase().includes(searchLower) ||
+      c.description?.toLowerCase().includes(searchLower)
+    );
+  }, [categories, search]);
+
+  // Get nonprofit count per category
+  const nonprofitCountByCategory = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    initialNonprofits.forEach((n) => {
+      if (n.category_id) {
+        counts[n.category_id] = (counts[n.category_id] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [initialNonprofits]);
+
   // Pagination for all nonprofits (more items per page in table view)
   const itemsPerPage = viewMode === "table" ? ITEMS_PER_PAGE_TABLE : ITEMS_PER_PAGE_GRID;
-  const totalPages = Math.ceil(filteredNonprofits.length / itemsPerPage);
+  const totalPages = browseMode === "nonprofits"
+    ? Math.ceil(filteredNonprofits.length / itemsPerPage)
+    : Math.ceil(filteredCategoriesForView.length / itemsPerPage);
   const paginatedNonprofits = filteredNonprofits.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+  const paginatedCategories = filteredCategoriesForView.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -165,14 +195,14 @@ export function DirectoryClient({
 
         {/* Search and Filters */}
         <div className="mt-10 space-y-4">
-          <div className="flex items-center gap-3 max-w-xl mx-auto">
+          <div className="flex items-center gap-3 max-w-2xl mx-auto">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search nonprofits..."
+                placeholder={browseMode === "nonprofits" ? "Search nonprofits..." : "Search categories..."}
                 className="pl-10 pr-10"
               />
               {search && (
@@ -185,6 +215,30 @@ export function DirectoryClient({
                 </button>
               )}
             </div>
+            {/* Browse mode toggle - Orgs vs Categories */}
+            <div className="flex items-center rounded-lg border border-slate-200 p-1">
+              <Button
+                variant={browseMode === "nonprofits" ? "default" : "ghost"}
+                size="sm"
+                className="h-8 px-2 gap-1"
+                onClick={() => setBrowseMode("nonprofits")}
+                title="Browse nonprofits"
+              >
+                <Building2 className="h-4 w-4" />
+                <span className="hidden sm:inline text-xs">Orgs</span>
+              </Button>
+              <Button
+                variant={browseMode === "categories" ? "default" : "ghost"}
+                size="sm"
+                className="h-8 px-2 gap-1"
+                onClick={() => setBrowseMode("categories")}
+                title="Browse categories"
+              >
+                <Tags className="h-4 w-4" />
+                <span className="hidden sm:inline text-xs">Categories</span>
+              </Button>
+            </div>
+            {/* View mode toggle - Grid vs List */}
             <div className="flex items-center rounded-lg border border-slate-200 p-1">
               <Button
                 variant={viewMode === "grid" ? "default" : "ghost"}
@@ -207,107 +261,139 @@ export function DirectoryClient({
             </div>
           </div>
 
-          {/* Category Filter and Sort - Dropdowns */}
-          <div className="flex flex-row gap-3 max-w-xl mx-auto">
-            {/* Category Filter - wider on mobile to prevent truncation */}
-            <div className="relative flex-[3] sm:flex-1">
-              <select
-                value={selectedCategory || ""}
-                onChange={(e) => setSelectedCategory(e.target.value || null)}
-                className={`flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-0 ${selectedCategory ? "pr-16" : "pr-10"}`}
-              >
-                <option value="">All Categories</option>
-                {filteredCategories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.icon ? `${category.icon} ` : ""}{category.name}
-                  </option>
-                ))}
-              </select>
-              {selectedCategory && (
-                <button
-                  onClick={() => setSelectedCategory(null)}
-                  className="absolute right-8 top-1/2 -translate-y-1/2 h-5 w-5 flex items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 text-slate-500 hover:text-slate-700 transition-colors"
-                  aria-label="Clear category filter"
+          {/* Category Filter and Sort - Dropdowns (only for nonprofits view) */}
+          {browseMode === "nonprofits" && (
+            <div className="flex flex-row gap-3 max-w-xl mx-auto">
+              {/* Category Filter - wider on mobile to prevent truncation */}
+              <div className="relative flex-[3] sm:flex-1">
+                <select
+                  value={selectedCategory || ""}
+                  onChange={(e) => setSelectedCategory(e.target.value || null)}
+                  className={`flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-0 ${selectedCategory ? "pr-16" : "pr-10"}`}
                 >
-                  <span className="text-xs font-medium">×</span>
-                </button>
-              )}
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            </div>
+                  <option value="">All Categories</option>
+                  {filteredCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.icon ? `${category.icon} ` : ""}{category.name}
+                    </option>
+                  ))}
+                </select>
+                {selectedCategory && (
+                  <button
+                    onClick={() => setSelectedCategory(null)}
+                    className="absolute right-8 top-1/2 -translate-y-1/2 h-5 w-5 flex items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 text-slate-500 hover:text-slate-700 transition-colors"
+                    aria-label="Clear category filter"
+                  >
+                    <span className="text-xs font-medium">×</span>
+                  </button>
+                )}
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              </div>
 
-            {/* Sort Dropdown - narrower on mobile */}
-            <div className="relative flex-[2] sm:flex-1">
-              <ArrowUpDown className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              {/* Mobile: short labels */}
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="sm:hidden flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-9 pr-10 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-0"
-              >
-                {SORT_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.shortLabel}
-                  </option>
-                ))}
-              </select>
-              {/* Desktop: full labels */}
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="hidden sm:flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-9 pr-10 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-0"
-              >
-                {SORT_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              {/* Sort Dropdown - narrower on mobile */}
+              <div className="relative flex-[2] sm:flex-1">
+                <ArrowUpDown className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                {/* Mobile: short labels */}
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  className="sm:hidden flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-9 pr-10 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-0"
+                >
+                  {SORT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.shortLabel}
+                    </option>
+                  ))}
+                </select>
+                {/* Desktop: full labels */}
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  className="hidden sm:flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-9 pr-10 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-0"
+                >
+                  {SORT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Results count */}
           <p className="text-center text-sm text-slate-500">
-            Showing {filteredNonprofits.length} nonprofit{filteredNonprofits.length !== 1 ? "s" : ""}
+            {browseMode === "nonprofits" ? (
+              <>Showing {filteredNonprofits.length} nonprofit{filteredNonprofits.length !== 1 ? "s" : ""}</>
+            ) : (
+              <>Showing {filteredCategoriesForView.length} categor{filteredCategoriesForView.length !== 1 ? "ies" : "y"}</>
+            )}
           </p>
         </div>
 
-        {/* All Nonprofits - single unified list */}
+        {/* Content - Nonprofits or Categories */}
         <div className="mt-12 overflow-visible">
-          {paginatedNonprofits.length > 0 ? (
-            <>
-              {viewMode === "grid" ? (
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {paginatedNonprofits.map((nonprofit) => (
-                    <NonprofitCard
-                      key={nonprofit.id}
-                      nonprofit={nonprofit}
-                      onQuickView={handleQuickView}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <NonprofitTable
-                  nonprofits={paginatedNonprofits}
-                  onQuickView={handleQuickView}
-                  sortBy={sortBy}
-                  onSortChange={setSortBy}
-                />
-              )}
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                  className="mt-10"
-                />
-              )}
-            </>
+          {browseMode === "nonprofits" ? (
+            /* Nonprofits View */
+            paginatedNonprofits.length > 0 ? (
+              <>
+                {viewMode === "grid" ? (
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {paginatedNonprofits.map((nonprofit) => (
+                      <NonprofitCard
+                        key={nonprofit.id}
+                        nonprofit={nonprofit}
+                        onQuickView={handleQuickView}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <NonprofitTable
+                    nonprofits={paginatedNonprofits}
+                    onQuickView={handleQuickView}
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                  />
+                )}
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    className="mt-10"
+                  />
+                )}
+              </>
+            ) : (
+              <div className="text-center py-12 text-slate-500">
+                <p>No nonprofits found matching your criteria.</p>
+              </div>
+            )
           ) : (
-            <div className="text-center py-12 text-slate-500">
-              <p>No nonprofits found matching your criteria.</p>
-            </div>
+            /* Categories View */
+            paginatedCategories.length > 0 ? (
+              <>
+                <CategoryTable
+                  categories={paginatedCategories}
+                  nonprofitCounts={nonprofitCountByCategory}
+                />
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    className="mt-10"
+                  />
+                )}
+              </>
+            ) : (
+              <div className="text-center py-12 text-slate-500">
+                <p>No categories found matching your search.</p>
+              </div>
+            )
           )}
         </div>
       </div>
