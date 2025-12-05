@@ -1114,14 +1114,27 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   // Check if item is in draft allocations
   const isInDraft = useCallback(
     (nonprofitId?: string, categoryId?: string) => {
-      if (!donationDraft) return false;
-      return donationDraft.allocations.some(
+      // Check if in actual draft allocations
+      const inAllocations = donationDraft?.allocations.some(
         (a) =>
           (nonprofitId && a.type === "nonprofit" && a.targetId === nonprofitId) ||
           (categoryId && a.type === "category" && a.targetId === categoryId)
       );
+      if (inAllocations) return true;
+
+      // Also check if pending in rebalance suggestion (item added but waiting for user accept/decline)
+      if (rebalanceSuggestion) {
+        const inSuggestion = rebalanceSuggestion.allocations.some(
+          (a) =>
+            (nonprofitId && a.type === "nonprofit" && a.targetId === nonprofitId) ||
+            (categoryId && a.type === "category" && a.targetId === categoryId)
+        );
+        if (inSuggestion) return true;
+      }
+
+      return false;
     },
-    [donationDraft]
+    [donationDraft, rebalanceSuggestion]
   );
 
   // Add item directly to donation draft allocations (creates draft if none exists)
@@ -1187,20 +1200,11 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         })),
       ];
 
-      // Set the shared suggestion state
+      // Set the shared suggestion state (don't save to draft yet - wait for user to accept/decline)
       setRebalanceSuggestion({
         allocations: suggestedAllocations,
         newItemNames: allNewItems.map((i) => i.targetName),
       });
-
-      // Add new allocation with 0% to the draft
-      const updatedDraft: DonationDraft = {
-        ...donationDraft,
-        allocations: [...donationDraft.allocations, newItem],
-      };
-
-      // Save the updated draft
-      await saveDonationDraft(updatedDraft);
     },
     [donationDraft, saveDonationDraft, setActiveTab, setSidebarOpen, rebalanceSuggestion]
   );
