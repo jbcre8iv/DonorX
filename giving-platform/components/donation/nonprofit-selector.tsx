@@ -110,34 +110,36 @@ export function NonprofitSelector({
 
             {/* Tabs and View Toggle */}
             <div className="flex items-center justify-between gap-2">
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-1">
                 <button
                   onClick={() => setActiveTab("nonprofits")}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                    "flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors flex-1 sm:flex-none",
                     activeTab === "nonprofits"
                       ? "bg-blue-100 text-blue-700"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                   )}
                 >
-                  <Building2 className="h-4 w-4" />
-                  Nonprofits ({filteredNonprofits.length})
+                  <Building2 className="h-4 w-4 flex-shrink-0" />
+                  <span>Nonprofits</span>
+                  <span className="text-xs opacity-70">({filteredNonprofits.length})</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("categories")}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                    "flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors flex-1 sm:flex-none",
                     activeTab === "categories"
                       ? "bg-purple-100 text-purple-700"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                   )}
                 >
-                  <Tag className="h-4 w-4" />
-                  Categories ({filteredCategories.length})
+                  <Tag className="h-4 w-4 flex-shrink-0" />
+                  <span>Categories</span>
+                  <span className="text-xs opacity-70">({filteredCategories.length})</span>
                 </button>
               </div>
-              {/* View Toggle */}
-              <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+              {/* View Toggle - hidden on mobile */}
+              <div className="hidden sm:flex items-center gap-1 bg-slate-100 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode("grid")}
                   className={cn(
@@ -267,57 +269,25 @@ export function NonprofitSelector({
                       <img
                         src={nonprofit.logo_url}
                         alt={`${nonprofit.name} logo`}
-                        className="h-10 w-10 rounded-lg object-contain flex-shrink-0"
+                        className="h-12 w-12 rounded-lg object-contain flex-shrink-0 bg-slate-50"
                       />
                     ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600 font-semibold flex-shrink-0">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100 text-slate-600 font-semibold text-lg flex-shrink-0">
                         {nonprofit.name.charAt(0)}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-slate-900 truncate group-hover:text-blue-700 transition-colors">
-                          {nonprofit.name}
-                        </h3>
-                        {nonprofit.featured && (
-                          <Badge variant="success" className="text-xs flex-shrink-0">Featured</Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-slate-500">
-                        {nonprofit.category && (
-                          <span className="flex items-center gap-1">
-                            {nonprofit.category.icon && <span>{nonprofit.category.icon}</span>}
-                            {nonprofit.category.name}
-                          </span>
-                        )}
-                        {nonprofit.ein && (
-                          <>
-                            <span className="text-slate-300">•</span>
-                            <span>EIN: {nonprofit.ein}</span>
-                          </>
-                        )}
-                      </div>
+                      <h3 className="font-medium text-slate-900 group-hover:text-blue-700 transition-colors leading-tight">
+                        {nonprofit.name}
+                      </h3>
+                      <p className="text-sm text-slate-500 mt-0.5">
+                        {nonprofit.category?.name || "Nonprofit"}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {nonprofit.website && (
-                        <a
-                          href={nonprofit.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors"
-                          title="Visit website"
-                        >
-                          <Globe className="h-4 w-4" />
-                        </a>
-                      )}
-                      <Button
-                        size="sm"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-600 hover:bg-emerald-700"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add
-                      </Button>
+                    <div className="flex-shrink-0">
+                      <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                        <Plus className="h-5 w-5" />
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -375,26 +345,22 @@ export function NonprofitSelector({
                   className="group flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
                   onClick={() => handleSelect("category", category.id, category.name)}
                 >
-                  <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center text-xl flex-shrink-0">
+                  <div className="h-12 w-12 rounded-lg bg-purple-100 flex items-center justify-center text-2xl flex-shrink-0">
                     {category.icon || "📁"}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-medium text-slate-900 group-hover:text-purple-700 transition-colors">
+                    <h3 className="font-medium text-slate-900 group-hover:text-purple-700 transition-colors leading-tight">
                       {category.name}
                     </h3>
-                    {category.description && (
-                      <p className="text-sm text-slate-500 truncate">
-                        {category.description}
-                      </p>
-                    )}
+                    <p className="text-sm text-slate-500 mt-0.5">
+                      Category
+                    </p>
                   </div>
-                  <Button
-                    size="sm"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-purple-600 hover:bg-purple-700 flex-shrink-0"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add
-                  </Button>
+                  <div className="flex-shrink-0">
+                    <div className="h-10 w-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                      <Plus className="h-5 w-5" />
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
