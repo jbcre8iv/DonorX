@@ -1,11 +1,23 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, Minus, Plus, Sparkles } from "lucide-react";
-import { useCartFavorites, type CartItem } from "@/contexts/cart-favorites-context";
+import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, Minus, Plus, Sparkles, Check } from "lucide-react";
+import { useCartFavorites, type CartItem, type DraftAllocation, type DonationDraft } from "@/contexts/cart-favorites-context";
 import { Button } from "@/components/ui/button";
+
+// Types for rebalance suggestions
+interface RebalanceSuggestion {
+  allocations: DraftAllocation[];
+  newItemNames: string[];
+}
+
+interface RemovalRebalanceSuggestion {
+  allocations: DraftAllocation[];
+  removedItemName: string;
+  removedPercentage: number;
+}
 
 export function CartTab() {
   const router = useRouter();
@@ -29,6 +41,13 @@ export function CartTab() {
 
   // Track percentage input values as strings to allow empty field during editing
   const [percentageInputs, setPercentageInputs] = useState<Record<string, string>>({});
+
+  // AI Rebalance suggestion states
+  const [rebalanceSuggestion, setRebalanceSuggestion] = useState<RebalanceSuggestion | null>(null);
+  const [removalSuggestion, setRemovalSuggestion] = useState<RemovalRebalanceSuggestion | null>(null);
+
+  // Track previous allocations to detect changes
+  const prevAllocationsRef = useRef<DraftAllocation[] | null>(null);
 
   // Handle percentage input change - allows empty string during editing
   const handlePercentageInputChange = useCallback((targetId: string, value: string) => {
@@ -89,6 +108,203 @@ export function CartTab() {
     // Clear input cache to show new values
     setPercentageInputs({});
   }, [donationDraft, saveDonationDraft]);
+
+  // Generate a smart rebalance suggestion when adding to existing allocations
+  const generateRebalanceSuggestion = useCallback((
+    currentAllocations: DraftAllocation[],
+    newItems: DraftAllocation[]
+  ): DraftAllocation[] => {
+    const totalItems = currentAllocations.length + newItems.length;
+    const equalPercentage = Math.floor(100 / totalItems);
+    const remainder = 100 - (equalPercentage * totalItems);
+
+    const rebalanced: DraftAllocation[] = currentAllocations.map((alloc, index) => ({
+      ...alloc,
+      percentage: equalPercentage + (index === 0 ? remainder : 0),
+    }));
+
+    for (const newItem of newItems) {
+      rebalanced.push({
+        ...newItem,
+        percentage: equalPercentage,
+      });
+    }
+
+    return rebalanced;
+  }, []);
+
+  // Generate a smart rebalance suggestion when removing an allocation
+  const generateRemovalRebalanceSuggestion = useCallback((
+    remainingAllocations: DraftAllocation[],
+    freedPercentage: number
+  ): DraftAllocation[] => {
+    const currentTotal = remainingAllocations.reduce((sum, item) => sum + item.percentage, 0);
+
+    if (currentTotal === 0) {
+      const equalPercentage = Math.floor(100 / remainingAllocations.length);
+      const remainder = 100 - (equalPercentage * remainingAllocations.length);
+      return remainingAllocations.map((alloc, index) => ({
+        ...alloc,
+        percentage: equalPercentage + (index === 0 ? remainder : 0),
+      }));
+    }
+
+    return remainingAllocations.map((alloc, index) => {
+      const proportion = alloc.percentage / currentTotal;
+      const additionalPercentage = Math.round(freedPercentage * proportion);
+
+      if (index === remainingAllocations.length - 1) {
+        const othersTotal = remainingAllocations
+          .slice(0, -1)
+          .reduce((sum, a) => {
+            const prop = a.percentage / currentTotal;
+            return sum + a.percentage + Math.round(freedPercentage * prop);
+          }, 0);
+        return {
+          ...alloc,
+          percentage: 100 - othersTotal,
+        };
+      }
+
+      return {
+        ...alloc,
+        percentage: alloc.percentage + additionalPercentage,
+      };
+    });
+  }, []);
+
+  // Handle removal with smart rebalance suggestion
+  const handleRemoveWithSuggestion = useCallback((targetId: string) => {
+    if (!donationDraft) return;
+
+    const itemToRemove = donationDraft.allocations.find((a) => a.targetId === targetId);
+    if (!itemToRemove) return;
+
+    const remainingAllocations = donationDraft.allocations.filter((a) => a.targetId !== targetId);
+
+    // If only one item left or removed item had 0%, just remove directly
+    if (remainingAllocations.length === 0 || itemToRemove.percentage === 0) {
+      removeFromDraft(targetId);
+      return;
+    }
+
+    // Generate smart rebalance suggestion for remaining items
+    const suggestedAllocations = generateRemovalRebalanceSuggestion(
+      remainingAllocations,
+      itemToRemove.percentage
+    );
+
+    setRemovalSuggestion({
+      allocations: suggestedAllocations,
+      removedItemName: itemToRemove.targetName,
+      removedPercentage: itemToRemove.percentage,
+    });
+  }, [donationDraft, removeFromDraft, generateRemovalRebalanceSuggestion]);
+
+  // Accept removal rebalance suggestion
+  const handleAcceptRemovalRebalance = useCallback(async () => {
+    if (!removalSuggestion || !donationDraft) return;
+
+    await saveDonationDraft({
+      ...donationDraft,
+      allocations: removalSuggestion.allocations,
+    });
+    setRemovalSuggestion(null);
+    setPercentageInputs({});
+  }, [removalSuggestion, donationDraft, saveDonationDraft]);
+
+  // Decline removal rebalance - just remove without rebalancing
+  const handleDeclineRemovalRebalance = useCallback(async () => {
+    if (!removalSuggestion || !donationDraft) return;
+
+    // Keep original percentages for remaining items
+    const remainingOriginalAllocations = donationDraft.allocations.filter(
+      (a) => removalSuggestion.allocations.some((s) => s.targetId === a.targetId)
+    );
+
+    if (remainingOriginalAllocations.length === 0) {
+      await clearDonationDraft();
+    } else {
+      await saveDonationDraft({
+        ...donationDraft,
+        allocations: remainingOriginalAllocations,
+      });
+    }
+    setRemovalSuggestion(null);
+  }, [removalSuggestion, donationDraft, saveDonationDraft, clearDonationDraft]);
+
+  // Accept add rebalance suggestion
+  const handleAcceptRebalance = useCallback(async () => {
+    if (!rebalanceSuggestion || !donationDraft) return;
+
+    await saveDonationDraft({
+      ...donationDraft,
+      allocations: rebalanceSuggestion.allocations,
+    });
+    setRebalanceSuggestion(null);
+    setPercentageInputs({});
+  }, [rebalanceSuggestion, donationDraft, saveDonationDraft]);
+
+  // Decline add rebalance - keep current percentages, add new items with small %
+  const handleDeclineRebalance = useCallback(async () => {
+    if (!rebalanceSuggestion || !donationDraft) return;
+
+    // Get the new items that were suggested
+    const newItems = rebalanceSuggestion.allocations.filter(
+      (a) => !donationDraft.allocations.some((existing) => existing.targetId === a.targetId)
+    );
+
+    // Calculate remaining percentage
+    const currentTotal = donationDraft.allocations.reduce((sum, a) => sum + a.percentage, 0);
+    const remainingPercentage = 100 - currentTotal;
+    const perItemPercentage = Math.min(Math.floor(remainingPercentage / newItems.length), 25);
+    const defaultPercentage = perItemPercentage > 0 ? perItemPercentage : 10;
+
+    await saveDonationDraft({
+      ...donationDraft,
+      allocations: [
+        ...donationDraft.allocations,
+        ...newItems.map((item) => ({ ...item, percentage: defaultPercentage })),
+      ],
+    });
+    setRebalanceSuggestion(null);
+  }, [rebalanceSuggestion, donationDraft, saveDonationDraft]);
+
+  // Detect when new items are added and show rebalance suggestion
+  useEffect(() => {
+    if (!donationDraft) {
+      prevAllocationsRef.current = null;
+      return;
+    }
+
+    const prevAllocations = prevAllocationsRef.current;
+    const currentAllocations = donationDraft.allocations;
+
+    // Skip if this is the first load or if there's already a suggestion showing
+    if (prevAllocations === null || rebalanceSuggestion || removalSuggestion) {
+      prevAllocationsRef.current = currentAllocations;
+      return;
+    }
+
+    // Find newly added items
+    const newItems = currentAllocations.filter(
+      (current) => !prevAllocations.some((prev) => prev.targetId === current.targetId)
+    );
+
+    // If new items were added and there were existing items, show suggestion
+    if (newItems.length > 0 && prevAllocations.length > 0) {
+      const suggestedAllocations = generateRebalanceSuggestion(
+        prevAllocations,
+        newItems
+      );
+      setRebalanceSuggestion({
+        allocations: suggestedAllocations,
+        newItemNames: newItems.map((item) => item.targetName),
+      });
+    }
+
+    prevAllocationsRef.current = currentAllocations;
+  }, [donationDraft, rebalanceSuggestion, removalSuggestion, generateRebalanceSuggestion]);
 
   // Calculate total percentage for draft allocations
   const totalDraftPercentage = donationDraft?.allocations.reduce(
@@ -296,9 +512,10 @@ export function CartTab() {
 
                   {/* Remove button */}
                   <button
-                    onClick={() => removeFromDraft(allocation.targetId)}
+                    onClick={() => handleRemoveWithSuggestion(allocation.targetId)}
                     className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
                     title="Remove from giving list"
+                    disabled={!!rebalanceSuggestion || !!removalSuggestion}
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -344,10 +561,150 @@ export function CartTab() {
             ))}
           </div>
 
-          {/* Tip */}
-          <p className="mt-4 text-xs text-slate-400 text-center">
-            Browse the directory to add more nonprofits or categories
-          </p>
+          {/* AI Rebalance Suggestion (Adding) */}
+          {rebalanceSuggestion && (
+            <div className="mt-3 p-3 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-3">
+              <div className="flex items-start gap-2">
+                <div className="p-1.5 rounded-lg bg-emerald-100 flex-shrink-0">
+                  <Sparkles className="h-3.5 w-3.5 text-emerald-600 animate-pulse" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-emerald-900 text-sm">AI Suggested Rebalance</h4>
+                  <p className="text-xs text-emerald-700 mt-0.5">
+                    Adding{" "}
+                    {rebalanceSuggestion.newItemNames.map((name, i) => (
+                      <span key={name}>
+                        <span className="font-medium">{name}</span>
+                        {i < rebalanceSuggestion.newItemNames.length - 2 && ", "}
+                        {i === rebalanceSuggestion.newItemNames.length - 2 && " and "}
+                      </span>
+                    ))}{" "}
+                    to your allocation. Here&apos;s a recommended distribution:
+                  </p>
+                </div>
+              </div>
+
+              {/* Suggested allocation preview */}
+              <div className="space-y-1.5">
+                {rebalanceSuggestion.allocations.map((alloc) => {
+                  const isNewItem = !donationDraft?.allocations.some((a) => a.targetId === alloc.targetId);
+                  return (
+                    <div
+                      key={alloc.targetId}
+                      className={`flex items-center justify-between text-xs py-1.5 px-2 rounded ${
+                        isNewItem
+                          ? "bg-emerald-100 border border-emerald-200"
+                          : "bg-white/60"
+                      }`}
+                    >
+                      <span className={`truncate mr-2 ${
+                        isNewItem ? "font-medium text-emerald-900" : "text-slate-700"
+                      }`}>
+                        {alloc.targetName}
+                        {isNewItem && (
+                          <span className="ml-1 text-emerald-600">(new)</span>
+                        )}
+                      </span>
+                      <span className="font-medium text-slate-900">{alloc.percentage}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Accept/Decline buttons */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleAcceptRebalance}
+                  size="sm"
+                  className="flex-1 h-8 text-xs"
+                >
+                  <Check className="h-3 w-3 mr-1" />
+                  Apply Suggestion
+                </Button>
+                <Button
+                  onClick={handleDeclineRebalance}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 h-8 text-xs"
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Manual Adjust
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* AI Rebalance Suggestion (Removing) */}
+          {removalSuggestion && (
+            <div className="mt-3 p-3 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-3">
+              <div className="flex items-start gap-2">
+                <div className="p-1.5 rounded-lg bg-emerald-100 flex-shrink-0">
+                  <Sparkles className="h-3.5 w-3.5 text-emerald-600 animate-pulse" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-emerald-900 text-sm">
+                    Redistribute {removalSuggestion.removedPercentage}%?
+                  </h4>
+                  <p className="text-xs text-emerald-700 mt-0.5">
+                    Removing <span className="font-medium">{removalSuggestion.removedItemName}</span> frees up {removalSuggestion.removedPercentage}%.
+                    Here&apos;s a suggested redistribution:
+                  </p>
+                </div>
+              </div>
+
+              {/* Suggested allocation preview */}
+              <div className="space-y-1.5">
+                {removalSuggestion.allocations.map((alloc) => {
+                  const original = donationDraft?.allocations.find((a) => a.targetId === alloc.targetId);
+                  const change = original ? alloc.percentage - original.percentage : 0;
+                  return (
+                    <div
+                      key={alloc.targetId}
+                      className="flex items-center justify-between text-xs py-1.5 px-2 rounded bg-white/60"
+                    >
+                      <span className="truncate mr-2 text-slate-700">
+                        {alloc.targetName}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {change > 0 && (
+                          <span className="text-emerald-600 font-medium">+{change}%</span>
+                        )}
+                        <span className="font-medium text-slate-900">{alloc.percentage}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Accept/Decline buttons */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleAcceptRemovalRebalance}
+                  size="sm"
+                  className="flex-1 h-8 text-xs"
+                >
+                  <Check className="h-3 w-3 mr-1" />
+                  Apply Redistribution
+                </Button>
+                <Button
+                  onClick={handleDeclineRemovalRebalance}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 h-8 text-xs"
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Just Remove
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Tip - only show when no suggestions are active */}
+          {!rebalanceSuggestion && !removalSuggestion && (
+            <p className="mt-4 text-xs text-slate-400 text-center">
+              Browse the directory to add more nonprofits or categories
+            </p>
+          )}
         </div>
       </div>
     );
