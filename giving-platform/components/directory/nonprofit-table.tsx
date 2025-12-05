@@ -285,14 +285,16 @@ function NonprofitRow({
         </td>
         {/* Mobile expand/status indicator */}
         <td className="py-3 sm:hidden">
-          <div className="flex items-center gap-1">
-            {/* In-draft indicator - pulsating green dot, visible when collapsed */}
-            {inDraft && !isExpanded && (
-              <span className="relative flex h-3 w-3 mr-1">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500"></span>
-              </span>
-            )}
+          <div className="flex items-center">
+            {/* Fixed-width container for indicator - keeps chevron aligned */}
+            <div className="w-5 flex items-center justify-center">
+              {inDraft && !isExpanded && (
+                <span className="relative flex h-3 w-3">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500"></span>
+                </span>
+              )}
+            </div>
             <button
               onClick={onToggleExpand}
               className="h-8 w-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
