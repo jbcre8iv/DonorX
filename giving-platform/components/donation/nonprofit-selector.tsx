@@ -105,7 +105,6 @@ export function NonprofitSelector({
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search nonprofits and categories..."
                 className="pl-10"
-                autoFocus
               />
             </div>
 
