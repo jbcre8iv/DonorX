@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { HandHeart, Check, Plus, ChevronDown, CreditCard, ArrowUp, ArrowDown } from "lucide-react";
+import { Check, ChevronDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { useToast } from "@/components/ui/toast";
@@ -15,6 +15,7 @@ interface CategoryTableProps {
   nonprofitCounts: Record<string, number>;
   sortBy?: SortOption;
   onSortChange?: (sort: SortOption) => void;
+  onViewOrgs?: (categoryId: string) => void;
 }
 
 function CategoryRow({
@@ -22,51 +23,32 @@ function CategoryRow({
   nonprofitCount,
   isExpanded,
   onToggleExpand,
+  onViewOrgs,
 }: {
   category: Category;
   nonprofitCount: number;
   isExpanded: boolean;
   onToggleExpand: () => void;
+  onViewOrgs?: (categoryId: string) => void;
 }) {
-  const { addToCart, isInCart, hasDraft, addToDraft, isInDraft } = useCartFavorites();
+  const { hasDraft, addToDraft, isInDraft } = useCartFavorites();
   const { addToast } = useToast();
 
-  const inCart = isInCart(undefined, category.id);
   const inDraft = isInDraft(undefined, category.id);
 
-  const handleAddToCartOrDraft = async (e: React.MouseEvent) => {
+  // Smart donate handler - adds to current draft when a donation is in progress
+  const handleSmartDonate = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // If there's an active draft, add directly to the draft allocations
-    if (hasDraft) {
-      if (!inDraft) {
-        await addToDraft({
-          type: "category",
-          targetId: category.id,
-          targetName: category.name,
-        });
-        addToast(`Added ${category.name} category to your donation`, "success", 3000);
-      }
-      return;
-    }
-
-    // Otherwise, add to cart
-    if (!inCart) {
-      const result = await addToCart({
-        categoryId: category.id,
-        category: {
-          id: category.id,
-          name: category.name,
-          icon: category.icon || undefined,
-        },
+    // Only called when hasDraft is true (the Link handles navigation otherwise)
+    if (!inDraft) {
+      await addToDraft({
+        type: "category",
+        targetId: category.id,
+        targetName: category.name,
       });
-
-      if (!result.success) {
-        if (result.reason === "cart_full") {
-          addToast("Your giving list is full (max 10 items).", "warning");
-        }
-      }
+      addToast(`Added ${category.name} category to your donation`, "success", 3000);
     }
   };
 
@@ -126,67 +108,46 @@ function CategoryRow({
         {/* Desktop actions - hidden on mobile */}
         <td className="py-3 pr-6 hidden sm:table-cell rounded-r-lg">
           <div className="flex items-center gap-1 justify-end">
-            {/* Donate to category */}
-            <Button asChild size="sm" className="h-8">
-              <Link href={`/donate?category=${category.id}`}>Donate</Link>
-            </Button>
-            {/* Add to donation/cart */}
-            {hasDraft ? (
-              <div className="relative group/tip">
+            {/* Smart Donate Button - adapts based on whether there's an active draft */}
+            <div className="relative group/tip">
+              {hasDraft ? (
+                // Draft active: clicking adds to current donation
                 <Button
-                  variant={inDraft ? "secondary" : "outline"}
                   size="sm"
-                  className={`h-9 w-9 p-0 rounded-xl cursor-pointer ${!inDraft ? "text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md" : ""}`}
-                  onClick={handleAddToCartOrDraft}
+                  className={`h-8 ${inDraft ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}
+                  onClick={handleSmartDonate}
                   disabled={inDraft}
                 >
                   {inDraft ? (
-                    <Check className="h-4 w-4" />
+                    <>
+                      <Check className="h-3.5 w-3.5 mr-1.5" />
+                      Added
+                    </>
                   ) : (
-                    <span className="flex items-center gap-0.5">
-                      <Plus className="h-3 w-3" />
-                      <CreditCard className="h-4 w-4" />
-                    </span>
+                    "Donate"
                   )}
                 </Button>
-                <span className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
-                  {inDraft ? "In donation" : "Add to donation"}
-                </span>
-              </div>
-            ) : (
-              <div className="relative group/tip">
-                <Button
-                  variant={inCart ? "secondary" : "outline"}
-                  size="sm"
-                  className={`h-9 w-9 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer`}
-                  onClick={handleAddToCartOrDraft}
-                  disabled={inCart}
-                >
-                  {inCart ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <span className="flex items-center gap-0.5">
-                      <Plus className="h-3 w-3" />
-                      <HandHeart className="h-4 w-4" />
-                    </span>
-                  )}
+              ) : (
+                // No draft: navigates to donate page
+                <Button asChild size="sm" className="h-8">
+                  <Link href={`/donate?category=${category.id}`}>Donate</Link>
                 </Button>
+              )}
+              {hasDraft && (
                 <span className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
-                  {inCart ? "In giving list" : "Add to giving list"}
+                  {inDraft ? "Already in donation" : "Add to current donation"}
                 </span>
-              </div>
-            )}
+              )}
+            </div>
             {/* View nonprofits in category */}
             <div className="relative group/tip">
               <Button
                 variant="outline"
                 size="sm"
                 className="h-9 px-3 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer"
-                asChild
+                onClick={() => onViewOrgs?.(category.id)}
               >
-                <Link href={`/directory?category=${category.slug}`}>
-                  View Orgs
-                </Link>
+                View Orgs
               </Button>
               <span className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
                 View nonprofits in this category
@@ -210,44 +171,28 @@ function CategoryRow({
         <tr className="sm:hidden bg-blue-50 shadow-[inset_0_0_0_2px_rgb(147,197,253)]">
           <td colSpan={2} className="py-3 px-4">
             <div className="flex items-center gap-2 justify-center flex-wrap">
-              {/* Donate to category */}
-              <Button asChild size="sm" className="h-10 px-10">
-                <Link href={`/donate?category=${category.id}`}>Donate</Link>
-              </Button>
-              {/* Add to donation/cart */}
+              {/* Smart Donate Button - adapts based on whether there's an active draft */}
               {hasDraft ? (
+                // Draft active: clicking adds to current donation
                 <Button
-                  variant={inDraft ? "secondary" : "outline"}
                   size="sm"
-                  className={`h-10 w-10 p-0 rounded-xl cursor-pointer ${!inDraft ? "text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md" : ""}`}
-                  onClick={handleAddToCartOrDraft}
+                  className={`h-10 px-6 ${inDraft ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}
+                  onClick={handleSmartDonate}
                   disabled={inDraft}
                 >
                   {inDraft ? (
-                    <Check className="h-5 w-5" />
+                    <>
+                      <Check className="h-4 w-4 mr-1.5" />
+                      Added
+                    </>
                   ) : (
-                    <span className="flex items-center gap-0.5">
-                      <Plus className="h-3.5 w-3.5" />
-                      <CreditCard className="h-5 w-5" />
-                    </span>
+                    "Donate"
                   )}
                 </Button>
               ) : (
-                <Button
-                  variant={inCart ? "secondary" : "outline"}
-                  size="sm"
-                  className={`h-10 w-10 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer`}
-                  onClick={handleAddToCartOrDraft}
-                  disabled={inCart}
-                >
-                  {inCart ? (
-                    <Check className="h-5 w-5" />
-                  ) : (
-                    <span className="flex items-center gap-0.5">
-                      <Plus className="h-3.5 w-3.5" />
-                      <HandHeart className="h-5 w-5" />
-                    </span>
-                  )}
+                // No draft: navigates to donate page
+                <Button asChild size="sm" className="h-10 px-10">
+                  <Link href={`/donate?category=${category.id}`}>Donate</Link>
                 </Button>
               )}
               {/* View nonprofits */}
@@ -255,11 +200,9 @@ function CategoryRow({
                 variant="outline"
                 size="sm"
                 className="h-10 px-4 rounded-xl"
-                asChild
+                onClick={() => onViewOrgs?.(category.id)}
               >
-                <Link href={`/directory?category=${category.slug}`}>
-                  View Orgs
-                </Link>
+                View Orgs
               </Button>
             </div>
           </td>
@@ -269,7 +212,7 @@ function CategoryRow({
   );
 }
 
-export function CategoryTable({ categories, nonprofitCounts, sortBy, onSortChange }: CategoryTableProps) {
+export function CategoryTable({ categories, nonprofitCounts, sortBy, onSortChange, onViewOrgs }: CategoryTableProps) {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
 
   if (categories.length === 0) {
@@ -331,6 +274,7 @@ export function CategoryTable({ categories, nonprofitCounts, sortBy, onSortChang
               nonprofitCount={nonprofitCounts[category.id] || 0}
               isExpanded={expandedId === category.id}
               onToggleExpand={() => handleToggleExpand(category.id)}
+              onViewOrgs={onViewOrgs}
             />
           ))}
         </tbody>

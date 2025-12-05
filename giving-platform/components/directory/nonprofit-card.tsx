@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Globe, Eye, Heart, HandHeart, Check, Plus, CreditCard } from "lucide-react";
+import { Globe, Eye, Heart, Check } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,48 +15,26 @@ interface NonprofitCardProps {
 }
 
 export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
-  const { addToCart, isInCart, toggleFavorite, isFavorite, hasDraft, addToDraft, isInDraft, userId } = useCartFavorites();
+  const { toggleFavorite, isFavorite, hasDraft, addToDraft, isInDraft, userId } = useCartFavorites();
   const { addToast } = useToast();
   const isLoggedIn = !!userId;
 
-  const inCart = isInCart(nonprofit.id);
   const inDraft = isInDraft(nonprofit.id);
   const favorited = isFavorite(nonprofit.id);
 
-  const handleAddToCartOrDraft = async (e: React.MouseEvent) => {
+  // Smart donate handler - adds to current draft when a donation is in progress
+  const handleSmartDonate = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // If there's an active draft, add directly to the draft allocations
-    if (hasDraft) {
-      if (!inDraft) {
-        await addToDraft({
-          type: "nonprofit",
-          targetId: nonprofit.id,
-          targetName: nonprofit.name,
-        });
-        addToast(`Added ${nonprofit.name} to your donation`, "success", 3000);
-      }
-      return;
-    }
-
-    // Otherwise, add to cart as before
-    if (!inCart) {
-      const result = await addToCart({
-        nonprofitId: nonprofit.id,
-        nonprofit: {
-          id: nonprofit.id,
-          name: nonprofit.name,
-          logoUrl: nonprofit.logo_url || undefined,
-          mission: nonprofit.mission || undefined,
-        },
+    // Only called when hasDraft is true (the Link handles navigation otherwise)
+    if (!inDraft) {
+      await addToDraft({
+        type: "nonprofit",
+        targetId: nonprofit.id,
+        targetName: nonprofit.name,
       });
-
-      if (!result.success) {
-        if (result.reason === "cart_full") {
-          addToast("Your giving list is full (max 10 items).", "warning");
-        }
-      }
+      addToast(`Added ${nonprofit.name} to your donation`, "success", 3000);
     }
   };
 
@@ -150,55 +128,37 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
         )}
 
         <div className="mt-4 flex items-center gap-2">
-          <Button asChild size="sm" className="flex-1">
-            <Link href={`/donate?nonprofit=${nonprofit.id}`}>Donate</Link>
-          </Button>
-          {/* Add to donation/cart button - changes based on draft state */}
-          {hasDraft ? (
-            <div className="relative group/btn">
+          {/* Smart Donate Button - adapts based on whether there's an active draft */}
+          <div className="relative group/btn flex-1">
+            {hasDraft ? (
+              // Draft active: clicking adds to current donation
               <Button
-                variant={inDraft ? "secondary" : "outline"}
                 size="sm"
-                onClick={handleAddToCartOrDraft}
+                className={`w-full ${inDraft ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}
+                onClick={handleSmartDonate}
                 disabled={inDraft}
-                className={`h-9 w-9 p-0 rounded-xl cursor-pointer ${!inDraft ? "text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md" : ""}`}
               >
                 {inDraft ? (
-                  <Check className="h-4 w-4" />
+                  <>
+                    <Check className="h-3.5 w-3.5 mr-1.5" />
+                    Added
+                  </>
                 ) : (
-                  <span className="flex items-center gap-0.5">
-                    <Plus className="h-3 w-3" />
-                    <CreditCard className="h-4 w-4" />
-                  </span>
+                  "Donate"
                 )}
               </Button>
-              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
-                {inDraft ? "In donation" : "Add to donation"}
-              </span>
-            </div>
-          ) : (
-            <div className="relative group/btn">
-              <Button
-                variant={inCart ? "secondary" : "outline"}
-                size="sm"
-                onClick={handleAddToCartOrDraft}
-                disabled={inCart}
-                className="h-9 w-9 p-0 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer"
-              >
-                {inCart ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  <span className="flex items-center gap-0.5">
-                    <Plus className="h-3 w-3" />
-                    <HandHeart className="h-4 w-4" />
-                  </span>
-                )}
+            ) : (
+              // No draft: navigates to donate page
+              <Button asChild size="sm" className="w-full">
+                <Link href={`/donate?nonprofit=${nonprofit.id}`}>Donate</Link>
               </Button>
+            )}
+            {hasDraft && (
               <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
-                {inCart ? "In giving list" : "Add to giving list"}
+                {inDraft ? "Already in donation" : "Add to current donation"}
               </span>
-            </div>
-          )}
+            )}
+          </div>
           {onQuickView && (
             <div className="relative group/btn">
               <Button

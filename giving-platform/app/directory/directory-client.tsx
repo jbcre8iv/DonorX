@@ -72,6 +72,12 @@ export function DirectoryClient({
     setSelectedNonprofit(null);
   };
 
+  // Handle "View Orgs" click from category table - switch to nonprofits view with category filter
+  const handleViewOrgsFromCategory = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    setBrowseMode("nonprofits");
+  };
+
   // Update selected category when URL changes
   React.useEffect(() => {
     setSelectedCategory(initialCategoryId);
@@ -397,6 +403,7 @@ export function DirectoryClient({
                   nonprofitCounts={nonprofitCountByCategory}
                   sortBy={sortBy}
                   onSortChange={setSortBy}
+                  onViewOrgs={handleViewOrgsFromCategory}
                 />
                 {/* Pagination */}
                 {totalPages > 1 && (
