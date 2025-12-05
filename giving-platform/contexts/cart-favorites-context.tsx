@@ -68,6 +68,12 @@ export interface DonationDraft {
   updatedAt?: string;
 }
 
+// Rebalance suggestion types (shared between sidebar and donate page)
+export interface RebalanceSuggestion {
+  allocations: DraftAllocation[];
+  newItemNames: string[];
+}
+
 // Result type for addToCart operation
 export type AddToCartResult =
   | { success: true }
@@ -122,6 +128,12 @@ interface CartFavoritesContextType {
   updateDraftAllocation: (targetId: string, percentage: number) => Promise<void>;
   isInDraft: (nonprofitId?: string, categoryId?: string) => boolean;
 
+  // Rebalance Suggestion (shared between sidebar and donate page)
+  rebalanceSuggestion: RebalanceSuggestion | null;
+  setRebalanceSuggestion: (suggestion: RebalanceSuggestion | null) => void;
+  applyRebalanceSuggestion: () => Promise<void>;
+  declineRebalanceSuggestion: () => Promise<void>;
+
   // UI State
   isSidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
@@ -155,6 +167,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   const [activeTab, setActiveTab] = useState<"cart" | "favorites">("cart");
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Shared rebalance suggestion state (synced between sidebar and donate page)
+  const [rebalanceSuggestion, setRebalanceSuggestion] = useState<RebalanceSuggestion | null>(null);
 
   // Track when we're doing a local draft operation to ignore our own realtime updates
   const isLocalDraftOperation = useRef(false);
@@ -1126,16 +1141,52 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       );
       if (alreadyInDraft) return;
 
-      // Add new allocation with 0% - the sidebar will show a rebalance suggestion
+      // Create the new item
+      const newItem: DraftAllocation = { ...item, percentage: 0 };
+
+      // Get existing items with percentage > 0 (the ones that will be rebalanced)
+      const existingItems = donationDraft.allocations;
+
+      // Check if there's already a pending suggestion and add to it
+      const pendingNewItems = rebalanceSuggestion
+        ? rebalanceSuggestion.allocations.filter(
+            (a) => !existingItems.some((e) => e.targetId === a.targetId)
+          )
+        : [];
+      const allNewItems = [...pendingNewItems, newItem];
+
+      // Generate rebalance suggestion
+      const totalItems = existingItems.length + allNewItems.length;
+      const equalPercentage = Math.floor(100 / totalItems);
+      const remainder = 100 - (equalPercentage * totalItems);
+
+      const suggestedAllocations: DraftAllocation[] = [
+        ...existingItems.map((alloc, index) => ({
+          ...alloc,
+          percentage: equalPercentage + (index === 0 ? remainder : 0),
+        })),
+        ...allNewItems.map((item) => ({
+          ...item,
+          percentage: equalPercentage,
+        })),
+      ];
+
+      // Set the shared suggestion state
+      setRebalanceSuggestion({
+        allocations: suggestedAllocations,
+        newItemNames: allNewItems.map((i) => i.targetName),
+      });
+
+      // Add new allocation with 0% to the draft
       const updatedDraft: DonationDraft = {
         ...donationDraft,
-        allocations: [...donationDraft.allocations, { ...item, percentage: 0 }],
+        allocations: [...donationDraft.allocations, newItem],
       };
 
       // Save the updated draft
       await saveDonationDraft(updatedDraft);
     },
-    [donationDraft, saveDonationDraft, setActiveTab, setSidebarOpen]
+    [donationDraft, saveDonationDraft, setActiveTab, setSidebarOpen, rebalanceSuggestion]
   );
 
   // Remove item from donation draft allocations
@@ -1196,6 +1247,24 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     [donationDraft, saveDonationDraft]
   );
 
+  // Apply the shared rebalance suggestion (updates draft with suggested allocations)
+  const applyRebalanceSuggestion = useCallback(async () => {
+    if (!rebalanceSuggestion || !donationDraft) return;
+
+    const updatedDraft: DonationDraft = {
+      ...donationDraft,
+      allocations: rebalanceSuggestion.allocations,
+    };
+
+    await saveDonationDraft(updatedDraft);
+    setRebalanceSuggestion(null);
+  }, [rebalanceSuggestion, donationDraft, saveDonationDraft]);
+
+  // Decline the shared rebalance suggestion (keeps items at 0%)
+  const declineRebalanceSuggestion = useCallback(async () => {
+    setRebalanceSuggestion(null);
+  }, []);
+
   // Helper to check if there's an active draft (even without allocations)
   const hasDraft = donationDraft !== null;
 
@@ -1221,6 +1290,10 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     removeFromDraft,
     updateDraftAllocation,
     isInDraft,
+    rebalanceSuggestion,
+    setRebalanceSuggestion,
+    applyRebalanceSuggestion,
+    declineRebalanceSuggestion,
     isSidebarOpen,
     setSidebarOpen,
     activeTab,

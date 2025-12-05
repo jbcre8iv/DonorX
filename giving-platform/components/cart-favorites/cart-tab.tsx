@@ -1,18 +1,13 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, Minus, Plus, Sparkles, Check } from "lucide-react";
-import { useCartFavorites, type CartItem, type DraftAllocation, type DonationDraft } from "@/contexts/cart-favorites-context";
+import { useCartFavorites, type CartItem, type DraftAllocation } from "@/contexts/cart-favorites-context";
 import { Button } from "@/components/ui/button";
 
-// Types for rebalance suggestions
-interface RebalanceSuggestion {
-  allocations: DraftAllocation[];
-  newItemNames: string[];
-}
-
+// Types for removal rebalance suggestion (local to sidebar)
 interface RemovalRebalanceSuggestion {
   allocations: DraftAllocation[];
   removedItemName: string;
@@ -33,6 +28,9 @@ export function CartTab() {
     clearDonationDraft,
     removeFromDraft,
     updateDraftAllocation,
+    rebalanceSuggestion,
+    applyRebalanceSuggestion,
+    declineRebalanceSuggestion,
   } = useCartFavorites();
 
   const [isClearing, setIsClearing] = useState(false);
@@ -42,12 +40,8 @@ export function CartTab() {
   // Track percentage input values as strings to allow empty field during editing
   const [percentageInputs, setPercentageInputs] = useState<Record<string, string>>({});
 
-  // AI Rebalance suggestion states
-  const [rebalanceSuggestion, setRebalanceSuggestion] = useState<RebalanceSuggestion | null>(null);
+  // Removal rebalance suggestion state (local - only relevant to sidebar)
   const [removalSuggestion, setRemovalSuggestion] = useState<RemovalRebalanceSuggestion | null>(null);
-
-  // Track previous allocations to detect changes
-  const prevAllocationsRef = useRef<DraftAllocation[] | null>(null);
 
   // Handle percentage input change - allows empty string during editing
   const handlePercentageInputChange = useCallback((targetId: string, value: string) => {
@@ -108,30 +102,6 @@ export function CartTab() {
     // Clear input cache to show new values
     setPercentageInputs({});
   }, [donationDraft, saveDonationDraft]);
-
-  // Generate a smart rebalance suggestion when adding to existing allocations
-  const generateRebalanceSuggestion = useCallback((
-    currentAllocations: DraftAllocation[],
-    newItems: DraftAllocation[]
-  ): DraftAllocation[] => {
-    const totalItems = currentAllocations.length + newItems.length;
-    const equalPercentage = Math.floor(100 / totalItems);
-    const remainder = 100 - (equalPercentage * totalItems);
-
-    const rebalanced: DraftAllocation[] = currentAllocations.map((alloc, index) => ({
-      ...alloc,
-      percentage: equalPercentage + (index === 0 ? remainder : 0),
-    }));
-
-    for (const newItem of newItems) {
-      rebalanced.push({
-        ...newItem,
-        percentage: equalPercentage,
-      });
-    }
-
-    return rebalanced;
-  }, []);
 
   // Generate a smart rebalance suggestion when removing an allocation
   const generateRemovalRebalanceSuggestion = useCallback((
@@ -233,77 +203,16 @@ export function CartTab() {
     setRemovalSuggestion(null);
   }, [removalSuggestion, donationDraft, saveDonationDraft, clearDonationDraft]);
 
-  // Accept add rebalance suggestion
+  // Accept add rebalance suggestion - uses shared context function
   const handleAcceptRebalance = useCallback(async () => {
-    if (!rebalanceSuggestion || !donationDraft) return;
-
-    await saveDonationDraft({
-      ...donationDraft,
-      allocations: rebalanceSuggestion.allocations,
-    });
-    setRebalanceSuggestion(null);
+    await applyRebalanceSuggestion();
     setPercentageInputs({});
-  }, [rebalanceSuggestion, donationDraft, saveDonationDraft]);
+  }, [applyRebalanceSuggestion]);
 
-  // Decline add rebalance - keep current percentages, add new items with small %
+  // Decline add rebalance - uses shared context function (keeps items at 0%)
   const handleDeclineRebalance = useCallback(async () => {
-    if (!rebalanceSuggestion || !donationDraft) return;
-
-    // Get the new items that were suggested
-    const newItems = rebalanceSuggestion.allocations.filter(
-      (a) => !donationDraft.allocations.some((existing) => existing.targetId === a.targetId)
-    );
-
-    // Calculate remaining percentage
-    const currentTotal = donationDraft.allocations.reduce((sum, a) => sum + a.percentage, 0);
-    const remainingPercentage = 100 - currentTotal;
-    const perItemPercentage = Math.min(Math.floor(remainingPercentage / newItems.length), 25);
-    const defaultPercentage = perItemPercentage > 0 ? perItemPercentage : 10;
-
-    await saveDonationDraft({
-      ...donationDraft,
-      allocations: [
-        ...donationDraft.allocations,
-        ...newItems.map((item) => ({ ...item, percentage: defaultPercentage })),
-      ],
-    });
-    setRebalanceSuggestion(null);
-  }, [rebalanceSuggestion, donationDraft, saveDonationDraft]);
-
-  // Detect when new items are added and show rebalance suggestion
-  useEffect(() => {
-    if (!donationDraft) {
-      prevAllocationsRef.current = null;
-      return;
-    }
-
-    const currentAllocations = donationDraft.allocations;
-
-    // Skip if there's already a suggestion showing
-    if (rebalanceSuggestion || removalSuggestion) {
-      prevAllocationsRef.current = currentAllocations;
-      return;
-    }
-
-    // Check for items at 0% when there are items with percentage > 0
-    // This indicates newly added items that need rebalancing
-    const itemsWithPercentage = currentAllocations.filter((a) => a.percentage > 0);
-    const itemsAtZero = currentAllocations.filter((a) => a.percentage === 0);
-
-    // If there are items at 0% AND items with percentage, show suggestion
-    if (itemsAtZero.length > 0 && itemsWithPercentage.length > 0) {
-      const suggestedAllocations = generateRebalanceSuggestion(
-        itemsWithPercentage,
-        itemsAtZero
-      );
-      setRebalanceSuggestion({
-        allocations: suggestedAllocations,
-        newItemNames: itemsAtZero.map((item) => item.targetName),
-      });
-    }
-
-    prevAllocationsRef.current = currentAllocations;
-  }, [donationDraft, rebalanceSuggestion, removalSuggestion, generateRebalanceSuggestion]);
+    await declineRebalanceSuggestion();
+  }, [declineRebalanceSuggestion]);
 
   // Calculate total percentage for draft allocations
   const totalDraftPercentage = donationDraft?.allocations.reduce(

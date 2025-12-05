@@ -44,7 +44,7 @@ export function DonateClient({
   const searchParams = useSearchParams();
   const canceled = searchParams.get("canceled") === "true";
 
-  const { donationDraft, saveDonationDraft, clearDonationDraft } = useCartFavorites();
+  const { donationDraft, saveDonationDraft, clearDonationDraft, rebalanceSuggestion, applyRebalanceSuggestion, declineRebalanceSuggestion } = useCartFavorites();
   const { addToast } = useToast();
   const [draftLoaded, setDraftLoaded] = React.useState(false);
   // Track if allocations were loaded from a draft (vs preselected nonprofit or cart)
@@ -734,6 +734,9 @@ export function DonateClient({
               categories={categories}
               donationAmount={amount}
               onApplyAiAllocation={handleApplyAiAllocation}
+              sharedRebalanceSuggestion={rebalanceSuggestion}
+              onApplySharedRebalance={applyRebalanceSuggestion}
+              onDeclineSharedRebalance={declineRebalanceSuggestion}
             />
           </div>
 
