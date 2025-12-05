@@ -221,14 +221,12 @@ export function AllocationAdvisor({
         <div className="space-y-3">
           {/* Synced donation amount display */}
           {hasExternalAmount && (
-            <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-emerald-700">Donation Amount</span>
-                <span className="text-lg font-semibold text-emerald-900">
-                  {formatCurrency(currentAmount * 100)}
-                </span>
-              </div>
-              <p className="text-xs text-emerald-600 mt-1">
+            <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-200">
+              <p className="text-sm text-emerald-700 mb-1">Donation Amount</p>
+              <p className="text-2xl font-semibold text-emerald-900">
+                {formatCurrency(currentAmount * 100)}
+              </p>
+              <p className="text-xs text-emerald-600 mt-2">
                 Synced from above
               </p>
             </div>
