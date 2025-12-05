@@ -340,42 +340,95 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   // Re-fetch data when tab becomes visible (handles sync when switching between devices/tabs)
   useEffect(() => {
     let lastSyncTime = 0;
+    let lastVisibilitySyncTime = 0;
+    let pollInterval: NodeJS.Timeout | null = null;
+    let isSyncing = false;
 
-    const syncData = async () => {
-      // Throttle to prevent rapid re-syncing (minimum 2 seconds between syncs)
+    const syncData = async (source: string, minInterval = 2000) => {
+      // Prevent concurrent syncs
+      if (isSyncing) return;
+
+      // Throttle based on source-specific interval
       const now = Date.now();
-      if (now - lastSyncTime < 2000) return;
-      lastSyncTime = now;
+      if (now - lastSyncTime < minInterval) return;
 
       if (!userId) return;
 
+      isSyncing = true;
+      lastSyncTime = now;
+
       try {
+        console.log(`[Sync] Fetching fresh data (source: ${source})`);
         const freshData = await fetchFromDatabase(userId);
         setCartItems(freshData.cart);
         setFavorites(freshData.favorites);
         setDonationDraft(freshData.draft);
         saveToLocalStorage(freshData.cart, freshData.favorites);
-      } catch {
-        // Silent fail - will retry on next visibility change
+        console.log(`[Sync] Data refreshed successfully (source: ${source})`);
+      } catch (err) {
+        console.error('[Sync] Error fetching data:', err);
+      } finally {
+        isSyncing = false;
       }
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        syncData();
+        // When becoming visible, sync immediately (no throttle for visibility changes)
+        // This is the primary sync mechanism for mobile
+        const now = Date.now();
+        if (now - lastVisibilitySyncTime > 500) {
+          lastVisibilitySyncTime = now;
+          syncData('visibilitychange', 0);
+        }
       }
     };
 
     const handleFocus = () => {
-      syncData();
+      // Focus events are less reliable on mobile, use shorter throttle
+      syncData('focus', 1000);
+    };
+
+    // Mobile Safari: pageshow fires when navigating back to a cached page
+    const handlePageShow = (event: PageTransitionEvent) => {
+      // Sync regardless of persisted state - this catches more mobile scenarios
+      syncData('pageshow', 0);
+    };
+
+    // Touch start can indicate user is interacting with mobile device
+    // Reduced from 10s to 5s for better mobile responsiveness
+    const handleTouchStart = () => {
+      const now = Date.now();
+      if (now - lastSyncTime > 5000 && userId) {
+        syncData('touchstart', 5000);
+      }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
+    window.addEventListener('pageshow', handlePageShow);
+
+    // Add touch listener for mobile - throttled
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+
+    // Fallback polling every 15 seconds when tab is visible (more frequent for mobile reliability)
+    pollInterval = setInterval(() => {
+      if (document.visibilityState === 'visible' && userId) {
+        syncData('poll', 10000);
+      }
+    }, 15000);
+
+    // Initial sync when effect runs (catches mobile app resume scenarios)
+    if (userId && document.visibilityState === 'visible') {
+      syncData('mount', 0);
+    }
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('pageshow', handlePageShow);
+      document.removeEventListener('touchstart', handleTouchStart);
+      if (pollInterval) clearInterval(pollInterval);
     };
   }, [userId, fetchFromDatabase, saveToLocalStorage]);
 
