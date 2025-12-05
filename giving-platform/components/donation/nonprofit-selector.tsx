@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Search, Building2, Tag, X, Globe, Plus, LayoutGrid, List } from "lucide-react";
+import { Search, Building2, Tag, X, Globe, Plus, LayoutGrid, List, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -262,32 +262,66 @@ export function NonprofitSelector({
                 {filteredNonprofits.map((nonprofit) => (
                   <div
                     key={nonprofit.id}
-                    className="group flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
-                    onClick={() => handleSelect("nonprofit", nonprofit.id, nonprofit.name)}
+                    className="group flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg hover:bg-slate-50 transition-colors"
                   >
                     {nonprofit.logo_url ? (
                       <img
                         src={nonprofit.logo_url}
                         alt={`${nonprofit.name} logo`}
-                        className="h-12 w-12 rounded-lg object-contain flex-shrink-0 bg-slate-50"
+                        className="h-10 w-10 rounded-lg object-contain flex-shrink-0 bg-slate-50"
                       />
                     ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100 text-slate-600 font-semibold text-lg flex-shrink-0">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600 font-semibold flex-shrink-0">
                         {nonprofit.name.charAt(0)}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-medium text-slate-900 group-hover:text-blue-700 transition-colors leading-tight">
+                      <h3 className="font-medium text-slate-900 leading-tight">
                         {nonprofit.name}
                       </h3>
-                      <p className="text-sm text-slate-500 mt-0.5">
-                        {nonprofit.category?.name || "Nonprofit"}
-                      </p>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                        <Plus className="h-5 w-5" />
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {nonprofit.category && (
+                          <Badge variant="secondary" className="text-xs">
+                            {nonprofit.category.icon && (
+                              <span className="mr-1">{nonprofit.category.icon}</span>
+                            )}
+                            {nonprofit.category.name}
+                          </Badge>
+                        )}
+                        {nonprofit.ein && (
+                          <span className="text-xs text-slate-400">EIN: {nonprofit.ein}</span>
+                        )}
                       </div>
+                    </div>
+                    {/* Action buttons matching directory table pattern */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {/* Add to allocation - Primary action */}
+                      <Button
+                        size="sm"
+                        className="h-8"
+                        onClick={() => handleSelect("nonprofit", nonprofit.id, nonprofit.name)}
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        Add
+                      </Button>
+                      {/* Website link */}
+                      {nonprofit.website && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 w-8 p-0 rounded-lg text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50"
+                          asChild
+                        >
+                          <a
+                            href={nonprofit.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Globe className="h-4 w-4" />
+                          </a>
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -342,24 +376,31 @@ export function NonprofitSelector({
               {filteredCategories.map((category) => (
                 <div
                   key={category.id}
-                  className="group flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
-                  onClick={() => handleSelect("category", category.id, category.name)}
+                  className="group flex items-center gap-3 py-3 px-2 -mx-2 rounded-lg hover:bg-slate-50 transition-colors"
                 >
-                  <div className="h-12 w-12 rounded-lg bg-purple-100 flex items-center justify-center text-2xl flex-shrink-0">
+                  <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center text-xl flex-shrink-0">
                     {category.icon || "📁"}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-medium text-slate-900 group-hover:text-purple-700 transition-colors leading-tight">
+                    <h3 className="font-medium text-slate-900 leading-tight">
                       {category.name}
                     </h3>
-                    <p className="text-sm text-slate-500 mt-0.5">
-                      Category
-                    </p>
+                    {category.description && (
+                      <p className="text-sm text-slate-500 mt-0.5 line-clamp-1">
+                        {category.description}
+                      </p>
+                    )}
                   </div>
+                  {/* Action button matching directory pattern */}
                   <div className="flex-shrink-0">
-                    <div className="h-10 w-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                      <Plus className="h-5 w-5" />
-                    </div>
+                    <Button
+                      size="sm"
+                      className="h-8 bg-purple-600 hover:bg-purple-700"
+                      onClick={() => handleSelect("category", category.id, category.name)}
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Add
+                    </Button>
                   </div>
                 </div>
               ))}
