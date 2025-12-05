@@ -207,10 +207,15 @@ export function CartTab() {
             ))}
           </div>
 
-          {/* Tip about adding more */}
-          <p className="mt-4 text-xs text-slate-400 text-center">
-            Browse the directory to add more nonprofits or categories
-          </p>
+          {/* Tips */}
+          <div className="mt-4 space-y-2">
+            <p className="text-xs text-slate-400 text-center">
+              Browse the directory to add more nonprofits or categories
+            </p>
+            <p className="text-xs text-slate-400 text-center">
+              You can adjust allocation percentages on the next page
+            </p>
+          </div>
         </div>
       </div>
     );
