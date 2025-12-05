@@ -17,6 +17,8 @@ interface NonprofitSelectorProps {
   onClose: () => void;
   onSelect: (type: SelectionType, id: string, name: string) => void;
   onRemove?: (id: string) => void;
+  /** Called when user cancels a pending selection (before Apply/Manual Adjust) */
+  onCancelPending?: () => void;
   nonprofits: Nonprofit[];
   categories: Category[];
   excludeIds?: string[];
@@ -29,6 +31,7 @@ export function NonprofitSelector({
   onClose,
   onSelect,
   onRemove,
+  onCancelPending,
   nonprofits,
   categories,
   excludeIds = [],
@@ -38,13 +41,21 @@ export function NonprofitSelector({
   const [activeTab, setActiveTab] = React.useState<"nonprofits" | "categories">("nonprofits");
   const [viewMode, setViewMode] = React.useState<"grid" | "table">("table");
   const [previewNonprofit, setPreviewNonprofit] = React.useState<Nonprofit | null>(null);
+  // Track items clicked but not yet confirmed (pending in rebalance suggestion)
+  const [pendingIds, setPendingIds] = React.useState<string[]>([]);
 
-  // Reset search when modal closes
+  // Reset search and pending items when modal closes
   React.useEffect(() => {
     if (!open) {
       setSearch("");
+      setPendingIds([]);
     }
   }, [open]);
+
+  // When includedIds changes, remove those items from pendingIds (they're now confirmed)
+  React.useEffect(() => {
+    setPendingIds((prev) => prev.filter((id) => !includedIds.includes(id)));
+  }, [includedIds]);
 
   // Prevent body scroll when open
   React.useEffect(() => {
@@ -67,14 +78,25 @@ export function NonprofitSelector({
     (c) => (!excludeIds.includes(c.id) || includedIds.includes(c.id)) && smartFilterCategory(c, search)
   );
 
-  // Check if an item is already in the allocation
-  const isIncluded = (id: string) => includedIds.includes(id);
+  // Check if an item is already in the allocation OR pending (clicked but not yet confirmed)
+  const isIncluded = (id: string) => includedIds.includes(id) || pendingIds.includes(id);
+
+  // Check if item is pending (clicked but not yet confirmed)
+  const isPending = (id: string) => pendingIds.includes(id) && !includedIds.includes(id);
 
   // Handle toggle - add or remove based on current state
   const handleToggle = (type: SelectionType, id: string, name: string) => {
-    if (isIncluded(id)) {
+    if (includedIds.includes(id)) {
+      // Already confirmed in allocation - remove it
       onRemove?.(id);
+    } else if (pendingIds.includes(id)) {
+      // Pending - remove from pending (user changed their mind before confirming)
+      setPendingIds((prev) => prev.filter((p) => p !== id));
+      // Cancel the pending rebalance suggestion in the allocation builder
+      onCancelPending?.();
     } else {
+      // Not in allocation or pending - add to pending and trigger onSelect
+      setPendingIds((prev) => [...prev, id]);
       onSelect(type, id, name);
     }
   };

@@ -766,6 +766,7 @@ export function AllocationBuilder({
         onClose={() => setSelectorOpen(false)}
         onSelect={handleAddAllocation}
         onRemove={handleRemoveFromSelector}
+        onCancelPending={() => setRebalanceSuggestion(null)}
         nonprofits={nonprofits}
         categories={categories}
         excludeIds={excludeIds}
