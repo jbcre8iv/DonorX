@@ -1265,15 +1265,20 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
   // Apply the shared rebalance suggestion (updates draft with suggested allocations)
   const applyRebalanceSuggestion = useCallback(async () => {
-    if (!rebalanceSuggestion || !donationDraft) return;
+    if (!rebalanceSuggestion || !donationDraft) {
+      // Clear suggestion even if nothing to apply (handles edge cases)
+      setRebalanceSuggestion(null);
+      return;
+    }
 
     const updatedDraft: DonationDraft = {
       ...donationDraft,
       allocations: rebalanceSuggestion.allocations,
     };
 
-    await saveDonationDraft(updatedDraft);
+    // Clear suggestion first to ensure UI updates, then save
     setRebalanceSuggestion(null);
+    await saveDonationDraft(updatedDraft);
   }, [rebalanceSuggestion, donationDraft, saveDonationDraft]);
 
   // Decline the shared rebalance suggestion (keeps items at 0%)
@@ -1283,23 +1288,35 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
   // Apply the shared removal suggestion (updates draft with suggested allocations after item removal)
   const applyRemovalSuggestion = useCallback(async () => {
-    if (!removalSuggestion || !donationDraft) return;
+    if (!removalSuggestion || !donationDraft) {
+      // Clear suggestion even if nothing to apply (handles edge cases)
+      setRemovalSuggestion(null);
+      return;
+    }
 
+    // Clear suggestion first to ensure UI updates, then save
+    setRemovalSuggestion(null);
     await saveDonationDraft({
       ...donationDraft,
       allocations: removalSuggestion.allocations,
     });
-    setRemovalSuggestion(null);
   }, [removalSuggestion, donationDraft, saveDonationDraft]);
 
   // Decline the shared removal suggestion (just remove item without rebalancing)
   const declineRemovalSuggestion = useCallback(async () => {
-    if (!removalSuggestion || !donationDraft) return;
+    if (!removalSuggestion || !donationDraft) {
+      // Clear suggestion even if nothing to apply (handles edge cases)
+      setRemovalSuggestion(null);
+      return;
+    }
 
     // Keep original percentages for remaining items
     const remainingOriginalAllocations = donationDraft.allocations.filter(
       (a) => removalSuggestion.allocations.some((s) => s.targetId === a.targetId)
     );
+
+    // Clear suggestion first to ensure UI updates
+    setRemovalSuggestion(null);
 
     if (remainingOriginalAllocations.length === 0) {
       await clearDonationDraft();
@@ -1309,7 +1326,6 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         allocations: remainingOriginalAllocations,
       });
     }
-    setRemovalSuggestion(null);
   }, [removalSuggestion, donationDraft, saveDonationDraft, clearDonationDraft]);
 
   // Helper to check if there's an active draft (even without allocations)
