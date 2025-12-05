@@ -11,6 +11,7 @@ import {
   ExternalLink,
   HandHeart,
   ArrowRight,
+  Check,
 } from "lucide-react";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { useToast } from "@/components/ui/toast";
@@ -23,11 +24,28 @@ export default function FavoritesPage() {
     removeFromFavorites,
     addToCart,
     isInCart,
+    addToDraft,
+    isInDraft,
     setSidebarOpen,
     setActiveTab,
     isLoading,
   } = useCartFavorites();
   const { addToast } = useToast();
+
+  const handleDonate = async (item: (typeof favorites)[0]) => {
+    const targetId = item.nonprofitId || item.categoryId;
+    const targetName = item.nonprofit?.name || item.category?.name || "Unknown";
+    const type = item.nonprofitId ? "nonprofit" : "category";
+
+    if (targetId && !isInDraft(item.nonprofitId, item.categoryId)) {
+      await addToDraft({
+        type: type as "nonprofit" | "category",
+        targetId,
+        targetName,
+      });
+      addToast(`Added ${targetName} to your donation`, "success", 3000);
+    }
+  };
 
   const handleAddToCart = async (item: (typeof favorites)[0]) => {
     const result = await addToCart({
@@ -184,10 +202,20 @@ export default function FavoritesPage() {
 
                   {/* Actions */}
                   <div className="mt-4 flex items-center gap-2">
-                    <Button asChild size="sm" className="flex-1">
-                      <Link href={`/donate?nonprofit=${item.nonprofitId}`}>
-                        Donate
-                      </Link>
+                    <Button
+                      size="sm"
+                      className={`flex-1 ${isInDraft(item.nonprofitId) ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}
+                      onClick={() => handleDonate(item)}
+                      disabled={isInDraft(item.nonprofitId)}
+                    >
+                      {isInDraft(item.nonprofitId) ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 mr-1" />
+                          Added
+                        </>
+                      ) : (
+                        "Donate"
+                      )}
                     </Button>
                     {isInCart(item.nonprofitId) ? (
                       <Button variant="secondary" size="sm" disabled>
@@ -257,10 +285,20 @@ export default function FavoritesPage() {
 
                   {/* Actions */}
                   <div className="mt-4 flex items-center gap-2">
-                    <Button asChild size="sm" className="flex-1">
-                      <Link href={`/donate?category=${item.categoryId}`}>
-                        Donate to Category
-                      </Link>
+                    <Button
+                      size="sm"
+                      className={`flex-1 ${isInDraft(undefined, item.categoryId) ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}
+                      onClick={() => handleDonate(item)}
+                      disabled={isInDraft(undefined, item.categoryId)}
+                    >
+                      {isInDraft(undefined, item.categoryId) ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 mr-1" />
+                          Added
+                        </>
+                      ) : (
+                        "Donate to Category"
+                      )}
                     </Button>
                     {isInCart(undefined, item.categoryId) ? (
                       <Button variant="secondary" size="sm" disabled>

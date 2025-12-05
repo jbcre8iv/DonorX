@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, Globe, CheckCircle } from "lucide-react";
+import { ExternalLink, Globe, CheckCircle, Check } from "lucide-react";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useCartFavorites } from "@/contexts/cart-favorites-context";
+import { useToast } from "@/components/ui/toast";
 import type { Nonprofit } from "@/types/database";
 
 interface NonprofitModalProps {
@@ -15,7 +17,24 @@ interface NonprofitModalProps {
 }
 
 export function NonprofitModal({ nonprofit, open, onClose, onViewFullProfile }: NonprofitModalProps) {
+  const { addToDraft, isInDraft } = useCartFavorites();
+  const { addToast } = useToast();
+
   if (!nonprofit) return null;
+
+  const inDraft = isInDraft(nonprofit.id);
+
+  const handleDonate = async () => {
+    if (!inDraft) {
+      await addToDraft({
+        type: "nonprofit",
+        targetId: nonprofit.id,
+        targetName: nonprofit.name,
+      });
+      addToast(`Added ${nonprofit.name} to your donation`, "success", 3000);
+    }
+    onClose();
+  };
 
   return (
     <Modal open={open} onClose={onClose} className="max-w-xl">
@@ -96,10 +115,19 @@ export function NonprofitModal({ nonprofit, open, onClose, onViewFullProfile }: 
       </ModalBody>
 
       <ModalFooter className="sm:justify-center">
-        <Button asChild className="w-full sm:w-auto order-1 sm:order-2">
-          <Link href={`/donate?nonprofit=${nonprofit.id}`} onClick={onClose}>
-            Donate Now
-          </Link>
+        <Button
+          onClick={handleDonate}
+          disabled={inDraft}
+          className={`w-full sm:w-auto order-1 sm:order-2 ${inDraft ? "bg-emerald-600 hover:bg-emerald-600" : ""}`}
+        >
+          {inDraft ? (
+            <>
+              <Check className="h-4 w-4 mr-1.5" />
+              Added
+            </>
+          ) : (
+            "Donate Now"
+          )}
         </Button>
         {onViewFullProfile ? (
           <Button variant="outline" onClick={() => onViewFullProfile(nonprofit.id)} className="w-full sm:w-auto order-2 sm:order-3">

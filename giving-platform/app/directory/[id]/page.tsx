@@ -2,9 +2,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Globe, Building2, CheckCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DonateButton } from "./donate-button";
 import type { Nonprofit, ImpactReport } from "@/types/database";
 
 interface NonprofitPageProps {
@@ -130,11 +130,11 @@ export default async function NonprofitPage({ params }: NonprofitPageProps) {
           </div>
 
           <div className="flex gap-3 w-full sm:w-auto">
-            <Button asChild className="flex-1 sm:flex-none">
-              <Link href={`/donate?nonprofit=${typedNonprofit.id}`}>
-                Donate Now
-              </Link>
-            </Button>
+            <DonateButton
+              nonprofitId={typedNonprofit.id}
+              nonprofitName={typedNonprofit.name}
+              className="flex-1 sm:flex-none"
+            />
           </div>
         </div>
 
@@ -223,11 +223,11 @@ export default async function NonprofitPage({ params }: NonprofitPageProps) {
           <p className="text-slate-600 mb-4">
             Ready to make a difference with {typedNonprofit.name}?
           </p>
-          <Button asChild size="lg">
-            <Link href={`/donate?nonprofit=${typedNonprofit.id}`}>
-              Donate to {typedNonprofit.name}
-            </Link>
-          </Button>
+          <DonateButton
+            nonprofitId={typedNonprofit.id}
+            nonprofitName={typedNonprofit.name}
+            size="lg"
+          />
         </div>
       </div>
     </div>
