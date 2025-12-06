@@ -93,7 +93,7 @@ export default async function HomePage() {
               The giving platform for corporations and family offices. Make one
               donation, support multiple causes, receive one tax receipt.
             </p>
-            <div className="mt-10 flex justify-center">
+            <div className="mt-10 sm:mt-14 flex justify-center">
               <Button size="lg" asChild>
                 <Link href="/directory">
                   Start Giving
