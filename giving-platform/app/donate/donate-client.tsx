@@ -313,6 +313,13 @@ export function DonateClient({
     // Don't save until initial load is complete
     if (!draftLoaded) return;
 
+    // If all allocations were removed, clear draft and redirect to directory
+    if (allocations.length === 0 && loadedFromDraft && !proceedingToPaymentRef.current) {
+      clearDonationDraft();
+      router.push('/directory');
+      return;
+    }
+
     // Save draft with current state (even if no allocations yet)
     // This preserves amount/frequency if user navigates away
     const draft: DonationDraft = {
@@ -350,7 +357,7 @@ export function DonateClient({
     });
 
     saveDonationDraft(draft);
-  }, [amount, frequency, allocations, draftLoaded, saveDonationDraft, nonprofits, categories]);
+  }, [amount, frequency, allocations, draftLoaded, loadedFromDraft, saveDonationDraft, clearDonationDraft, router, nonprofits, categories]);
 
   const handleSaveTemplate = async () => {
     if (!templateName.trim()) {
