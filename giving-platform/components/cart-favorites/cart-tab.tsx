@@ -455,15 +455,29 @@ export function CartTab() {
               style={{ width: `${Math.min(totalDraftPercentage, 100)}%` }}
             />
           </div>
-          {/* Auto-balance button */}
+          {/* Status text and Auto-balance button */}
           {totalDraftPercentage !== 100 && donationDraft.allocations.length > 0 && (
-            <button
-              onClick={handleAutoBalance}
-              className="mt-2 flex items-center gap-1.5 text-xs text-emerald-600 hover:text-emerald-700 transition-colors"
-            >
-              <Sparkles className="h-3 w-3" />
-              Auto-balance to 100%
-            </button>
+            <div className="flex items-center justify-between mt-1.5">
+              <div>
+                {totalDraftPercentage < 100 && (
+                  <span className="text-xs text-slate-500">
+                    {100 - totalDraftPercentage}% remaining
+                  </span>
+                )}
+                {totalDraftPercentage > 100 && (
+                  <span className="text-xs text-red-600">
+                    Over-allocated by {totalDraftPercentage - 100}%
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={handleAutoBalance}
+                className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 transition-colors"
+              >
+                <Sparkles className="h-3 w-3" />
+                Auto-balance
+              </button>
+            </div>
           )}
         </div>
 
