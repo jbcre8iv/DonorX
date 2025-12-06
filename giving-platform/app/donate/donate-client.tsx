@@ -53,6 +53,8 @@ export function DonateClient({
   const lastSavedDraftRef = React.useRef<string | null>(null);
   // Track when proceeding to payment to prevent redirect on draft clear
   const proceedingToPaymentRef = React.useRef(false);
+  // Track current lockedIds to avoid stale closure in auto-save effect
+  const lockedIdsRef = React.useRef<string[] | undefined>(undefined);
 
   const [amount, setAmount] = React.useState(75000); // Start with $75K (first preset of tier 3)
   const [frequency, setFrequency] = React.useState<DonationFrequency>("one-time");
@@ -160,6 +162,11 @@ export function DonateClient({
 
     setDraftLoaded(true);
   }, [preselectedNonprofitId, nonprofits, searchParams, donationDraft, draftLoaded, initialTemplate]);
+
+  // Keep lockedIds ref in sync with donationDraft
+  React.useEffect(() => {
+    lockedIdsRef.current = donationDraft?.lockedIds;
+  }, [donationDraft?.lockedIds]);
 
   // Redirect when draft is cleared externally (e.g., from "Clear & Start Over" on another device)
   // Only redirect if the allocations were originally loaded from a draft
@@ -347,8 +354,8 @@ export function DonateClient({
           icon,
         };
       }),
-      // Preserve locked IDs from existing draft
-      lockedIds: donationDraft?.lockedIds,
+      // Preserve locked IDs using ref (avoids stale closure issue)
+      lockedIds: lockedIdsRef.current,
     };
 
     // Track what we're saving so we don't sync our own changes back
@@ -359,9 +366,6 @@ export function DonateClient({
     });
 
     saveDonationDraft(draft);
-  // Note: We intentionally read donationDraft?.lockedIds but don't include donationDraft in deps
-  // to avoid infinite loops. The lockedIds are preserved from the current draft state.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [amount, frequency, allocations, draftLoaded, loadedFromDraft, saveDonationDraft, clearDonationDraft, router, nonprofits, categories]);
 
   const handleSaveTemplate = async () => {
