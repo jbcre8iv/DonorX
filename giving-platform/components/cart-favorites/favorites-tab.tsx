@@ -32,7 +32,7 @@ export function FavoritesTab() {
       targetName,
       logoUrl: item.nonprofit?.logoUrl,
       icon: item.category?.icon,
-    });
+    }, { skipTabSwitch: true }); // Stay on favorites tab
   };
 
   // Show login prompt for non-authenticated users

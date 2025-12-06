@@ -130,7 +130,7 @@ interface CartFavoritesContextType {
     targetName: string;
     logoUrl?: string;
     icon?: string;
-  }) => Promise<void>;
+  }, options?: { skipTabSwitch?: boolean }) => Promise<void>;
   removeFromDraft: (targetId: string) => Promise<void>;
   updateDraftAllocation: (targetId: string, percentage: number) => Promise<void>;
   isInDraft: (nonprofitId?: string, categoryId?: string) => boolean;
@@ -1145,10 +1145,13 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       targetName: string;
       logoUrl?: string;
       icon?: string;
-    }) => {
+    }, options?: { skipTabSwitch?: boolean }) => {
       // Open the sidebar immediately on desktop only (don't interrupt mobile browsing)
       // 1024px is the lg breakpoint in Tailwind
-      setActiveTab("cart");
+      // Skip tab switch if requested (e.g., when adding from favorites tab)
+      if (!options?.skipTabSwitch) {
+        setActiveTab("cart");
+      }
       if (typeof window !== "undefined" && window.innerWidth >= 1024) {
         setSidebarOpen(true);
       }
