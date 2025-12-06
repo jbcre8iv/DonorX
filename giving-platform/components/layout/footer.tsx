@@ -1,6 +1,20 @@
 import Link from "next/link";
-import { Twitter, Linkedin } from "lucide-react";
+import { Linkedin, Instagram, Facebook } from "lucide-react";
 import { config } from "@/lib/config";
+
+// X (formerly Twitter) icon - custom SVG since lucide doesn't have it
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M13.982 10.622 20.54 3h-1.554l-5.693 6.618L8.745 3H3.5l6.876 10.007L3.5 21h1.554l6.012-6.989L15.868 21H21.5l-7.518-10.378Zm-2.128 2.474-.697-.997-5.543-7.93H8l4.474 6.4.697.996 5.815 8.318h-2.387l-4.745-6.787Z" />
+    </svg>
+  );
+}
 
 const footerLinks = {
   platform: [
@@ -32,12 +46,18 @@ export function Footer() {
               </span>
             </Link>
             <p className="mt-4 text-sm text-slate-600">{config.tagline}</p>
-            <div className="mt-4 flex gap-4">
-              <span className="text-slate-400">
-                <Twitter className="h-5 w-5" />
-              </span>
-              <span className="text-slate-400">
+            <div className="mt-4 flex items-center gap-4">
+              <span className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer flex items-center justify-center h-5 w-5">
                 <Linkedin className="h-5 w-5" />
+              </span>
+              <span className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer flex items-center justify-center h-5 w-5">
+                <Instagram className="h-5 w-5" />
+              </span>
+              <span className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer flex items-center justify-center h-5 w-5">
+                <Facebook className="h-5 w-5" />
+              </span>
+              <span className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer flex items-center justify-center h-5 w-5">
+                <XIcon className="h-4 w-4" />
               </span>
             </div>
           </div>
