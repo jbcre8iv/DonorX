@@ -372,7 +372,7 @@ export function NonprofitTable({ nonprofits, onQuickView, sortBy, onSortChange }
 
   return (
     <div className="sm:overflow-x-auto overflow-visible">
-      <table className="w-full table-fixed sm:table-auto">
+      <table className="w-full table-fixed sm:table-auto border-separate border-spacing-0">
         <thead>
           <tr className="border-b border-slate-200 text-left text-sm text-slate-600">
             <th className="pb-3 pl-3 font-medium">
