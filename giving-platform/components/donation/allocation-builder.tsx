@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Trash2, Building2, Tag, Info, ExternalLink, Globe, Sparkles, ChevronDown, ChevronUp, Check, X, HandHeart } from "lucide-react";
+import { Plus, Trash2, Building2, Tag, Info, ExternalLink, Globe, Sparkles, ChevronDown, ChevronUp, Check, X, HandHeart, Lock, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NonprofitSelector } from "./nonprofit-selector";
@@ -63,6 +63,10 @@ interface AllocationBuilderProps {
   onDeclineSharedRemoval?: () => void;
   // Callback to set shared removal suggestion (for syncing removes to sidebar)
   onSetSharedRemoval?: (suggestion: SharedRemovalSuggestion | null) => void;
+  // Lock functionality
+  lockedIds?: string[];
+  onToggleLock?: (targetId: string) => void;
+  canLock?: (targetId: string) => boolean;
 }
 
 export function AllocationBuilder({
@@ -81,6 +85,9 @@ export function AllocationBuilder({
   onApplySharedRemoval,
   onDeclineSharedRemoval,
   onSetSharedRemoval,
+  lockedIds = [],
+  onToggleLock,
+  canLock,
 }: AllocationBuilderProps) {
   const [selectorOpen, setSelectorOpen] = React.useState(false);
   const [detailsItem, setDetailsItem] = React.useState<AllocationItem | null>(null);
@@ -860,7 +867,7 @@ export function AllocationBuilder({
                       <button
                         onClick={() => handlePercentageChange(item.id, item.percentage - 1)}
                         className="h-10 w-10 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={item.percentage <= 0}
+                        disabled={item.percentage <= 0 || lockedIds.includes(item.targetId)}
                       >
                         −
                       </button>
@@ -872,14 +879,46 @@ export function AllocationBuilder({
                           value={getPercentageInputValue(item.id, item.percentage)}
                           onChange={(e) => handlePercentageInputChange(item.id, e.target.value)}
                           onBlur={() => handlePercentageInputBlur(item.id)}
-                          className="w-full h-10 rounded-lg border border-slate-200 pl-2 pr-7 text-center text-base font-medium"
+                          className={`w-full h-10 rounded-lg border pl-2 pr-7 text-center text-base font-medium ${
+                            lockedIds.includes(item.targetId)
+                              ? "border-amber-300 bg-amber-50"
+                              : "border-slate-200"
+                          }`}
+                          disabled={lockedIds.includes(item.targetId)}
                         />
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">%</span>
                       </div>
+                      {/* Lock button */}
+                      {onToggleLock && (
+                        <button
+                          onClick={() => onToggleLock(item.targetId)}
+                          disabled={!canLock?.(item.targetId)}
+                          className={`h-10 w-10 rounded-lg border flex items-center justify-center transition-colors ${
+                            lockedIds.includes(item.targetId)
+                              ? "border-amber-300 bg-amber-50 text-amber-600 hover:bg-amber-100"
+                              : canLock?.(item.targetId)
+                              ? "border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                              : "border-slate-100 text-slate-300 cursor-not-allowed"
+                          }`}
+                          title={
+                            lockedIds.includes(item.targetId)
+                              ? "Unlock (allow auto-balance)"
+                              : canLock?.(item.targetId)
+                              ? "Lock (exclude from auto-balance)"
+                              : "Cannot lock - at least one item must remain unlocked"
+                          }
+                        >
+                          {lockedIds.includes(item.targetId) ? (
+                            <Lock className="h-4 w-4" />
+                          ) : (
+                            <Unlock className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
                       <button
                         onClick={() => handlePercentageChange(item.id, item.percentage + 1)}
                         className="h-10 w-10 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={item.percentage >= 100}
+                        disabled={item.percentage >= 100 || lockedIds.includes(item.targetId)}
                       >
                         +
                       </button>

@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, Minus, Plus, Sparkles, Check } from "lucide-react";
+import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, Minus, Plus, Sparkles, Check, Lock, Unlock } from "lucide-react";
 import { useCartFavorites, type CartItem, type DraftAllocation, type RemovalRebalanceSuggestion } from "@/contexts/cart-favorites-context";
 import { Button } from "@/components/ui/button";
 
@@ -28,6 +28,9 @@ export function CartTab() {
     setRemovalSuggestion,
     applyRemovalSuggestion,
     declineRemovalSuggestion,
+    toggleLockAllocation,
+    isLocked,
+    canLock,
   } = useCartFavorites();
 
   const [isClearing, setIsClearing] = useState(false);
@@ -104,14 +107,36 @@ export function CartTab() {
   const handleAutoBalance = useCallback(async () => {
     if (!donationDraft || donationDraft.allocations.length === 0) return;
 
-    const count = donationDraft.allocations.length;
-    const evenPercentage = Math.floor(100 / count);
-    const remainder = 100 - evenPercentage * count;
+    const lockedIds = donationDraft.lockedIds || [];
 
-    const balancedAllocations = donationDraft.allocations.map((a, index) => ({
-      ...a,
-      percentage: index === 0 ? evenPercentage + remainder : evenPercentage,
-    }));
+    // Separate locked and unlocked allocations
+    const lockedAllocations = donationDraft.allocations.filter((a) => lockedIds.includes(a.targetId));
+    const unlockedAllocations = donationDraft.allocations.filter((a) => !lockedIds.includes(a.targetId));
+
+    // Calculate total locked percentage
+    const lockedTotal = lockedAllocations.reduce((sum, a) => sum + a.percentage, 0);
+
+    // Remaining percentage to distribute among unlocked items
+    const remainingPercentage = Math.max(0, 100 - lockedTotal);
+    const unlockedCount = unlockedAllocations.length;
+
+    if (unlockedCount === 0) return; // Nothing to balance
+
+    const evenPercentage = Math.floor(remainingPercentage / unlockedCount);
+    const remainder = remainingPercentage - evenPercentage * unlockedCount;
+
+    // Create balanced allocations preserving locked values
+    const balancedAllocations = donationDraft.allocations.map((a) => {
+      if (lockedIds.includes(a.targetId)) {
+        return a; // Keep locked items unchanged
+      }
+      // Find index among unlocked items to assign remainder to first one
+      const unlockedIndex = unlockedAllocations.findIndex((u) => u.targetId === a.targetId);
+      return {
+        ...a,
+        percentage: unlockedIndex === 0 ? evenPercentage + remainder : evenPercentage,
+      };
+    });
 
     await saveDonationDraft({
       ...donationDraft,
@@ -125,33 +150,59 @@ export function CartTab() {
   // Generate a smart rebalance suggestion when removing an allocation
   const generateRemovalRebalanceSuggestion = useCallback((
     remainingAllocations: DraftAllocation[],
-    freedPercentage: number
+    freedPercentage: number,
+    lockedIds: string[] = []
   ): DraftAllocation[] => {
-    const currentTotal = remainingAllocations.reduce((sum, item) => sum + item.percentage, 0);
+    // Separate locked and unlocked allocations
+    const lockedAllocations = remainingAllocations.filter((a) => lockedIds.includes(a.targetId));
+    const unlockedAllocations = remainingAllocations.filter((a) => !lockedIds.includes(a.targetId));
 
-    if (currentTotal === 0) {
-      const equalPercentage = Math.floor(100 / remainingAllocations.length);
-      const remainder = 100 - (equalPercentage * remainingAllocations.length);
-      return remainingAllocations.map((alloc, index) => ({
-        ...alloc,
-        percentage: equalPercentage + (index === 0 ? remainder : 0),
-      }));
+    // If no unlocked allocations, can't redistribute - return as-is
+    if (unlockedAllocations.length === 0) {
+      return remainingAllocations;
     }
 
+    const unlockedTotal = unlockedAllocations.reduce((sum, item) => sum + item.percentage, 0);
+
+    // Redistribute freed percentage among unlocked items only
+    if (unlockedTotal === 0) {
+      // All unlocked items have 0%, distribute equally
+      const equalPercentage = Math.floor((100 - lockedAllocations.reduce((s, a) => s + a.percentage, 0)) / unlockedAllocations.length);
+      const remainder = (100 - lockedAllocations.reduce((s, a) => s + a.percentage, 0)) - (equalPercentage * unlockedAllocations.length);
+
+      let firstAssigned = false;
+      return remainingAllocations.map((alloc) => {
+        if (lockedIds.includes(alloc.targetId)) {
+          return alloc; // Locked items stay unchanged
+        }
+        const pct = !firstAssigned ? equalPercentage + remainder : equalPercentage;
+        firstAssigned = true;
+        return { ...alloc, percentage: pct };
+      });
+    }
+
+    // Distribute freed percentage proportionally among unlocked items
     return remainingAllocations.map((alloc, index) => {
-      const proportion = alloc.percentage / currentTotal;
+      if (lockedIds.includes(alloc.targetId)) {
+        return alloc; // Locked items stay unchanged
+      }
+
+      const proportion = alloc.percentage / unlockedTotal;
       const additionalPercentage = Math.round(freedPercentage * proportion);
 
-      if (index === remainingAllocations.length - 1) {
+      // Handle rounding for last unlocked item
+      const unlockedIndex = unlockedAllocations.findIndex((u) => u.targetId === alloc.targetId);
+      if (unlockedIndex === unlockedAllocations.length - 1) {
+        const lockedTotal = lockedAllocations.reduce((sum, a) => sum + a.percentage, 0);
         const othersTotal = remainingAllocations
-          .slice(0, -1)
+          .filter((a) => !lockedIds.includes(a.targetId) && a.targetId !== alloc.targetId)
           .reduce((sum, a) => {
-            const prop = a.percentage / currentTotal;
+            const prop = a.percentage / unlockedTotal;
             return sum + a.percentage + Math.round(freedPercentage * prop);
           }, 0);
         return {
           ...alloc,
-          percentage: 100 - othersTotal,
+          percentage: 100 - lockedTotal - othersTotal,
         };
       }
 
@@ -162,6 +213,9 @@ export function CartTab() {
     });
   }, []);
 
+  // State for showing "unlock items" warning when removing only unlocked item
+  const [unlockWarning, setUnlockWarning] = useState<{ targetId: string; targetName: string } | null>(null);
+
   // Handle removal with smart rebalance suggestion
   const handleRemoveWithSuggestion = useCallback((targetId: string) => {
     if (!donationDraft) return;
@@ -169,7 +223,9 @@ export function CartTab() {
     const itemToRemove = donationDraft.allocations.find((a) => a.targetId === targetId);
     if (!itemToRemove) return;
 
+    const lockedIds = donationDraft.lockedIds || [];
     const remainingAllocations = donationDraft.allocations.filter((a) => a.targetId !== targetId);
+    const remainingLockedIds = lockedIds.filter((id) => id !== targetId);
 
     // If only one item left or removed item had 0%, just remove directly
     if (remainingAllocations.length === 0 || itemToRemove.percentage === 0) {
@@ -177,10 +233,21 @@ export function CartTab() {
       return;
     }
 
+    // Check if this is the only unlocked item and there are locked items remaining
+    const isOnlyUnlockedItem = !lockedIds.includes(targetId) &&
+      remainingAllocations.every((a) => remainingLockedIds.includes(a.targetId));
+
+    if (isOnlyUnlockedItem && remainingAllocations.length > 0) {
+      // Show warning - user needs to unlock at least one item
+      setUnlockWarning({ targetId, targetName: itemToRemove.targetName });
+      return;
+    }
+
     // Generate smart rebalance suggestion for remaining items
     const suggestedAllocations = generateRemovalRebalanceSuggestion(
       remainingAllocations,
-      itemToRemove.percentage
+      itemToRemove.percentage,
+      remainingLockedIds
     );
 
     setRemovalSuggestion({
@@ -189,6 +256,26 @@ export function CartTab() {
       removedPercentage: itemToRemove.percentage,
     });
   }, [donationDraft, removeFromDraft, generateRemovalRebalanceSuggestion]);
+
+  // Handle unlocking all items and proceeding with removal
+  const handleUnlockAllAndRemove = useCallback(async () => {
+    if (!donationDraft || !unlockWarning) return;
+
+    // Clear all locks first
+    await saveDonationDraft({
+      ...donationDraft,
+      lockedIds: undefined,
+    });
+
+    // Clear warning and trigger removal again
+    const targetId = unlockWarning.targetId;
+    setUnlockWarning(null);
+
+    // Now proceed with removal (will work since nothing is locked)
+    setTimeout(() => {
+      handleRemoveWithSuggestion(targetId);
+    }, 100);
+  }, [donationDraft, unlockWarning, saveDonationDraft, handleRemoveWithSuggestion]);
 
   // Accept removal rebalance suggestion - uses shared context function
   const handleAcceptRemovalRebalance = useCallback(async () => {
@@ -436,7 +523,7 @@ export function CartTab() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handlePercentageStep(allocation.targetId, allocation.percentage, -1)}
-                    disabled={allocation.percentage <= 0}
+                    disabled={allocation.percentage <= 0 || isLocked(allocation.targetId)}
                     className="h-7 w-7 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Minus className="h-3 w-3" />
@@ -449,13 +536,43 @@ export function CartTab() {
                       value={getPercentageInputValue(allocation.targetId, allocation.percentage)}
                       onChange={(e) => handlePercentageInputChange(allocation.targetId, e.target.value)}
                       onBlur={() => handlePercentageInputBlur(allocation.targetId)}
-                      className="w-full h-7 rounded border border-slate-200 pl-1 pr-5 text-center text-base font-medium"
+                      disabled={isLocked(allocation.targetId)}
+                      className={`w-full h-7 rounded border pl-1 pr-5 text-center text-base font-medium ${
+                        isLocked(allocation.targetId)
+                          ? "border-amber-300 bg-amber-50"
+                          : "border-slate-200"
+                      }`}
                     />
                     <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">%</span>
                   </div>
+                  {/* Lock button */}
+                  <button
+                    onClick={() => toggleLockAllocation(allocation.targetId)}
+                    disabled={!canLock(allocation.targetId)}
+                    className={`h-7 w-7 rounded border flex items-center justify-center transition-colors ${
+                      isLocked(allocation.targetId)
+                        ? "border-amber-300 bg-amber-50 text-amber-600 hover:bg-amber-100"
+                        : canLock(allocation.targetId)
+                        ? "border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                        : "border-slate-100 text-slate-300 cursor-not-allowed"
+                    }`}
+                    title={
+                      isLocked(allocation.targetId)
+                        ? "Unlock"
+                        : canLock(allocation.targetId)
+                        ? "Lock"
+                        : "Cannot lock all items"
+                    }
+                  >
+                    {isLocked(allocation.targetId) ? (
+                      <Lock className="h-3 w-3" />
+                    ) : (
+                      <Unlock className="h-3 w-3" />
+                    )}
+                  </button>
                   <button
                     onClick={() => handlePercentageStep(allocation.targetId, allocation.percentage, 1)}
-                    disabled={allocation.percentage >= 100}
+                    disabled={allocation.percentage >= 100 || isLocked(allocation.targetId)}
                     className="h-7 w-7 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="h-3 w-3" />
@@ -545,8 +662,55 @@ export function CartTab() {
             </div>
           )}
 
+          {/* Unlock Warning - shown when trying to remove the only unlocked item */}
+          {unlockWarning && (
+            <div className="mt-3 p-3 rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 space-y-3 relative">
+              <button
+                onClick={() => setUnlockWarning(null)}
+                className="absolute top-2 right-2 p-1 rounded-full text-amber-600 hover:bg-amber-100 hover:text-amber-700 transition-colors"
+                title="Cancel"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+              <div className="flex items-start gap-2 pr-5">
+                <div className="p-1.5 rounded-lg bg-amber-100 flex-shrink-0">
+                  <Lock className="h-3.5 w-3.5 text-amber-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-amber-900 text-sm">
+                    Cannot Redistribute
+                  </h4>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    <span className="font-medium">{unlockWarning.targetName}</span> is the only unlocked item.
+                    Unlock at least one other item to redistribute percentages.
+                  </p>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleUnlockAllAndRemove}
+                  size="sm"
+                  className="flex-1 h-8 text-xs bg-amber-600 hover:bg-amber-700"
+                >
+                  <Unlock className="h-3 w-3 mr-1" />
+                  Unlock All & Remove
+                </Button>
+                <Button
+                  onClick={() => setUnlockWarning(null)}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 h-8 text-xs"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* AI Rebalance Suggestion (Removing) */}
-          {removalSuggestion && (
+          {removalSuggestion && !unlockWarning && (
             <div className="mt-3 p-3 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-3 relative">
               {/* Cancel/dismiss button */}
               <button
@@ -619,7 +783,7 @@ export function CartTab() {
           )}
 
           {/* Tip - only show when no suggestions are active */}
-          {!rebalanceSuggestion && !removalSuggestion && (
+          {!rebalanceSuggestion && !removalSuggestion && !unlockWarning && (
             <p className="mt-4 text-xs text-slate-400 text-center">
               Browse the directory to add more nonprofits or categories
             </p>

@@ -65,6 +65,7 @@ export interface DonationDraft {
   amountCents: number;
   frequency: "one-time" | "monthly" | "quarterly" | "annually";
   allocations: DraftAllocation[];
+  lockedIds?: string[]; // Target IDs that are locked from auto-balance
   updatedAt?: string;
 }
 
@@ -134,6 +135,9 @@ interface CartFavoritesContextType {
   removeFromDraft: (targetId: string) => Promise<void>;
   updateDraftAllocation: (targetId: string, percentage: number) => Promise<void>;
   isInDraft: (nonprofitId?: string, categoryId?: string) => boolean;
+  toggleLockAllocation: (targetId: string) => Promise<void>;
+  isLocked: (targetId: string) => boolean;
+  canLock: (targetId: string) => boolean; // Returns false if locking would lock all items
 
   // Rebalance Suggestion (shared between sidebar and donate page)
   rebalanceSuggestion: RebalanceSuggestion | null;
@@ -317,6 +321,11 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
             allocations: typeof dbDraft.allocations === "string"
               ? JSON.parse(dbDraft.allocations)
               : dbDraft.allocations,
+            lockedIds: dbDraft.locked_ids
+              ? (typeof dbDraft.locked_ids === "string"
+                  ? JSON.parse(dbDraft.locked_ids)
+                  : dbDraft.locked_ids)
+              : undefined,
             updatedAt: dbDraft.updated_at,
           }
         : null;
@@ -1070,6 +1079,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
               amount_cents: draft.amountCents,
               frequency: draft.frequency,
               allocations: JSON.stringify(draft.allocations),
+              locked_ids: draft.lockedIds ? JSON.stringify(draft.lockedIds) : null,
             },
             { onConflict: "user_id" }
           );
@@ -1178,6 +1188,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
       // Get existing items (the ones that will be rebalanced)
       const existingItems = donationDraft.allocations;
+      const lockedIds = donationDraft.lockedIds || [];
 
       // Check if there's already a pending suggestion and add to it
       const pendingNewItems = rebalanceSuggestion
@@ -1187,16 +1198,40 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         : [];
       const allNewItems = [...pendingNewItems, newItem];
 
-      // Generate rebalance suggestion
-      const totalItems = existingItems.length + allNewItems.length;
-      const equalPercentage = Math.floor(100 / totalItems);
-      const remainder = 100 - (equalPercentage * totalItems);
+      // Separate locked and unlocked existing items
+      const lockedExisting = existingItems.filter((a) => lockedIds.includes(a.targetId));
+      const unlockedExisting = existingItems.filter((a) => !lockedIds.includes(a.targetId));
 
+      // Calculate total locked percentage
+      const lockedTotal = lockedExisting.reduce((sum, a) => sum + a.percentage, 0);
+
+      // Remaining percentage to distribute among unlocked items and new items
+      const remainingPercentage = Math.max(0, 100 - lockedTotal);
+      const totalUnlockedItems = unlockedExisting.length + allNewItems.length;
+
+      if (totalUnlockedItems === 0) {
+        // All items are locked, can't rebalance - just add new item with 0%
+        setRebalanceSuggestion({
+          allocations: [...existingItems, ...allNewItems],
+          newItemNames: allNewItems.map((i) => i.targetName),
+        });
+        return;
+      }
+
+      const equalPercentage = Math.floor(remainingPercentage / totalUnlockedItems);
+      const remainder = remainingPercentage - (equalPercentage * totalUnlockedItems);
+
+      // Build suggested allocations: locked items keep their values, unlocked get redistributed
+      let firstUnlockedAssigned = false;
       const suggestedAllocations: DraftAllocation[] = [
-        ...existingItems.map((alloc, index) => ({
-          ...alloc,
-          percentage: equalPercentage + (index === 0 ? remainder : 0),
-        })),
+        ...existingItems.map((alloc) => {
+          if (lockedIds.includes(alloc.targetId)) {
+            return alloc; // Locked items keep their percentage
+          }
+          const pct = !firstUnlockedAssigned ? equalPercentage + remainder : equalPercentage;
+          firstUnlockedAssigned = true;
+          return { ...alloc, percentage: pct };
+        }),
         ...allNewItems.map((item) => ({
           ...item,
           percentage: equalPercentage,
@@ -1217,10 +1252,13 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     async (targetId: string) => {
       if (!donationDraft) return;
 
-      // Filter out the allocation
+      const lockedIds = donationDraft.lockedIds || [];
+
+      // Filter out the allocation and also remove from lockedIds if it was locked
       const filteredAllocations = donationDraft.allocations.filter(
         (a) => a.targetId !== targetId
       );
+      const filteredLockedIds = lockedIds.filter((id) => id !== targetId);
 
       // If no allocations left, clear the draft entirely
       if (filteredAllocations.length === 0) {
@@ -1228,19 +1266,41 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Redistribute percentages evenly among remaining allocations
-      const count = filteredAllocations.length;
-      const evenPercentage = Math.floor(100 / count);
-      const remainder = 100 - evenPercentage * count;
+      // Separate locked and unlocked remaining allocations
+      const lockedAllocations = filteredAllocations.filter((a) => filteredLockedIds.includes(a.targetId));
+      const unlockedAllocations = filteredAllocations.filter((a) => !filteredLockedIds.includes(a.targetId));
 
-      const redistributedAllocations = filteredAllocations.map((a, index) => ({
-        ...a,
-        percentage: index === 0 ? evenPercentage + remainder : evenPercentage,
-      }));
+      // Calculate total locked percentage
+      const lockedTotal = lockedAllocations.reduce((sum, a) => sum + a.percentage, 0);
+
+      // Remaining percentage to distribute among unlocked items
+      const remainingPercentage = Math.max(0, 100 - lockedTotal);
+      const unlockedCount = unlockedAllocations.length;
+
+      let redistributedAllocations: DraftAllocation[];
+
+      if (unlockedCount === 0) {
+        // All remaining items are locked, can't redistribute
+        redistributedAllocations = filteredAllocations;
+      } else {
+        const evenPercentage = Math.floor(remainingPercentage / unlockedCount);
+        const remainder = remainingPercentage - evenPercentage * unlockedCount;
+
+        let firstUnlockedAssigned = false;
+        redistributedAllocations = filteredAllocations.map((a) => {
+          if (filteredLockedIds.includes(a.targetId)) {
+            return a; // Locked items keep their percentage
+          }
+          const pct = !firstUnlockedAssigned ? evenPercentage + remainder : evenPercentage;
+          firstUnlockedAssigned = true;
+          return { ...a, percentage: pct };
+        });
+      }
 
       const updatedDraft: DonationDraft = {
         ...donationDraft,
         allocations: redistributedAllocations,
+        lockedIds: filteredLockedIds.length > 0 ? filteredLockedIds : undefined,
       };
 
       // Save the updated draft
@@ -1373,6 +1433,61 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     }
   }, [removalSuggestion, donationDraft, saveDonationDraft, clearDonationDraft]);
 
+  // Check if a specific allocation is locked
+  const isLocked = useCallback(
+    (targetId: string) => {
+      return donationDraft?.lockedIds?.includes(targetId) ?? false;
+    },
+    [donationDraft]
+  );
+
+  // Check if we can lock an allocation (must leave at least one unlocked)
+  const canLock = useCallback(
+    (targetId: string) => {
+      if (!donationDraft) return false;
+
+      // If already locked, can always unlock
+      if (donationDraft.lockedIds?.includes(targetId)) return true;
+
+      // Count unlocked items (items not in lockedIds)
+      const lockedIds = donationDraft.lockedIds || [];
+      const unlockedCount = donationDraft.allocations.filter(
+        (a) => !lockedIds.includes(a.targetId)
+      ).length;
+
+      // Can only lock if there will be at least 1 unlocked item remaining
+      return unlockedCount > 1;
+    },
+    [donationDraft]
+  );
+
+  // Toggle lock on an allocation
+  const toggleLockAllocation = useCallback(
+    async (targetId: string) => {
+      if (!donationDraft) return;
+
+      const currentLockedIds = donationDraft.lockedIds || [];
+      const isCurrentlyLocked = currentLockedIds.includes(targetId);
+
+      let newLockedIds: string[];
+
+      if (isCurrentlyLocked) {
+        // Unlock
+        newLockedIds = currentLockedIds.filter((id) => id !== targetId);
+      } else {
+        // Check if we can lock (must leave at least one unlocked)
+        if (!canLock(targetId)) return;
+        newLockedIds = [...currentLockedIds, targetId];
+      }
+
+      await saveDonationDraft({
+        ...donationDraft,
+        lockedIds: newLockedIds,
+      });
+    },
+    [donationDraft, saveDonationDraft, canLock]
+  );
+
   // Helper to check if there's an active draft (even without allocations)
   const hasDraft = donationDraft !== null;
 
@@ -1398,6 +1513,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     removeFromDraft,
     updateDraftAllocation,
     isInDraft,
+    toggleLockAllocation,
+    isLocked,
+    canLock,
     rebalanceSuggestion,
     setRebalanceSuggestion,
     applyRebalanceSuggestion,
