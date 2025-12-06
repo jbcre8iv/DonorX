@@ -89,14 +89,9 @@ export default async function NonprofitPage({ params }: NonprofitPageProps) {
           )}
 
           <div className="flex-1">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-3xl font-bold text-slate-900">
-                {typedNonprofit.name}
-              </h1>
-              {typedNonprofit.featured && (
-                <Badge variant="success">Featured</Badge>
-              )}
-            </div>
+            <h1 className="text-3xl font-bold text-slate-900">
+              {typedNonprofit.name}
+            </h1>
 
             <div className="flex items-center gap-4 mt-3 flex-wrap">
               {typedNonprofit.category && (

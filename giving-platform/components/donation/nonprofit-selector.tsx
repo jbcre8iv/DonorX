@@ -257,9 +257,6 @@ export function NonprofitSelector({
                                 {nonprofit.category.name}
                               </Badge>
                             )}
-                            {nonprofit.featured && (
-                              <Badge variant="success" className="text-xs">Featured</Badge>
-                            )}
                           </div>
                         </div>
                       </div>

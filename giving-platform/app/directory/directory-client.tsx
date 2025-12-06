@@ -58,8 +58,17 @@ export function DirectoryClient({
   const [currentPage, setCurrentPage] = React.useState(1);
   const [browseMode, setBrowseMode] = React.useState<BrowseMode>("nonprofits");
 
-  // View mode is now managed by preferences hook
-  const viewMode = preferences.directory_view_mode || "grid";
+  // View mode is managed by preferences hook, with responsive default
+  // Default: grid on desktop (>=640px), table on mobile (<640px)
+  const [defaultViewMode, setDefaultViewMode] = React.useState<"grid" | "table">("grid");
+
+  React.useEffect(() => {
+    // Set default based on screen size (only if no saved preference)
+    const isDesktop = window.innerWidth >= 640;
+    setDefaultViewMode(isDesktop ? "grid" : "table");
+  }, []);
+
+  const viewMode = preferences.directory_view_mode || defaultViewMode;
   const setViewMode = (mode: "grid" | "table") => {
     setPreference("directory_view_mode", mode);
   };

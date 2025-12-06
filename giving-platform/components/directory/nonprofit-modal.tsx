@@ -78,14 +78,9 @@ export function NonprofitModal({
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-xl font-bold text-slate-900">
-                {nonprofit.name}
-              </h2>
-              {nonprofit.featured && (
-                <Badge variant="success">Featured</Badge>
-              )}
-            </div>
+            <h2 className="text-xl font-bold text-slate-900">
+              {nonprofit.name}
+            </h2>
             <div className="flex items-center gap-3 mt-2 flex-wrap">
               {nonprofit.category && (
                 <Badge variant="secondary">

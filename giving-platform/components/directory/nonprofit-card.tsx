@@ -96,9 +96,6 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
             </div>
           </Link>
           <div className="flex items-center gap-1 flex-shrink-0">
-            {nonprofit.featured && (
-              <Badge variant="success">Featured</Badge>
-            )}
             <div className="relative group/fav">
               <button
                 onClick={handleToggleFavorite}
