@@ -78,8 +78,10 @@ export function DirectoryClient({
   const handleViewOrgsFromCategory = (categoryId: string) => {
     setSelectedCategory(categoryId);
     setBrowseMode("nonprofits");
-    // Scroll to top after switching views
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Scroll to top after switching views - use setTimeout to ensure DOM has updated
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 100);
   };
 
   // Update selected category when URL changes
@@ -247,7 +249,7 @@ export function DirectoryClient({
                 title="Browse nonprofits"
               >
                 <Building2 className="h-4 w-4" />
-                <span className="hidden sm:inline text-xs">Orgs</span>
+                <span className="hidden sm:inline text-xs">Nonprofits</span>
               </Button>
               <Button
                 variant={browseMode === "categories" ? "default" : "ghost"}

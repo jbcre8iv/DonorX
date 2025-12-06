@@ -141,7 +141,7 @@ function CategoryRow({
               >
                 Nonprofits
               </Button>
-              <span className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
+              <span className="hidden sm:block absolute bottom-full right-0 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
                 View nonprofits in this category
               </span>
             </div>
