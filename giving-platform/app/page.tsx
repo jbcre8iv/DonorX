@@ -82,7 +82,7 @@ export default async function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 to-white py-20 sm:py-32">
+      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 to-white py-20 sm:pt-32 sm:pb-36">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
@@ -93,7 +93,7 @@ export default async function HomePage() {
               The giving platform for corporations and family offices. Make one
               donation, support multiple causes, receive one tax receipt.
             </p>
-            <div className="mt-10 sm:mt-14 flex justify-center">
+            <div className="mt-10 flex justify-center">
               <Button size="lg" asChild>
                 <Link href="/directory">
                   Start Giving
