@@ -409,11 +409,10 @@ export function CartTab() {
           <div className="flex gap-2">
             <Button
               onClick={handleContinueDonation}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-              size="sm"
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-base"
             >
               Finalize Donation
-              <ArrowRight className="ml-1.5 h-4 w-4" />
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <Button
               variant="outline"
