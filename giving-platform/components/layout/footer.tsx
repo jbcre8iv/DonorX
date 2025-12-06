@@ -5,7 +5,7 @@ import { config } from "@/lib/config";
 const footerLinks = {
   platform: [
     { href: "/directory", label: "Browse Nonprofits" },
-    { href: "/donate", label: "Start Giving" },
+    { href: "/directory", label: "Start Giving" },
     { href: "/about", label: "About Us" },
   ],
   resources: [

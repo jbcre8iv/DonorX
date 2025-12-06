@@ -367,7 +367,11 @@ export default async function HomePage() {
       <section className="py-20 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="relative overflow-hidden rounded-3xl bg-blue-700 px-6 py-20 sm:px-12 sm:py-28">
-            <div className="relative mx-auto max-w-2xl text-center">
+            {/* Background decoration */}
+            <div className="absolute -left-20 -top-20 h-80 w-80 rounded-full bg-blue-600 opacity-50" />
+            <div className="absolute -bottom-20 -right-20 h-80 w-80 rounded-full bg-blue-800 opacity-50" />
+            {/* Content - z-10 to stay above decorations */}
+            <div className="relative z-10 mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                 Ready to transform your giving?
               </h2>
@@ -393,9 +397,6 @@ export default async function HomePage() {
                 </Button>
               </div>
             </div>
-            {/* Background decoration */}
-            <div className="absolute -left-20 -top-20 h-80 w-80 rounded-full bg-blue-600 opacity-50" />
-            <div className="absolute -bottom-20 -right-20 h-80 w-80 rounded-full bg-blue-800 opacity-50" />
           </div>
         </div>
       </section>
