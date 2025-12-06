@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, Minus, Plus, Sparkles, Check } from "lucide-react";
@@ -36,6 +36,31 @@ export function CartTab() {
 
   // Track percentage input values as strings to allow empty field during editing
   const [percentageInputs, setPercentageInputs] = useState<Record<string, string>>({});
+
+  // Track previous allocations to detect external changes
+  const prevAllocationsRef = useRef<string>("");
+
+  // Clear input cache when allocations change externally (e.g., from donate page)
+  useEffect(() => {
+    if (!donationDraft) {
+      setPercentageInputs({});
+      prevAllocationsRef.current = "";
+      return;
+    }
+
+    // Create a signature of current allocations
+    const currentSignature = donationDraft.allocations
+      .map((a) => `${a.targetId}:${a.percentage}`)
+      .sort()
+      .join(",");
+
+    // If allocations changed and we have cached inputs, clear them
+    if (prevAllocationsRef.current && prevAllocationsRef.current !== currentSignature) {
+      setPercentageInputs({});
+    }
+
+    prevAllocationsRef.current = currentSignature;
+  }, [donationDraft]);
 
   // Handle percentage input change - allows empty string during editing
   const handlePercentageInputChange = useCallback((targetId: string, value: string) => {
