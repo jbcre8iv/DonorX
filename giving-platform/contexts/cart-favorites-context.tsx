@@ -1363,8 +1363,39 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         newLockedIds = [...currentLockedIds, targetId];
       }
 
+      // After locking/unlocking, auto-balance the unlocked items to reach 100%
+      // The locked item keeps its current percentage, unlocked items are redistributed
+      const lockedTotal = currentDraft.allocations
+        .filter((a) => newLockedIds.includes(a.targetId))
+        .reduce((sum, a) => sum + a.percentage, 0);
+
+      const unlockedAllocations = currentDraft.allocations.filter(
+        (a) => !newLockedIds.includes(a.targetId)
+      );
+
+      const remainingPercentage = Math.max(0, 100 - lockedTotal);
+      const unlockedCount = unlockedAllocations.length;
+
+      let newAllocations = currentDraft.allocations;
+
+      if (unlockedCount > 0) {
+        const evenPercentage = Math.floor(remainingPercentage / unlockedCount);
+        const remainder = remainingPercentage - evenPercentage * unlockedCount;
+
+        let firstUnlockedAssigned = false;
+        newAllocations = currentDraft.allocations.map((a) => {
+          if (newLockedIds.includes(a.targetId)) {
+            return a; // Locked items keep their percentage
+          }
+          const pct = !firstUnlockedAssigned ? evenPercentage + remainder : evenPercentage;
+          firstUnlockedAssigned = true;
+          return { ...a, percentage: pct };
+        });
+      }
+
       await saveDonationDraft({
         ...currentDraft,
+        allocations: newAllocations,
         lockedIds: newLockedIds,
       });
     },
