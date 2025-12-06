@@ -326,7 +326,7 @@ export function NonprofitSelector({
                       <div
                         className={`flex items-center gap-3 py-3 px-2 -mx-2 transition-colors cursor-pointer ${
                           isExpanded
-                            ? "bg-slate-50 rounded-t-lg"
+                            ? "bg-blue-100/50 border-t-2 border-l-2 border-r-2 border-blue-200 rounded-t-xl"
                             : "hover:bg-slate-50 rounded-lg"
                         }`}
                         onClick={() => setExpandedId(isExpanded ? null : nonprofit.id)}
@@ -424,7 +424,7 @@ export function NonprofitSelector({
                       </div>
                       {/* Mobile expanded actions row */}
                       {isExpanded && (
-                        <div className="sm:hidden bg-slate-50 px-4 py-3 -mx-2 rounded-b-lg flex items-center justify-center gap-2 flex-wrap">
+                        <div className="sm:hidden bg-blue-100/50 border-b-2 border-l-2 border-r-2 border-blue-200 px-4 py-3 -mx-2 rounded-b-xl flex items-center justify-center gap-2 flex-wrap">
                           <Button
                             size="sm"
                             className={`h-10 px-6 ${inAllocation ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}

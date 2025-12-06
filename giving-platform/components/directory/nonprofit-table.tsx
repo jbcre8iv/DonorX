@@ -218,9 +218,6 @@ function NonprofitRow({
               <span className="font-medium text-slate-900 group-hover:text-blue-700 transition-colors block truncate">
                 {nonprofit.name}
               </span>
-              {nonprofit.ein && (
-                <p className="text-xs text-slate-400 truncate">EIN: {nonprofit.ein}</p>
-              )}
             </div>
           </Link>
           {/* Mobile: Non-link content (row click handles expand) */}
@@ -240,9 +237,6 @@ function NonprofitRow({
               <span className="font-medium text-slate-900 block truncate">
                 {nonprofit.name}
               </span>
-              {nonprofit.ein && (
-                <p className="text-xs text-slate-400 truncate">EIN: {nonprofit.ein}</p>
-              )}
               {nonprofit.category && (
                 <Badge variant="secondary" className="mt-1 text-xs">
                   {nonprofit.category.icon && (
