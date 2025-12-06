@@ -422,7 +422,9 @@ export function CartTab() {
                   </button>
                   {/* Lock button */}
                   <button
-                    onClick={() => {
+                    onMouseDown={(e) => {
+                      // Use onMouseDown to capture value BEFORE blur clears focus
+                      e.preventDefault(); // Prevent focus change
                       // Get the current input value (which may not be saved yet)
                       const inputValue = percentageInputs[allocation.targetId];
                       const currentPct = inputValue !== undefined && inputValue !== ""
