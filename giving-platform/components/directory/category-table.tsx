@@ -60,7 +60,7 @@ function CategoryRow({
       <tr
         className={`text-sm transition-colors sm:cursor-default cursor-pointer ${
           isExpanded
-            ? "sm:hover:bg-slate-50 bg-blue-50 shadow-[inset_0_0_0_2px_rgb(147,197,253)]"
+            ? "sm:hover:bg-slate-50"
             : "hover:bg-slate-50"
         }`}
         onClick={() => {
@@ -70,7 +70,7 @@ function CategoryRow({
           }
         }}
       >
-        <td className="py-3 pl-3 pr-2 sm:pr-4">
+        <td className={`py-3 pl-3 pr-2 sm:pr-4 ${isExpanded ? "sm:bg-transparent bg-blue-100/50 border-t-2 border-l-2 border-blue-200 rounded-tl-xl" : ""}`}>
           {/* Desktop: Link to filtered directory */}
           <Link
             href={`/directory?category=${category.slug}`}
@@ -148,14 +148,17 @@ function CategoryRow({
           </div>
         </td>
         {/* Mobile expand/status indicator */}
-        <td className="py-3 sm:hidden">
-          <div className="flex items-center gap-1">
-            {/* In-draft indicator - visible when collapsed */}
-            {inDraft && !isExpanded && (
-              <div className="h-7 w-7 flex items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                <Check className="h-4 w-4" />
-              </div>
-            )}
+        <td className={`py-3 sm:hidden ${isExpanded ? "bg-blue-100/50 border-t-2 border-r-2 border-blue-200 rounded-tr-xl" : ""}`}>
+          <div className="flex items-center">
+            {/* Fixed-width container for indicator - keeps chevron aligned */}
+            <div className="w-5 flex items-center justify-center">
+              {inDraft && !isExpanded && (
+                <span className="relative flex h-3 w-3">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500"></span>
+                </span>
+              )}
+            </div>
             <button
               onClick={onToggleExpand}
               className="h-8 w-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
@@ -168,8 +171,8 @@ function CategoryRow({
       </tr>
       {/* Mobile expanded actions row */}
       {isExpanded && (
-        <tr className="sm:hidden bg-blue-50 shadow-[inset_0_0_0_2px_rgb(147,197,253)]">
-          <td colSpan={2} className="py-3 px-4">
+        <tr className="sm:hidden">
+          <td colSpan={2} className="py-3 px-4 bg-blue-100/50 border-b-2 border-l-2 border-r-2 border-blue-200 rounded-b-xl">
             <div className="flex items-center gap-2 justify-center flex-wrap">
               {/* Toggle Donate Button - adds to or removes from draft */}
               <Button
@@ -236,7 +239,7 @@ export function CategoryTable({ categories, nonprofitCounts, sortBy, onSortChang
 
   return (
     <div className="sm:overflow-x-auto overflow-visible">
-      <table className="w-full table-fixed sm:table-auto">
+      <table className="w-full table-fixed sm:table-auto border-separate border-spacing-0">
         <thead>
           <tr className="border-b border-slate-200 text-left text-sm text-slate-600">
             <th className="pb-3 pl-3 font-medium">
