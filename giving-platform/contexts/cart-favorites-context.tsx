@@ -1071,8 +1071,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
   // Save donation draft
   const saveDonationDraft = useCallback(async (draft: DonationDraft) => {
-    // Update local state immediately
+    // Update local state and ref immediately (ref ensures callbacks get latest value)
     setDonationDraft(draft);
+    donationDraftRef.current = draft;
 
     // If logged in, save to database
     if (userId) {
@@ -1105,6 +1106,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   // Clear donation draft
   const clearDonationDraft = useCallback(async () => {
     setDonationDraft(null);
+    donationDraftRef.current = null;
 
     if (userId) {
       try {
