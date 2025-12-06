@@ -347,6 +347,8 @@ export function DonateClient({
           icon,
         };
       }),
+      // Preserve locked IDs from existing draft
+      lockedIds: donationDraft?.lockedIds,
     };
 
     // Track what we're saving so we don't sync our own changes back
@@ -357,6 +359,9 @@ export function DonateClient({
     });
 
     saveDonationDraft(draft);
+  // Note: We intentionally read donationDraft?.lockedIds but don't include donationDraft in deps
+  // to avoid infinite loops. The lockedIds are preserved from the current draft state.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [amount, frequency, allocations, draftLoaded, loadedFromDraft, saveDonationDraft, clearDonationDraft, router, nonprofits, categories]);
 
   const handleSaveTemplate = async () => {
