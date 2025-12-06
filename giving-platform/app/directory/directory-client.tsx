@@ -78,6 +78,8 @@ export function DirectoryClient({
   const handleViewOrgsFromCategory = (categoryId: string) => {
     setSelectedCategory(categoryId);
     setBrowseMode("nonprofits");
+    // Scroll to top after switching views
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Update selected category when URL changes

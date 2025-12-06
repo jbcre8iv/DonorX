@@ -137,10 +137,7 @@ function CategoryRow({
                 variant="outline"
                 size="sm"
                 className="h-9 px-3 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer"
-                onClick={() => {
-                  onViewOrgs?.(category.id);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
+                onClick={() => onViewOrgs?.(category.id)}
               >
                 Nonprofits
               </Button>
@@ -197,10 +194,7 @@ function CategoryRow({
                 variant="outline"
                 size="sm"
                 className="h-10 px-4 rounded-xl"
-                onClick={() => {
-                  onViewOrgs?.(category.id);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
+                onClick={() => onViewOrgs?.(category.id)}
               >
                 Nonprofits
               </Button>
