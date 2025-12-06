@@ -21,9 +21,6 @@ export function CartTab() {
     clearDonationDraft,
     removeFromDraft,
     updateDraftAllocation,
-    rebalanceSuggestion,
-    applyRebalanceSuggestion,
-    declineRebalanceSuggestion,
     removalSuggestion,
     setRemovalSuggestion,
     applyRemovalSuggestion,
@@ -288,17 +285,6 @@ export function CartTab() {
     await declineRemovalSuggestion();
   }, [declineRemovalSuggestion]);
 
-  // Accept add rebalance suggestion - uses shared context function
-  const handleAcceptRebalance = useCallback(async () => {
-    await applyRebalanceSuggestion();
-    setPercentageInputs({});
-  }, [applyRebalanceSuggestion]);
-
-  // Decline add rebalance - uses shared context function (keeps items at 0%)
-  const handleDeclineRebalance = useCallback(async () => {
-    await declineRebalanceSuggestion();
-  }, [declineRebalanceSuggestion]);
-
   // Cancel removal - dismiss suggestion without removing item
   const handleCancelRemoval = useCallback(() => {
     setRemovalSuggestion(null);
@@ -487,7 +473,7 @@ export function CartTab() {
                     onClick={() => handleRemoveWithSuggestion(allocation.targetId)}
                     className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
                     title="Remove from giving list"
-                    disabled={!!rebalanceSuggestion || !!removalSuggestion}
+                    disabled={!!removalSuggestion}
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -607,79 +593,6 @@ export function CartTab() {
               )}
             </div>
           </div>
-
-          {/* AI Rebalance Suggestion (Adding) */}
-          {rebalanceSuggestion && (
-            <div className="mt-3 p-3 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-3">
-              <div className="flex items-start gap-2">
-                <div className="p-1.5 rounded-lg bg-emerald-100 flex-shrink-0">
-                  <Sparkles className="h-3.5 w-3.5 text-emerald-600 animate-pulse" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-emerald-900 text-sm">AI Suggested Rebalance</h4>
-                  <p className="text-xs text-emerald-700 mt-0.5">
-                    Adding{" "}
-                    {rebalanceSuggestion.newItemNames.map((name, i) => (
-                      <span key={name}>
-                        <span className="font-medium">{name}</span>
-                        {i < rebalanceSuggestion.newItemNames.length - 2 && ", "}
-                        {i === rebalanceSuggestion.newItemNames.length - 2 && " and "}
-                      </span>
-                    ))}{" "}
-                    to your allocation. Here&apos;s a recommended distribution:
-                  </p>
-                </div>
-              </div>
-
-              {/* Suggested allocation preview */}
-              <div className="space-y-1.5">
-                {rebalanceSuggestion.allocations.map((alloc) => {
-                  const isNewItem = !donationDraft?.allocations.some((a) => a.targetId === alloc.targetId);
-                  return (
-                    <div
-                      key={alloc.targetId}
-                      className={`flex items-center justify-between text-xs py-1.5 px-2 rounded ${
-                        isNewItem
-                          ? "bg-emerald-100 border border-emerald-200"
-                          : "bg-white/60"
-                      }`}
-                    >
-                      <span className={`truncate mr-2 ${
-                        isNewItem ? "font-medium text-emerald-900" : "text-slate-700"
-                      }`}>
-                        {alloc.targetName}
-                        {isNewItem && (
-                          <span className="ml-1 text-emerald-600">(new)</span>
-                        )}
-                      </span>
-                      <span className="font-medium text-slate-900">{alloc.percentage}%</span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Accept/Decline buttons */}
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleAcceptRebalance}
-                  size="sm"
-                  className="flex-1 h-8 text-xs"
-                >
-                  <Check className="h-3 w-3 mr-1" />
-                  Apply Suggestion
-                </Button>
-                <Button
-                  onClick={handleDeclineRebalance}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 h-8 text-xs"
-                >
-                  <X className="h-3 w-3 mr-1" />
-                  Manual Adjust
-                </Button>
-              </div>
-            </div>
-          )}
 
           {/* Unlock Warning - shown when trying to remove the only unlocked item */}
           {unlockWarning && (
@@ -802,7 +715,7 @@ export function CartTab() {
           )}
 
           {/* Tip - only show when no suggestions are active */}
-          {!rebalanceSuggestion && !removalSuggestion && !unlockWarning && (
+          {!removalSuggestion && !unlockWarning && (
             <p className="mt-4 text-xs text-slate-400 text-center">
               Browse the directory to add more nonprofits or categories
             </p>

@@ -20,21 +20,10 @@ export interface AllocationItem {
   percentage: number;
 }
 
-interface RebalanceSuggestion {
-  allocations: AllocationItem[];
-  newItemNames: string[];
-}
-
 interface RemovalRebalanceSuggestion {
   allocations: AllocationItem[];
   removedItemName: string;
   removedPercentage: number;
-}
-
-// Shared rebalance suggestion from context (for sync between sidebar and donate page)
-export interface SharedRebalanceSuggestion {
-  allocations: { targetId: string; targetName: string; percentage: number; type: "nonprofit" | "category" }[];
-  newItemNames: string[];
 }
 
 export interface SharedRemovalSuggestion {
@@ -51,12 +40,6 @@ interface AllocationBuilderProps {
   categories: Category[];
   donationAmount?: number; // Amount in dollars for AI advisor
   onApplyAiAllocation?: (allocations: AIAllocation[]) => void;
-  // Shared rebalance suggestion from context (synced with sidebar)
-  sharedRebalanceSuggestion?: SharedRebalanceSuggestion | null;
-  onApplySharedRebalance?: () => void;
-  onDeclineSharedRebalance?: () => void;
-  // Callback to set shared rebalance suggestion (for syncing adds to sidebar)
-  onSetSharedRebalance?: (suggestion: SharedRebalanceSuggestion | null) => void;
   // Shared removal suggestion from context (synced with sidebar)
   sharedRemovalSuggestion?: SharedRemovalSuggestion | null;
   onApplySharedRemoval?: () => void;
@@ -77,10 +60,6 @@ export function AllocationBuilder({
   categories,
   donationAmount,
   onApplyAiAllocation,
-  sharedRebalanceSuggestion,
-  onApplySharedRebalance,
-  onDeclineSharedRebalance,
-  onSetSharedRebalance,
   sharedRemovalSuggestion,
   onApplySharedRemoval,
   onDeclineSharedRemoval,
@@ -92,7 +71,6 @@ export function AllocationBuilder({
   const [selectorOpen, setSelectorOpen] = React.useState(false);
   const [detailsItem, setDetailsItem] = React.useState<AllocationItem | null>(null);
   const [aiExpanded, setAiExpanded] = React.useState(false);
-  const [rebalanceSuggestion, setRebalanceSuggestion] = React.useState<RebalanceSuggestion | null>(null);
   const [removalSuggestion, setRemovalSuggestion] = React.useState<RemovalRebalanceSuggestion | null>(null);
 
   // Track which allocations were manually adjusted by the user
@@ -126,29 +104,6 @@ export function AllocationBuilder({
     });
   }, [allocations]);
 
-  // Determine which rebalance suggestion to show:
-  // - Use sharedRebalanceSuggestion from context if provided (from sidebar adding items)
-  // - Otherwise use local rebalanceSuggestion (from adding via allocation builder itself)
-  const activeRebalanceSuggestion = React.useMemo(() => {
-    if (sharedRebalanceSuggestion) {
-      // Convert shared suggestion to local format (add id to each allocation)
-      return {
-        allocations: sharedRebalanceSuggestion.allocations.map((a) => ({
-          id: allocations.find((alloc) => alloc.targetId === a.targetId)?.id || crypto.randomUUID(),
-          type: a.type,
-          targetId: a.targetId,
-          targetName: a.targetName,
-          percentage: a.percentage,
-        })),
-        newItemNames: sharedRebalanceSuggestion.newItemNames,
-      };
-    }
-    return rebalanceSuggestion;
-  }, [sharedRebalanceSuggestion, rebalanceSuggestion, allocations]);
-
-  // Check if we're using the shared suggestion
-  const isUsingSharedSuggestion = !!sharedRebalanceSuggestion;
-
   // Determine which removal suggestion to show:
   // - Use sharedRemovalSuggestion from context if provided (from sidebar removing items)
   // - Otherwise use local removalSuggestion (from removing via allocation builder itself)
@@ -173,7 +128,6 @@ export function AllocationBuilder({
   // Check if we're using the shared removal suggestion
   const isUsingSharedRemovalSuggestion = !!sharedRemovalSuggestion;
 
-  const addSuggestionRef = React.useRef<HTMLDivElement>(null);
   const removalSuggestionRef = React.useRef<HTMLDivElement>(null);
 
   // Reset viewport zoom on iOS - workaround for unexpected zoom behavior
@@ -189,32 +143,18 @@ export function AllocationBuilder({
     }
   }, []);
 
-  // Reset zoom when selector modal closes (after adding items)
+  // Reset zoom when selector modal closes
   React.useEffect(() => {
-    if (!selectorOpen && (activeRebalanceSuggestion || activeRemovalSuggestion)) {
+    if (!selectorOpen && activeRemovalSuggestion) {
       const isMobile = window.innerWidth < 640;
       if (isMobile) {
         // Small delay to let the modal fully close
         setTimeout(resetViewportZoom, 150);
       }
     }
-  }, [selectorOpen, activeRebalanceSuggestion, activeRemovalSuggestion, resetViewportZoom]);
+  }, [selectorOpen, activeRemovalSuggestion, resetViewportZoom]);
 
-  // Auto-scroll to suggestion when it appears (desktop only), reset zoom on mobile
-  React.useEffect(() => {
-    if (activeRebalanceSuggestion && addSuggestionRef.current && !selectorOpen) {
-      const isMobile = window.innerWidth < 640;
-      if (isMobile) {
-        // Reset zoom on mobile when suggestion appears (e.g., from directory add)
-        setTimeout(resetViewportZoom, 100);
-      } else {
-        setTimeout(() => {
-          addSuggestionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 100);
-      }
-    }
-  }, [activeRebalanceSuggestion, selectorOpen, resetViewportZoom]);
-
+  // Auto-scroll to removal suggestion when it appears (desktop only), reset zoom on mobile
   React.useEffect(() => {
     if (activeRemovalSuggestion && removalSuggestionRef.current && !selectorOpen) {
       const isMobile = window.innerWidth < 640;
@@ -365,7 +305,7 @@ export function AllocationBuilder({
       if (index === remainingAllocations.length - 1) {
         const othersTotal = remainingAllocations
           .slice(0, -1)
-          .reduce((sum, a, i) => {
+          .reduce((sum, a) => {
             const prop = a.percentage / currentTotal;
             return sum + a.percentage + Math.round(freedPercentage * prop);
           }, 0);
@@ -526,40 +466,10 @@ export function AllocationBuilder({
     onAllocationsChange(newAllocations);
   };
 
-  // Generate a smart rebalance suggestion when adding to existing allocations
-  const generateRebalanceSuggestion = (
-    currentAllocations: AllocationItem[],
-    newItems: AllocationItem[]
-  ): AllocationItem[] => {
-    const totalItems = currentAllocations.length + newItems.length;
-
-    // Calculate equal distribution as base
-    const equalPercentage = Math.floor(100 / totalItems);
-    const remainder = 100 - (equalPercentage * totalItems);
-
-    // Create rebalanced allocations
-    const rebalanced: AllocationItem[] = currentAllocations.map((alloc, index) => ({
-      ...alloc,
-      // Give the first item the remainder to ensure 100% total
-      percentage: equalPercentage + (index === 0 ? remainder : 0),
-    }));
-
-    // Add all new items with equal percentage
-    for (const newItem of newItems) {
-      rebalanced.push({
-        ...newItem,
-        percentage: equalPercentage,
-      });
-    }
-
-    return rebalanced;
-  };
-
+  // Handle adding allocation - auto-balances immediately (no blocking popup)
   const handleAddAllocation = (type: "nonprofit" | "category", targetId: string, targetName: string) => {
-    // Check max allocation limit (accounting for any pending items in suggestion)
-    // Use activeRebalanceSuggestion to account for both local and shared suggestions
-    const pendingCount = activeRebalanceSuggestion ? activeRebalanceSuggestion.newItemNames.length : 0;
-    if (allocations.length + pendingCount >= config.features.maxAllocationItems) {
+    // Check max allocation limit
+    if (allocations.length >= config.features.maxAllocationItems) {
       return;
     }
 
@@ -568,174 +478,55 @@ export function AllocationBuilder({
       type,
       targetId,
       targetName,
-      percentage: 0, // Will be set by suggestion or default
+      percentage: 0,
     };
 
-    // If there are existing allocations (or an existing suggestion), show/update a rebalance suggestion
-    if (allocations.length > 0 || activeRebalanceSuggestion) {
-      // If there's already a pending suggestion, add to it
-      if (activeRebalanceSuggestion) {
-        // Get the existing new items from the suggestion (items not in current allocations)
-        const existingNewItems = activeRebalanceSuggestion.allocations.filter(
-          (a) => !allocations.some((alloc) => alloc.targetId === a.targetId)
-        );
-        // Add the new item to the list
-        const allNewItems = [...existingNewItems, newAllocation];
-        const suggestedAllocations = generateRebalanceSuggestion(allocations, allNewItems);
-        const newSuggestion = {
-          allocations: suggestedAllocations,
-          newItemNames: [...activeRebalanceSuggestion.newItemNames, targetName],
-        };
-        // Use shared setter if available (syncs to sidebar), otherwise use local state
-        if (onSetSharedRebalance) {
-          onSetSharedRebalance({
-            allocations: suggestedAllocations.map((a) => ({
-              targetId: a.targetId,
-              targetName: a.targetName,
-              percentage: a.percentage,
-              type: a.type,
-            })),
-            newItemNames: newSuggestion.newItemNames,
-          });
-        } else {
-          setRebalanceSuggestion(newSuggestion);
-        }
-      } else {
-        // Create a new suggestion with just this item
-        const suggestedAllocations = generateRebalanceSuggestion(allocations, [newAllocation]);
-        const newSuggestion = {
-          allocations: suggestedAllocations,
-          newItemNames: [targetName],
-        };
-        // Use shared setter if available (syncs to sidebar), otherwise use local state
-        if (onSetSharedRebalance) {
-          onSetSharedRebalance({
-            allocations: suggestedAllocations.map((a) => ({
-              targetId: a.targetId,
-              targetName: a.targetName,
-              percentage: a.percentage,
-              type: a.type,
-            })),
-            newItemNames: newSuggestion.newItemNames,
-          });
-        } else {
-          setRebalanceSuggestion(newSuggestion);
-        }
-      }
-    } else {
+    if (allocations.length === 0) {
       // First allocation gets 100%
       newAllocation.percentage = 100;
       onAllocationsChange([newAllocation]);
-    }
-  };
-
-  const handleAcceptRebalance = () => {
-    // If using shared suggestion from context, use the shared handler
-    if (isUsingSharedSuggestion && onApplySharedRebalance) {
-      onApplySharedRebalance();
-      setManuallyAdjustedIds(new Set());
       return;
     }
 
-    // Otherwise use local suggestion
-    if (rebalanceSuggestion) {
-      onAllocationsChange(rebalanceSuggestion.allocations);
-      setRebalanceSuggestion(null);
-      // Clear manual tracking since AI suggested these values
-      setManuallyAdjustedIds(new Set());
-    }
-  };
+    // Auto-balance: distribute equally among all items (respecting locks)
+    // Separate locked and unlocked items
+    const lockedItems = allocations.filter((a) => lockedIds.includes(a.targetId));
+    const unlockedItems = allocations.filter((a) => !lockedIds.includes(a.targetId));
 
-  const handleDeclineRebalance = () => {
-    // If using shared suggestion from context, use the shared handler
-    if (isUsingSharedSuggestion && onDeclineSharedRebalance) {
-      onDeclineSharedRebalance();
-      return;
-    }
+    // Calculate locked total
+    const lockedTotal = lockedItems.reduce((sum, a) => sum + a.percentage, 0);
+    const remainingForUnlocked = Math.max(0, 100 - lockedTotal);
+    const totalUnlockedItems = unlockedItems.length + 1; // +1 for new item
 
-    // Otherwise use local suggestion
-    if (rebalanceSuggestion) {
-      // Get all new items from the suggestion (items not in current allocations)
-      const newItems = rebalanceSuggestion.allocations.filter(
-        (a) => !allocations.some((alloc) => alloc.targetId === a.targetId)
-      );
-      // Calculate default percentage for each new item
-      const perItemPercentage = Math.min(Math.floor(remainingPercentage / newItems.length), 25);
-      const defaultPercentage = perItemPercentage > 0 ? perItemPercentage : 10;
+    const equalPercentage = Math.floor(remainingForUnlocked / totalUnlockedItems);
+    const remainder = remainingForUnlocked - (equalPercentage * totalUnlockedItems);
 
-      onAllocationsChange([
-        ...allocations,
-        ...newItems.map((item) => ({ ...item, percentage: defaultPercentage })),
-      ]);
-      setRebalanceSuggestion(null);
-    }
+    // Build new allocations
+    let firstUnlockedAssigned = false;
+    const newAllocations: AllocationItem[] = [
+      ...allocations.map((alloc) => {
+        if (lockedIds.includes(alloc.targetId)) {
+          return alloc; // Locked items keep their percentage
+        }
+        const pct = !firstUnlockedAssigned ? equalPercentage + remainder : equalPercentage;
+        firstUnlockedAssigned = true;
+        return { ...alloc, percentage: pct };
+      }),
+      { ...newAllocation, percentage: equalPercentage },
+    ];
+
+    onAllocationsChange(newAllocations);
+    setManuallyAdjustedIds(new Set()); // Clear manual tracking since we auto-balanced
   };
 
   const excludeIds = allocations.map((a) => a.targetId);
-  // Include both existing allocations and pending items from the rebalance suggestion
-  const pendingItemIds = activeRebalanceSuggestion
-    ? activeRebalanceSuggestion.allocations
-        .filter((a) => !allocations.some((alloc) => alloc.targetId === a.targetId))
-        .map((a) => a.targetId)
-    : [];
-  const includedIds = [...allocations.map((a) => a.targetId), ...pendingItemIds];
+  const includedIds = allocations.map((a) => a.targetId);
 
   // Handle removal from the selector modal (toggle behavior)
   const handleRemoveFromSelector = (targetId: string) => {
-    // First check if it's in the current allocations
     const allocation = allocations.find((a) => a.targetId === targetId);
     if (allocation) {
       handleRemove(allocation.id);
-      return;
-    }
-
-    // Check if it's a pending item in the rebalance suggestion (local or shared)
-    if (activeRebalanceSuggestion) {
-      const isPending = activeRebalanceSuggestion.allocations.some(
-        (a) => a.targetId === targetId && !allocations.some((alloc) => alloc.targetId === a.targetId)
-      );
-      if (isPending) {
-        // Remove this item from the pending suggestion
-        const remainingNewItems = activeRebalanceSuggestion.allocations.filter(
-          (a) => a.targetId !== targetId && !allocations.some((alloc) => alloc.targetId === a.targetId)
-        );
-        const remainingNewItemNames = activeRebalanceSuggestion.newItemNames.filter((_, i) => {
-          // Find the item index by matching order (new items are at the end of allocations)
-          const newItemsInAllocs = activeRebalanceSuggestion.allocations.filter(
-            (a) => !allocations.some((alloc) => alloc.targetId === a.targetId)
-          );
-          return newItemsInAllocs[i]?.targetId !== targetId;
-        });
-
-        if (remainingNewItems.length === 0) {
-          // No more pending items, clear the suggestion
-          if (onSetSharedRebalance) {
-            onSetSharedRebalance(null);
-          } else {
-            setRebalanceSuggestion(null);
-          }
-        } else {
-          // Regenerate suggestion with remaining items
-          const suggestedAllocations = generateRebalanceSuggestion(allocations, remainingNewItems);
-          const newSuggestion = {
-            allocations: suggestedAllocations,
-            newItemNames: remainingNewItemNames,
-          };
-          if (onSetSharedRebalance) {
-            onSetSharedRebalance({
-              allocations: suggestedAllocations.map((a) => ({
-                targetId: a.targetId,
-                targetName: a.targetName,
-                percentage: a.percentage,
-                type: a.type,
-              })),
-              newItemNames: newSuggestion.newItemNames,
-            });
-          } else {
-            setRebalanceSuggestion(newSuggestion);
-          }
-        }
-      }
     }
   };
 
@@ -977,7 +768,7 @@ export function AllocationBuilder({
                 )}
               </div>
               {/* AI Auto-balance button - shown when not at 100% */}
-              {allocations.length > 0 && totalPercentage !== 100 && !activeRebalanceSuggestion && !activeRemovalSuggestion && (
+              {allocations.length > 0 && totalPercentage !== 100 && !activeRemovalSuggestion && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -990,82 +781,6 @@ export function AllocationBuilder({
               )}
             </div>
           </div>
-
-          {/* AI Rebalance Suggestion (Adding) */}
-          {activeRebalanceSuggestion && (
-            <div ref={addSuggestionRef} className="p-4 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-4 overflow-hidden max-w-full">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-emerald-100 flex-shrink-0">
-                  <Sparkles className="h-4 w-4 text-emerald-600 animate-pulse" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-emerald-900">AI Suggested Rebalance</h4>
-                  <p className="text-sm text-emerald-700 mt-1">
-                    Adding{" "}
-                    {activeRebalanceSuggestion.newItemNames.map((name, i) => (
-                      <span key={name}>
-                        <span className="font-medium">{name}</span>
-                        {i < activeRebalanceSuggestion.newItemNames.length - 2 && ", "}
-                        {i === activeRebalanceSuggestion.newItemNames.length - 2 && " and "}
-                      </span>
-                    ))}{" "}
-                    to your allocation.
-                    Here&apos;s a recommended distribution:
-                  </p>
-                </div>
-              </div>
-
-              {/* Suggested allocation preview */}
-              <div className="space-y-2 sm:pl-11">
-                {activeRebalanceSuggestion.allocations.map((alloc) => {
-                  const isNewItem = !allocations.some((a) => a.targetId === alloc.targetId);
-                  return (
-                    <div
-                      key={alloc.id}
-                      className={`flex items-center justify-between text-sm py-1.5 px-3 rounded ${
-                        isNewItem
-                          ? "bg-emerald-100 border border-emerald-200"
-                          : "bg-white/60"
-                      }`}
-                    >
-                      <span className={`truncate mr-2 ${
-                        isNewItem
-                          ? "font-medium text-emerald-900"
-                          : "text-slate-700"
-                      }`}>
-                        {alloc.targetName}
-                        {isNewItem && (
-                          <span className="ml-2 text-xs text-emerald-600">(new)</span>
-                        )}
-                      </span>
-                      <span className="font-medium text-slate-900">{alloc.percentage}%</span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Accept/Decline buttons */}
-              <div className="flex gap-3 sm:pl-11">
-                <Button
-                  onClick={handleAcceptRebalance}
-                  size="sm"
-                  className="flex-1"
-                >
-                  <Check className="h-4 w-4 mr-1" />
-                  Apply Suggestion
-                </Button>
-                <Button
-                  onClick={handleDeclineRebalance}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Manual Adjust
-                </Button>
-              </div>
-            </div>
-          )}
 
           {/* AI Rebalance Suggestion (Removing) */}
           {activeRemovalSuggestion && (
@@ -1140,7 +855,7 @@ export function AllocationBuilder({
           )}
 
           {/* Add Button */}
-          {allocations.length < config.features.maxAllocationItems && !activeRebalanceSuggestion && !activeRemovalSuggestion && (
+          {allocations.length < config.features.maxAllocationItems && !activeRemovalSuggestion && (
             <Button
               variant="outline"
               fullWidth
@@ -1165,7 +880,6 @@ export function AllocationBuilder({
         onClose={() => setSelectorOpen(false)}
         onSelect={handleAddAllocation}
         onRemove={handleRemoveFromSelector}
-        onCancelPending={() => setRebalanceSuggestion(null)}
         nonprofits={nonprofits}
         categories={categories}
         excludeIds={excludeIds}

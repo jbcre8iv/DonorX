@@ -1134,30 +1134,17 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   // Check if item is in draft allocations
   const isInDraft = useCallback(
     (nonprofitId?: string, categoryId?: string) => {
-      // Check if in actual draft allocations
-      const inAllocations = donationDraft?.allocations.some(
+      return donationDraft?.allocations.some(
         (a) =>
           (nonprofitId && a.type === "nonprofit" && a.targetId === nonprofitId) ||
           (categoryId && a.type === "category" && a.targetId === categoryId)
-      );
-      if (inAllocations) return true;
-
-      // Also check if pending in rebalance suggestion (item added but waiting for user accept/decline)
-      if (rebalanceSuggestion) {
-        const inSuggestion = rebalanceSuggestion.allocations.some(
-          (a) =>
-            (nonprofitId && a.type === "nonprofit" && a.targetId === nonprofitId) ||
-            (categoryId && a.type === "category" && a.targetId === categoryId)
-        );
-        if (inSuggestion) return true;
-      }
-
-      return false;
+      ) ?? false;
     },
-    [donationDraft, rebalanceSuggestion]
+    [donationDraft]
   );
 
   // Add item directly to donation draft allocations (creates draft if none exists)
+  // Auto-balances immediately without requiring user confirmation
   const addToDraft = useCallback(
     async (item: {
       type: "nonprofit" | "category";
@@ -1196,20 +1183,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       );
       if (alreadyInDraft) return;
 
-      // Create the new item
-      const newItem: DraftAllocation = { ...item, percentage: 0 };
-
-      // Get existing items (the ones that will be rebalanced)
+      // Get existing items
       const existingItems = currentDraft.allocations;
       const lockedIds = currentDraft.lockedIds || [];
-
-      // Check if there's already a pending suggestion and add to it
-      const pendingNewItems = rebalanceSuggestion
-        ? rebalanceSuggestion.allocations.filter(
-            (a) => !existingItems.some((e) => e.targetId === a.targetId)
-          )
-        : [];
-      const allNewItems = [...pendingNewItems, newItem];
 
       // Separate locked and unlocked existing items
       const lockedExisting = existingItems.filter((a) => lockedIds.includes(a.targetId));
@@ -1218,25 +1194,30 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       // Calculate total locked percentage
       const lockedTotal = lockedExisting.reduce((sum, a) => sum + a.percentage, 0);
 
-      // Remaining percentage to distribute among unlocked items and new items
+      // Remaining percentage to distribute among unlocked items and the new item
       const remainingPercentage = Math.max(0, 100 - lockedTotal);
-      const totalUnlockedItems = unlockedExisting.length + allNewItems.length;
+      const totalUnlockedItems = unlockedExisting.length + 1; // +1 for new item
 
-      if (totalUnlockedItems === 0) {
-        // All items are locked, can't rebalance - just add new item with 0%
-        setRebalanceSuggestion({
-          allocations: [...existingItems, ...allNewItems],
-          newItemNames: allNewItems.map((i) => i.targetName),
+      if (totalUnlockedItems === 1 && unlockedExisting.length === 0) {
+        // All existing items are locked, add new item with remaining percentage
+        const newAllocations: DraftAllocation[] = [
+          ...existingItems,
+          { ...item, percentage: remainingPercentage },
+        ];
+        await saveDonationDraft({
+          ...currentDraft,
+          allocations: newAllocations,
         });
         return;
       }
 
+      // Auto-balance: distribute remaining percentage equally among unlocked items + new item
       const equalPercentage = Math.floor(remainingPercentage / totalUnlockedItems);
       const remainder = remainingPercentage - (equalPercentage * totalUnlockedItems);
 
-      // Build suggested allocations: locked items keep their values, unlocked get redistributed
+      // Build new allocations: locked items keep their values, unlocked get redistributed
       let firstUnlockedAssigned = false;
-      const suggestedAllocations: DraftAllocation[] = [
+      const newAllocations: DraftAllocation[] = [
         ...existingItems.map((alloc) => {
           if (lockedIds.includes(alloc.targetId)) {
             return alloc; // Locked items keep their percentage
@@ -1245,19 +1226,16 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           firstUnlockedAssigned = true;
           return { ...alloc, percentage: pct };
         }),
-        ...allNewItems.map((item) => ({
-          ...item,
-          percentage: equalPercentage,
-        })),
+        { ...item, percentage: equalPercentage },
       ];
 
-      // Set the shared suggestion state (don't save to draft yet - wait for user to accept/decline)
-      setRebalanceSuggestion({
-        allocations: suggestedAllocations,
-        newItemNames: allNewItems.map((i) => i.targetName),
+      // Save immediately (no blocking suggestion popup)
+      await saveDonationDraft({
+        ...currentDraft,
+        allocations: newAllocations,
       });
     },
-    [saveDonationDraft, rebalanceSuggestion]
+    [saveDonationDraft]
   );
 
   // Remove item from donation draft allocations
