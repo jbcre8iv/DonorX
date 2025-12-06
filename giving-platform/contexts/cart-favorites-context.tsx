@@ -194,6 +194,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   // Track when we're doing a local draft operation to ignore our own realtime updates
   const isLocalDraftOperation = useRef(false);
 
+  // Ref to access latest donationDraft in callbacks (avoids stale closures)
+  const donationDraftRef = useRef<DonationDraft | null>(null);
+
   // Use ref for supabase client to ensure stability across renders
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
@@ -472,6 +475,11 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       if (pollInterval) clearInterval(pollInterval);
     };
   }, [userId, fetchFromDatabase, saveToLocalStorage]);
+
+  // Keep ref in sync with donationDraft state (for avoiding stale closures)
+  useEffect(() => {
+    donationDraftRef.current = donationDraft;
+  }, [donationDraft]);
 
   // Initialize - check auth and load data
   useEffect(() => {
@@ -1156,6 +1164,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       logoUrl?: string;
       icon?: string;
     }, options?: { skipTabSwitch?: boolean }) => {
+      // Use ref to get latest draft (avoids stale closure issues)
+      const currentDraft = donationDraftRef.current;
+
       // Open the sidebar immediately on desktop only (don't interrupt mobile browsing)
       // 1024px is the lg breakpoint in Tailwind
       // Skip tab switch if requested (e.g., when adding from favorites tab)
@@ -1167,10 +1178,10 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       }
 
       // If no draft exists or draft has no allocations, create/update with this item at 100%
-      if (!donationDraft || donationDraft.allocations.length === 0) {
+      if (!currentDraft || currentDraft.allocations.length === 0) {
         const newDraft: DonationDraft = {
-          amountCents: donationDraft?.amountCents ?? 10000000, // $100,000 default
-          frequency: donationDraft?.frequency ?? "one-time",
+          amountCents: currentDraft?.amountCents ?? 10000000, // $100,000 default
+          frequency: currentDraft?.frequency ?? "one-time",
           allocations: [{ ...item, percentage: 100 }],
         };
         await saveDonationDraft(newDraft);
@@ -1178,7 +1189,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       }
 
       // Check if already in draft
-      const alreadyInDraft = donationDraft.allocations.some(
+      const alreadyInDraft = currentDraft.allocations.some(
         (a) => a.type === item.type && a.targetId === item.targetId
       );
       if (alreadyInDraft) return;
@@ -1187,8 +1198,8 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       const newItem: DraftAllocation = { ...item, percentage: 0 };
 
       // Get existing items (the ones that will be rebalanced)
-      const existingItems = donationDraft.allocations;
-      const lockedIds = donationDraft.lockedIds || [];
+      const existingItems = currentDraft.allocations;
+      const lockedIds = currentDraft.lockedIds || [];
 
       // Check if there's already a pending suggestion and add to it
       const pendingNewItems = rebalanceSuggestion
@@ -1244,18 +1255,20 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         newItemNames: allNewItems.map((i) => i.targetName),
       });
     },
-    [donationDraft, saveDonationDraft, setActiveTab, setSidebarOpen, rebalanceSuggestion]
+    [saveDonationDraft, rebalanceSuggestion]
   );
 
   // Remove item from donation draft allocations
   const removeFromDraft = useCallback(
     async (targetId: string) => {
-      if (!donationDraft) return;
+      // Use ref to get latest draft (avoids stale closure issues)
+      const currentDraft = donationDraftRef.current;
+      if (!currentDraft) return;
 
-      const lockedIds = donationDraft.lockedIds || [];
+      const lockedIds = currentDraft.lockedIds || [];
 
       // Filter out the allocation and also remove from lockedIds if it was locked
-      const filteredAllocations = donationDraft.allocations.filter(
+      const filteredAllocations = currentDraft.allocations.filter(
         (a) => a.targetId !== targetId
       );
       const filteredLockedIds = lockedIds.filter((id) => id !== targetId);
@@ -1298,7 +1311,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       }
 
       const updatedDraft: DonationDraft = {
-        ...donationDraft,
+        ...currentDraft,
         allocations: redistributedAllocations,
         lockedIds: filteredLockedIds.length > 0 ? filteredLockedIds : undefined,
       };
@@ -1306,58 +1319,64 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       // Save the updated draft
       await saveDonationDraft(updatedDraft);
     },
-    [donationDraft, saveDonationDraft, clearDonationDraft]
+    [saveDonationDraft, clearDonationDraft]
   );
 
   // Update a single allocation's percentage in the draft
   const updateDraftAllocation = useCallback(
     async (targetId: string, percentage: number) => {
-      if (!donationDraft) return;
+      // Use ref to get latest draft (avoids stale closure issues)
+      const currentDraft = donationDraftRef.current;
+      if (!currentDraft) return;
 
       const clampedPercentage = Math.max(0, Math.min(percentage, 100));
 
-      const updatedAllocations = donationDraft.allocations.map((a) =>
+      const updatedAllocations = currentDraft.allocations.map((a) =>
         a.targetId === targetId ? { ...a, percentage: clampedPercentage } : a
       );
 
       const updatedDraft: DonationDraft = {
-        ...donationDraft,
+        ...currentDraft,
         allocations: updatedAllocations,
       };
 
       await saveDonationDraft(updatedDraft);
     },
-    [donationDraft, saveDonationDraft]
+    [saveDonationDraft]
   );
 
   // Apply the shared rebalance suggestion (updates draft with suggested allocations)
   const applyRebalanceSuggestion = useCallback(async () => {
-    if (!rebalanceSuggestion || !donationDraft) {
+    // Use ref to get latest draft (avoids stale closure issues)
+    const currentDraft = donationDraftRef.current;
+    if (!rebalanceSuggestion || !currentDraft) {
       // Clear suggestion even if nothing to apply (handles edge cases)
       setRebalanceSuggestion(null);
       return;
     }
 
     const updatedDraft: DonationDraft = {
-      ...donationDraft,
+      ...currentDraft,
       allocations: rebalanceSuggestion.allocations,
     };
 
     // Clear suggestion first to ensure UI updates, then save
     setRebalanceSuggestion(null);
     await saveDonationDraft(updatedDraft);
-  }, [rebalanceSuggestion, donationDraft, saveDonationDraft]);
+  }, [rebalanceSuggestion, saveDonationDraft]);
 
   // Decline the shared rebalance suggestion (adds items with default percentage for manual adjustment)
   const declineRebalanceSuggestion = useCallback(async () => {
-    if (!rebalanceSuggestion || !donationDraft) {
+    // Use ref to get latest draft (avoids stale closure issues)
+    const currentDraft = donationDraftRef.current;
+    if (!rebalanceSuggestion || !currentDraft) {
       setRebalanceSuggestion(null);
       return;
     }
 
     // Get the new items from the suggestion (items not in current allocations)
     const newItems = rebalanceSuggestion.allocations.filter(
-      (a) => !donationDraft.allocations.some((alloc) => alloc.targetId === a.targetId)
+      (a) => !currentDraft.allocations.some((alloc) => alloc.targetId === a.targetId)
     );
 
     if (newItems.length === 0) {
@@ -1366,7 +1385,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     }
 
     // Calculate remaining percentage from current allocations
-    const currentTotal = donationDraft.allocations.reduce((sum, a) => sum + a.percentage, 0);
+    const currentTotal = currentDraft.allocations.reduce((sum, a) => sum + a.percentage, 0);
     const remainingPercentage = 100 - currentTotal;
 
     // Calculate default percentage for each new item (similar to allocation-builder logic)
@@ -1375,9 +1394,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
     // Add new items with default percentage
     const updatedDraft: DonationDraft = {
-      ...donationDraft,
+      ...currentDraft,
       allocations: [
-        ...donationDraft.allocations,
+        ...currentDraft.allocations,
         ...newItems.map((item) => ({
           type: item.type,
           targetId: item.targetId,
@@ -1389,11 +1408,13 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
     setRebalanceSuggestion(null);
     await saveDonationDraft(updatedDraft);
-  }, [rebalanceSuggestion, donationDraft, saveDonationDraft]);
+  }, [rebalanceSuggestion, saveDonationDraft]);
 
   // Apply the shared removal suggestion (updates draft with suggested allocations after item removal)
   const applyRemovalSuggestion = useCallback(async () => {
-    if (!removalSuggestion || !donationDraft) {
+    // Use ref to get latest draft (avoids stale closure issues)
+    const currentDraft = donationDraftRef.current;
+    if (!removalSuggestion || !currentDraft) {
       // Clear suggestion even if nothing to apply (handles edge cases)
       setRemovalSuggestion(null);
       return;
@@ -1402,21 +1423,23 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     // Clear suggestion first to ensure UI updates, then save
     setRemovalSuggestion(null);
     await saveDonationDraft({
-      ...donationDraft,
+      ...currentDraft,
       allocations: removalSuggestion.allocations,
     });
-  }, [removalSuggestion, donationDraft, saveDonationDraft]);
+  }, [removalSuggestion, saveDonationDraft]);
 
   // Decline the shared removal suggestion (just remove item without rebalancing)
   const declineRemovalSuggestion = useCallback(async () => {
-    if (!removalSuggestion || !donationDraft) {
+    // Use ref to get latest draft (avoids stale closure issues)
+    const currentDraft = donationDraftRef.current;
+    if (!removalSuggestion || !currentDraft) {
       // Clear suggestion even if nothing to apply (handles edge cases)
       setRemovalSuggestion(null);
       return;
     }
 
     // Keep original percentages for remaining items
-    const remainingOriginalAllocations = donationDraft.allocations.filter(
+    const remainingOriginalAllocations = currentDraft.allocations.filter(
       (a) => removalSuggestion.allocations.some((s) => s.targetId === a.targetId)
     );
 
@@ -1427,11 +1450,11 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       await clearDonationDraft();
     } else {
       await saveDonationDraft({
-        ...donationDraft,
+        ...currentDraft,
         allocations: remainingOriginalAllocations,
       });
     }
-  }, [removalSuggestion, donationDraft, saveDonationDraft, clearDonationDraft]);
+  }, [removalSuggestion, saveDonationDraft, clearDonationDraft]);
 
   // Check if a specific allocation is locked
   const isLocked = useCallback(
@@ -1464,9 +1487,11 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   // Toggle lock on an allocation
   const toggleLockAllocation = useCallback(
     async (targetId: string) => {
-      if (!donationDraft) return;
+      // Use ref to get latest draft (avoids stale closure issues)
+      const currentDraft = donationDraftRef.current;
+      if (!currentDraft) return;
 
-      const currentLockedIds = donationDraft.lockedIds || [];
+      const currentLockedIds = currentDraft.lockedIds || [];
       const isCurrentlyLocked = currentLockedIds.includes(targetId);
 
       let newLockedIds: string[];
@@ -1476,16 +1501,20 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         newLockedIds = currentLockedIds.filter((id) => id !== targetId);
       } else {
         // Check if we can lock (must leave at least one unlocked)
-        if (!canLock(targetId)) return;
+        // Count unlocked items using ref
+        const unlockedCount = currentDraft.allocations.filter(
+          (a) => !currentLockedIds.includes(a.targetId)
+        ).length;
+        if (unlockedCount <= 1) return; // Can't lock if it would lock all items
         newLockedIds = [...currentLockedIds, targetId];
       }
 
       await saveDonationDraft({
-        ...donationDraft,
+        ...currentDraft,
         lockedIds: newLockedIds,
       });
     },
-    [donationDraft, saveDonationDraft, canLock]
+    [saveDonationDraft]
   );
 
   // Helper to check if there's an active draft (even without allocations)
