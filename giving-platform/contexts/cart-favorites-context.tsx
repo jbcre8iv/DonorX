@@ -69,19 +69,6 @@ export interface DonationDraft {
   updatedAt?: string;
 }
 
-// Rebalance suggestion types (shared between sidebar and donate page)
-export interface RebalanceSuggestion {
-  allocations: DraftAllocation[];
-  newItemNames: string[];
-}
-
-// Removal rebalance suggestion types (shared between sidebar and donate page)
-export interface RemovalRebalanceSuggestion {
-  allocations: DraftAllocation[];
-  removedItemName: string;
-  removedPercentage: number;
-}
-
 // Result type for addToCart operation
 export type AddToCartResult =
   | { success: true }
@@ -139,17 +126,10 @@ interface CartFavoritesContextType {
   isLocked: (targetId: string) => boolean;
   canLock: (targetId: string) => boolean; // Returns false if locking would lock all items
 
-  // Rebalance Suggestion (shared between sidebar and donate page)
-  rebalanceSuggestion: RebalanceSuggestion | null;
-  setRebalanceSuggestion: (suggestion: RebalanceSuggestion | null) => void;
-  applyRebalanceSuggestion: () => Promise<void>;
-  declineRebalanceSuggestion: () => Promise<void>;
-
-  // Removal Rebalance Suggestion (shared between sidebar and donate page)
-  removalSuggestion: RemovalRebalanceSuggestion | null;
-  setRemovalSuggestion: (suggestion: RemovalRebalanceSuggestion | null) => void;
-  applyRemovalSuggestion: () => Promise<void>;
-  declineRemovalSuggestion: () => Promise<void>;
+  // Pending removal (for confirmation dialog)
+  pendingRemoval: { targetId: string; targetName: string } | null;
+  setPendingRemoval: (item: { targetId: string; targetName: string } | null) => void;
+  confirmRemoval: () => Promise<void>;
 
   // UI State
   isSidebarOpen: boolean;
@@ -185,11 +165,8 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Shared rebalance suggestion state (synced between sidebar and donate page)
-  const [rebalanceSuggestion, setRebalanceSuggestion] = useState<RebalanceSuggestion | null>(null);
-
-  // Shared removal rebalance suggestion state (synced between sidebar and donate page)
-  const [removalSuggestion, setRemovalSuggestion] = useState<RemovalRebalanceSuggestion | null>(null);
+  // Pending removal for confirmation dialog (synced between sidebar and donate page)
+  const [pendingRemoval, setPendingRemoval] = useState<{ targetId: string; targetName: string } | null>(null);
 
   // Track when we're doing a local draft operation to ignore our own realtime updates
   const isLocalDraftOperation = useRef(false);
@@ -1325,116 +1302,13 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     [saveDonationDraft]
   );
 
-  // Apply the shared rebalance suggestion (updates draft with suggested allocations)
-  const applyRebalanceSuggestion = useCallback(async () => {
-    // Use ref to get latest draft (avoids stale closure issues)
-    const currentDraft = donationDraftRef.current;
-    if (!rebalanceSuggestion || !currentDraft) {
-      // Clear suggestion even if nothing to apply (handles edge cases)
-      setRebalanceSuggestion(null);
-      return;
-    }
+  // Confirm pending removal (actually removes the item from draft)
+  const confirmRemoval = useCallback(async () => {
+    if (!pendingRemoval) return;
 
-    const updatedDraft: DonationDraft = {
-      ...currentDraft,
-      allocations: rebalanceSuggestion.allocations,
-    };
-
-    // Clear suggestion first to ensure UI updates, then save
-    setRebalanceSuggestion(null);
-    await saveDonationDraft(updatedDraft);
-  }, [rebalanceSuggestion, saveDonationDraft]);
-
-  // Decline the shared rebalance suggestion (adds items with default percentage for manual adjustment)
-  const declineRebalanceSuggestion = useCallback(async () => {
-    // Use ref to get latest draft (avoids stale closure issues)
-    const currentDraft = donationDraftRef.current;
-    if (!rebalanceSuggestion || !currentDraft) {
-      setRebalanceSuggestion(null);
-      return;
-    }
-
-    // Get the new items from the suggestion (items not in current allocations)
-    const newItems = rebalanceSuggestion.allocations.filter(
-      (a) => !currentDraft.allocations.some((alloc) => alloc.targetId === a.targetId)
-    );
-
-    if (newItems.length === 0) {
-      setRebalanceSuggestion(null);
-      return;
-    }
-
-    // Calculate remaining percentage from current allocations
-    const currentTotal = currentDraft.allocations.reduce((sum, a) => sum + a.percentage, 0);
-    const remainingPercentage = 100 - currentTotal;
-
-    // Calculate default percentage for each new item (similar to allocation-builder logic)
-    const perItemPercentage = Math.min(Math.floor(remainingPercentage / newItems.length), 25);
-    const defaultPercentage = perItemPercentage > 0 ? perItemPercentage : 10;
-
-    // Add new items with default percentage
-    const updatedDraft: DonationDraft = {
-      ...currentDraft,
-      allocations: [
-        ...currentDraft.allocations,
-        ...newItems.map((item) => ({
-          type: item.type,
-          targetId: item.targetId,
-          targetName: item.targetName,
-          percentage: defaultPercentage,
-        })),
-      ],
-    };
-
-    setRebalanceSuggestion(null);
-    await saveDonationDraft(updatedDraft);
-  }, [rebalanceSuggestion, saveDonationDraft]);
-
-  // Apply the shared removal suggestion (updates draft with suggested allocations after item removal)
-  const applyRemovalSuggestion = useCallback(async () => {
-    // Use ref to get latest draft (avoids stale closure issues)
-    const currentDraft = donationDraftRef.current;
-    if (!removalSuggestion || !currentDraft) {
-      // Clear suggestion even if nothing to apply (handles edge cases)
-      setRemovalSuggestion(null);
-      return;
-    }
-
-    // Clear suggestion first to ensure UI updates, then save
-    setRemovalSuggestion(null);
-    await saveDonationDraft({
-      ...currentDraft,
-      allocations: removalSuggestion.allocations,
-    });
-  }, [removalSuggestion, saveDonationDraft]);
-
-  // Decline the shared removal suggestion (just remove item without rebalancing)
-  const declineRemovalSuggestion = useCallback(async () => {
-    // Use ref to get latest draft (avoids stale closure issues)
-    const currentDraft = donationDraftRef.current;
-    if (!removalSuggestion || !currentDraft) {
-      // Clear suggestion even if nothing to apply (handles edge cases)
-      setRemovalSuggestion(null);
-      return;
-    }
-
-    // Keep original percentages for remaining items
-    const remainingOriginalAllocations = currentDraft.allocations.filter(
-      (a) => removalSuggestion.allocations.some((s) => s.targetId === a.targetId)
-    );
-
-    // Clear suggestion first to ensure UI updates
-    setRemovalSuggestion(null);
-
-    if (remainingOriginalAllocations.length === 0) {
-      await clearDonationDraft();
-    } else {
-      await saveDonationDraft({
-        ...currentDraft,
-        allocations: remainingOriginalAllocations,
-      });
-    }
-  }, [removalSuggestion, saveDonationDraft, clearDonationDraft]);
+    await removeFromDraft(pendingRemoval.targetId);
+    setPendingRemoval(null);
+  }, [pendingRemoval, removeFromDraft]);
 
   // Check if a specific allocation is locked
   const isLocked = useCallback(
@@ -1525,14 +1399,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     toggleLockAllocation,
     isLocked,
     canLock,
-    rebalanceSuggestion,
-    setRebalanceSuggestion,
-    applyRebalanceSuggestion,
-    declineRebalanceSuggestion,
-    removalSuggestion,
-    setRemovalSuggestion,
-    applyRemovalSuggestion,
-    declineRemovalSuggestion,
+    pendingRemoval,
+    setPendingRemoval,
+    confirmRemoval,
     isSidebarOpen,
     setSidebarOpen,
     activeTab,

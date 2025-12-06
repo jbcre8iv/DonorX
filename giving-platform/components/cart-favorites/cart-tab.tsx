@@ -3,8 +3,8 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, Minus, Plus, Sparkles, Check, Lock, Unlock } from "lucide-react";
-import { useCartFavorites, type CartItem, type DraftAllocation, type RemovalRebalanceSuggestion } from "@/contexts/cart-favorites-context";
+import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, Minus, Plus, Sparkles, Lock, Unlock } from "lucide-react";
+import { useCartFavorites, type CartItem, type DraftAllocation } from "@/contexts/cart-favorites-context";
 import { Button } from "@/components/ui/button";
 
 export function CartTab() {
@@ -21,10 +21,6 @@ export function CartTab() {
     clearDonationDraft,
     removeFromDraft,
     updateDraftAllocation,
-    removalSuggestion,
-    setRemovalSuggestion,
-    applyRemovalSuggestion,
-    declineRemovalSuggestion,
     toggleLockAllocation,
     isLocked,
     canLock,
@@ -144,91 +140,19 @@ export function CartTab() {
     setPercentageInputs({});
   }, [donationDraft, saveDonationDraft]);
 
-  // Generate a smart rebalance suggestion when removing an allocation
-  const generateRemovalRebalanceSuggestion = useCallback((
-    remainingAllocations: DraftAllocation[],
-    freedPercentage: number,
-    lockedIds: string[] = []
-  ): DraftAllocation[] => {
-    // Separate locked and unlocked allocations
-    const lockedAllocations = remainingAllocations.filter((a) => lockedIds.includes(a.targetId));
-    const unlockedAllocations = remainingAllocations.filter((a) => !lockedIds.includes(a.targetId));
-
-    // If no unlocked allocations, can't redistribute - return as-is
-    if (unlockedAllocations.length === 0) {
-      return remainingAllocations;
-    }
-
-    const unlockedTotal = unlockedAllocations.reduce((sum, item) => sum + item.percentage, 0);
-
-    // Redistribute freed percentage among unlocked items only
-    if (unlockedTotal === 0) {
-      // All unlocked items have 0%, distribute equally
-      const equalPercentage = Math.floor((100 - lockedAllocations.reduce((s, a) => s + a.percentage, 0)) / unlockedAllocations.length);
-      const remainder = (100 - lockedAllocations.reduce((s, a) => s + a.percentage, 0)) - (equalPercentage * unlockedAllocations.length);
-
-      let firstAssigned = false;
-      return remainingAllocations.map((alloc) => {
-        if (lockedIds.includes(alloc.targetId)) {
-          return alloc; // Locked items stay unchanged
-        }
-        const pct = !firstAssigned ? equalPercentage + remainder : equalPercentage;
-        firstAssigned = true;
-        return { ...alloc, percentage: pct };
-      });
-    }
-
-    // Distribute freed percentage proportionally among unlocked items
-    return remainingAllocations.map((alloc, index) => {
-      if (lockedIds.includes(alloc.targetId)) {
-        return alloc; // Locked items stay unchanged
-      }
-
-      const proportion = alloc.percentage / unlockedTotal;
-      const additionalPercentage = Math.round(freedPercentage * proportion);
-
-      // Handle rounding for last unlocked item
-      const unlockedIndex = unlockedAllocations.findIndex((u) => u.targetId === alloc.targetId);
-      if (unlockedIndex === unlockedAllocations.length - 1) {
-        const lockedTotal = lockedAllocations.reduce((sum, a) => sum + a.percentage, 0);
-        const othersTotal = remainingAllocations
-          .filter((a) => !lockedIds.includes(a.targetId) && a.targetId !== alloc.targetId)
-          .reduce((sum, a) => {
-            const prop = a.percentage / unlockedTotal;
-            return sum + a.percentage + Math.round(freedPercentage * prop);
-          }, 0);
-        return {
-          ...alloc,
-          percentage: 100 - lockedTotal - othersTotal,
-        };
-      }
-
-      return {
-        ...alloc,
-        percentage: alloc.percentage + additionalPercentage,
-      };
-    });
-  }, []);
+  // State for pending removal confirmation
+  const [pendingRemoval, setPendingRemoval] = useState<{ targetId: string; targetName: string } | null>(null);
 
   // State for showing "unlock items" warning when removing only unlocked item
   const [unlockWarning, setUnlockWarning] = useState<{ targetId: string; targetName: string } | null>(null);
 
-  // Handle removal with smart rebalance suggestion
-  const handleRemoveWithSuggestion = useCallback((targetId: string) => {
+  // Handle removal click - show confirmation dialog
+  const handleRemoveClick = useCallback((targetId: string, targetName: string) => {
     if (!donationDraft) return;
-
-    const itemToRemove = donationDraft.allocations.find((a) => a.targetId === targetId);
-    if (!itemToRemove) return;
 
     const lockedIds = donationDraft.lockedIds || [];
     const remainingAllocations = donationDraft.allocations.filter((a) => a.targetId !== targetId);
     const remainingLockedIds = lockedIds.filter((id) => id !== targetId);
-
-    // If only one item left or removed item had 0%, just remove directly
-    if (remainingAllocations.length === 0 || itemToRemove.percentage === 0) {
-      removeFromDraft(targetId);
-      return;
-    }
 
     // Check if this is the only unlocked item and there are locked items remaining
     const isOnlyUnlockedItem = !lockedIds.includes(targetId) &&
@@ -236,23 +160,25 @@ export function CartTab() {
 
     if (isOnlyUnlockedItem && remainingAllocations.length > 0) {
       // Show warning - user needs to unlock at least one item
-      setUnlockWarning({ targetId, targetName: itemToRemove.targetName });
+      setUnlockWarning({ targetId, targetName });
       return;
     }
 
-    // Generate smart rebalance suggestion for remaining items
-    const suggestedAllocations = generateRemovalRebalanceSuggestion(
-      remainingAllocations,
-      itemToRemove.percentage,
-      remainingLockedIds
-    );
+    // Show simple confirmation dialog
+    setPendingRemoval({ targetId, targetName });
+  }, [donationDraft]);
 
-    setRemovalSuggestion({
-      allocations: suggestedAllocations,
-      removedItemName: itemToRemove.targetName,
-      removedPercentage: itemToRemove.percentage,
-    });
-  }, [donationDraft, removeFromDraft, generateRemovalRebalanceSuggestion]);
+  // Confirm removal
+  const handleConfirmRemoval = useCallback(() => {
+    if (!pendingRemoval) return;
+    removeFromDraft(pendingRemoval.targetId);
+    setPendingRemoval(null);
+  }, [pendingRemoval, removeFromDraft]);
+
+  // Cancel removal
+  const handleCancelRemoval = useCallback(() => {
+    setPendingRemoval(null);
+  }, []);
 
   // Handle unlocking all items and proceeding with removal
   const handleUnlockAllAndRemove = useCallback(async () => {
@@ -264,31 +190,13 @@ export function CartTab() {
       lockedIds: undefined,
     });
 
-    // Clear warning and trigger removal again
-    const targetId = unlockWarning.targetId;
+    // Clear warning and show simple confirmation
+    const { targetId, targetName } = unlockWarning;
     setUnlockWarning(null);
 
-    // Now proceed with removal (will work since nothing is locked)
-    setTimeout(() => {
-      handleRemoveWithSuggestion(targetId);
-    }, 100);
-  }, [donationDraft, unlockWarning, saveDonationDraft, handleRemoveWithSuggestion]);
-
-  // Accept removal rebalance suggestion - uses shared context function
-  const handleAcceptRemovalRebalance = useCallback(async () => {
-    await applyRemovalSuggestion();
-    setPercentageInputs({});
-  }, [applyRemovalSuggestion]);
-
-  // Decline removal rebalance - uses shared context function (just removes without rebalancing)
-  const handleDeclineRemovalRebalance = useCallback(async () => {
-    await declineRemovalSuggestion();
-  }, [declineRemovalSuggestion]);
-
-  // Cancel removal - dismiss suggestion without removing item
-  const handleCancelRemoval = useCallback(() => {
-    setRemovalSuggestion(null);
-  }, [setRemovalSuggestion]);
+    // Now show simple confirmation dialog
+    setPendingRemoval({ targetId, targetName });
+  }, [donationDraft, unlockWarning, saveDonationDraft]);
 
   // Calculate total percentage for draft allocations
   const totalDraftPercentage = donationDraft?.allocations.reduce(
@@ -470,10 +378,10 @@ export function CartTab() {
 
                   {/* Remove button */}
                   <button
-                    onClick={() => handleRemoveWithSuggestion(allocation.targetId)}
+                    onClick={() => handleRemoveClick(allocation.targetId, allocation.targetName)}
                     className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
                     title="Remove from giving list"
-                    disabled={!!removalSuggestion}
+                    disabled={!!pendingRemoval}
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -641,81 +549,49 @@ export function CartTab() {
             </div>
           )}
 
-          {/* AI Rebalance Suggestion (Removing) */}
-          {removalSuggestion && !unlockWarning && (
-            <div className="mt-3 p-3 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 space-y-3 relative">
-              {/* Cancel/dismiss button */}
-              <button
-                onClick={handleCancelRemoval}
-                className="absolute top-2 right-2 p-1 rounded-full text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 transition-colors"
-                title="Cancel removal"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-              <div className="flex items-start gap-2 pr-5">
-                <div className="p-1.5 rounded-lg bg-emerald-100 flex-shrink-0">
-                  <Sparkles className="h-3.5 w-3.5 text-emerald-600 animate-pulse" />
+          {/* Remove Confirmation Dialog */}
+          {pendingRemoval && !unlockWarning && (
+            <div className="mt-3 p-3 rounded-lg border border-red-200 bg-red-50 space-y-3">
+              <div className="flex items-start gap-2">
+                <div className="p-1.5 rounded-lg bg-red-100 flex-shrink-0">
+                  <Trash2 className="h-3.5 w-3.5 text-red-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-emerald-900 text-sm">
-                    Redistribute {removalSuggestion.removedPercentage}%?
+                  <h4 className="font-medium text-red-900 text-sm">
+                    Remove {pendingRemoval.targetName}?
                   </h4>
-                  <p className="text-xs text-emerald-700 mt-0.5">
-                    Removing <span className="font-medium">{removalSuggestion.removedItemName}</span> frees up {removalSuggestion.removedPercentage}%.
-                    Here&apos;s a suggested redistribution:
+                  <p className="text-xs text-red-700 mt-0.5">
+                    This will remove it from your giving list. You can use Auto-balance afterward to redistribute percentages.
                   </p>
                 </div>
               </div>
 
-              {/* Suggested allocation preview */}
-              <div className="space-y-1.5">
-                {removalSuggestion.allocations.map((alloc) => {
-                  const original = donationDraft?.allocations.find((a) => a.targetId === alloc.targetId);
-                  const change = original ? alloc.percentage - original.percentage : 0;
-                  return (
-                    <div
-                      key={alloc.targetId}
-                      className="flex items-center justify-between text-xs py-1.5 px-2 rounded bg-white/60"
-                    >
-                      <span className="truncate mr-2 text-slate-700">
-                        {alloc.targetName}
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        {change > 0 && (
-                          <span className="text-emerald-600 font-medium">+{change}%</span>
-                        )}
-                        <span className="font-medium text-slate-900">{alloc.percentage}%</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Accept/Decline buttons */}
+              {/* Confirm/Cancel buttons */}
               <div className="flex gap-2">
                 <Button
-                  onClick={handleAcceptRemovalRebalance}
+                  onClick={handleConfirmRemoval}
                   size="sm"
+                  variant="destructive"
                   className="flex-1 h-8 text-xs"
                 >
-                  <Check className="h-3 w-3 mr-1" />
-                  Apply Redistribution
+                  <Trash2 className="h-3 w-3 mr-1" />
+                  Remove
                 </Button>
                 <Button
-                  onClick={handleDeclineRemovalRebalance}
+                  onClick={handleCancelRemoval}
                   variant="outline"
                   size="sm"
                   className="flex-1 h-8 text-xs"
                 >
                   <X className="h-3 w-3 mr-1" />
-                  Just Remove
+                  Cancel
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Tip - only show when no suggestions are active */}
-          {!removalSuggestion && !unlockWarning && (
+          {/* Tip - only show when no dialogs are active */}
+          {!pendingRemoval && !unlockWarning && (
             <p className="mt-4 text-xs text-slate-400 text-center">
               Browse the directory to add more nonprofits or categories
             </p>
