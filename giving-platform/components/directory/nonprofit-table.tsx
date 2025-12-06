@@ -187,7 +187,7 @@ function NonprofitRow({
       <tr
         className={`text-sm transition-colors sm:cursor-default cursor-pointer ${
           isExpanded
-            ? "sm:hover:bg-slate-50 bg-blue-50 shadow-[inset_0_0_0_2px_rgb(147,197,253)]"
+            ? "sm:hover:bg-slate-50"
             : "hover:bg-slate-50"
         }`}
         onClick={() => {
@@ -197,7 +197,7 @@ function NonprofitRow({
           }
         }}
       >
-        <td className="py-3 pl-3 pr-2 sm:pr-4">
+        <td className={`py-3 pl-3 pr-2 sm:pr-4 ${isExpanded ? "sm:bg-transparent bg-blue-100/50 border-t-2 border-l-2 border-blue-200 rounded-tl-xl" : ""}`}>
           {/* Desktop: Link to detail page */}
           <Link
             href={`/directory/${nonprofit.id}`}
@@ -284,7 +284,7 @@ function NonprofitRow({
           />
         </td>
         {/* Mobile expand/status indicator */}
-        <td className="py-3 sm:hidden">
+        <td className={`py-3 sm:hidden ${isExpanded ? "bg-blue-100/50 border-t-2 border-r-2 border-blue-200 rounded-tr-xl" : ""}`}>
           <div className="flex items-center">
             {/* Fixed-width container for indicator - keeps chevron aligned */}
             <div className="w-5 flex items-center justify-center">
@@ -307,8 +307,8 @@ function NonprofitRow({
       </tr>
       {/* Mobile expanded actions row */}
       {isExpanded && (
-        <tr className="sm:hidden bg-blue-50 shadow-[inset_0_0_0_2px_rgb(147,197,253)]">
-          <td colSpan={2} className="py-3 px-4">
+        <tr className="sm:hidden">
+          <td colSpan={2} className="py-3 px-4 bg-blue-100/50 border-b-2 border-l-2 border-r-2 border-blue-200 rounded-b-xl">
             <ActionButtons
               className="justify-center flex-wrap"
               nonprofit={nonprofit}
