@@ -422,7 +422,14 @@ export function CartTab() {
                   </button>
                   {/* Lock button */}
                   <button
-                    onClick={() => toggleLockAllocation(allocation.targetId)}
+                    onClick={() => {
+                      // Get the current input value (which may not be saved yet)
+                      const inputValue = percentageInputs[allocation.targetId];
+                      const currentPct = inputValue !== undefined && inputValue !== ""
+                        ? parseInt(inputValue, 10)
+                        : allocation.percentage;
+                      toggleLockAllocation(allocation.targetId, currentPct);
+                    }}
                     disabled={!canLock(allocation.targetId)}
                     className={`h-7 w-7 rounded border flex items-center justify-center transition-colors ${
                       isLocked(allocation.targetId)

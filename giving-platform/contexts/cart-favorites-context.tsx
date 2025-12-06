@@ -122,7 +122,7 @@ interface CartFavoritesContextType {
   removeFromDraft: (targetId: string) => Promise<void>;
   updateDraftAllocation: (targetId: string, percentage: number) => Promise<void>;
   isInDraft: (nonprofitId?: string, categoryId?: string) => boolean;
-  toggleLockAllocation: (targetId: string) => Promise<void>;
+  toggleLockAllocation: (targetId: string, currentPercentage?: number) => Promise<void>;
   isLocked: (targetId: string) => boolean;
   canLock: (targetId: string) => boolean; // Returns false if locking would lock all items
 
@@ -1341,8 +1341,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   // Toggle lock on an allocation
   // Note: This only toggles the lock state, it does NOT auto-balance.
   // Auto-balance happens when user clicks the Auto-balance button.
+  // currentPercentage: Optional - pass the current input value to avoid race conditions
   const toggleLockAllocation = useCallback(
-    async (targetId: string) => {
+    async (targetId: string, currentPercentage?: number) => {
       // Use ref to get latest draft (avoids stale closure issues)
       const currentDraft = donationDraftRef.current;
       if (!currentDraft) return;
@@ -1365,11 +1366,18 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         newLockedIds = [...currentLockedIds, targetId];
       }
 
-      // Only update the lock state, don't change any percentages
-      // This avoids race conditions with percentage input changes
-      // User can click Auto-balance if they want to redistribute
+      // If currentPercentage is provided, update the allocation with that value
+      // This ensures the typed input value is saved even if the async save hasn't completed
+      let newAllocations = currentDraft.allocations;
+      if (currentPercentage !== undefined) {
+        newAllocations = currentDraft.allocations.map((a) =>
+          a.targetId === targetId ? { ...a, percentage: currentPercentage } : a
+        );
+      }
+
       await saveDonationDraft({
         ...currentDraft,
+        allocations: newAllocations,
         lockedIds: newLockedIds,
       });
     },

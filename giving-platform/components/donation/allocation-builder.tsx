@@ -37,7 +37,7 @@ interface AllocationBuilderProps {
   onApplyAiAllocation?: (allocations: AIAllocation[]) => void;
   // Lock functionality
   lockedIds?: string[];
-  onToggleLock?: (targetId: string) => void;
+  onToggleLock?: (targetId: string, currentPercentage?: number) => void;
   canLock?: (targetId: string) => boolean;
 }
 
@@ -528,7 +528,14 @@ export function AllocationBuilder({
                       {/* Lock button */}
                       {onToggleLock && (
                         <button
-                          onClick={() => onToggleLock(item.targetId)}
+                          onClick={() => {
+                            // Get the current input value (which may not be saved yet)
+                            const inputValue = percentageInputs[item.id];
+                            const currentPct = inputValue !== undefined && inputValue !== ""
+                              ? parseInt(inputValue, 10)
+                              : item.percentage;
+                            onToggleLock(item.targetId, currentPct);
+                          }}
                           disabled={!canLock?.(item.targetId)}
                           className={`h-10 w-10 rounded-lg border flex items-center justify-center transition-colors ${
                             lockedIds.includes(item.targetId)
