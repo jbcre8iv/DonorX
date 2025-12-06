@@ -103,6 +103,12 @@ export function DirectoryClient({
     setCurrentPage(1);
   }, [search, selectedCategory, sortBy, viewMode, browseMode]);
 
+  // Handle page change with scroll to top
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   // First filter by search only (to determine which categories to show)
   const searchFilteredNonprofits = initialNonprofits.filter((nonprofit) =>
     smartFilterNonprofit(nonprofit, search)
@@ -399,7 +405,7 @@ export function DirectoryClient({
                   <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
-                    onPageChange={setCurrentPage}
+                    onPageChange={handlePageChange}
                     className="mt-10"
                   />
                 )}
@@ -425,7 +431,7 @@ export function DirectoryClient({
                   <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
-                    onPageChange={setCurrentPage}
+                    onPageChange={handlePageChange}
                     className="mt-10"
                   />
                 )}

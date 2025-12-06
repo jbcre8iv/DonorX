@@ -121,11 +121,6 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
           {nonprofit.mission || nonprofit.description || "No description available."}
         </p>
 
-        {nonprofit.ein && (
-          <p className="text-xs text-slate-400 mt-2">
-            EIN: {nonprofit.ein}
-          </p>
-        )}
 
         <div className="mt-4 flex items-center gap-2">
           {/* Toggle Donate Button - adds to or removes from draft */}
