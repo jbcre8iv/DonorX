@@ -4,39 +4,35 @@ import { useState } from "react";
 import Link from "next/link";
 import { Heart, Trash2, Tag, Building2, Plus, Eye, X, Globe, LogIn } from "lucide-react";
 import { useCartFavorites, type FavoriteItem } from "@/contexts/cart-favorites-context";
-import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 
 export function FavoritesTab() {
   const {
     favorites,
     removeFromFavorites,
-    addToCart,
-    isInCart,
+    addToDraft,
+    isInDraft,
     setSidebarOpen,
-    setActiveTab,
     userId,
   } = useCartFavorites();
-  const { addToast } = useToast();
 
   const [quickViewItem, setQuickViewItem] = useState<FavoriteItem | null>(null);
 
-  const handleAddToCart = async (item: typeof favorites[0]) => {
-    const result = await addToCart({
-      nonprofitId: item.nonprofitId,
-      categoryId: item.categoryId,
-      nonprofit: item.nonprofit,
-      category: item.category,
-    });
+  const handleAddToGivingList = async (item: typeof favorites[0]) => {
+    // Always add directly to draft (the new giving list system)
+    const targetId = item.nonprofitId || item.categoryId;
+    const targetName = item.nonprofit?.name || item.category?.name || "Unknown";
+    const type = item.nonprofitId ? "nonprofit" : "category";
 
-    if (!result.success) {
-      if (result.reason === "blocked_by_draft") {
-        addToast("You have an active donation in progress. Continue or clear it first.", "warning", 5000);
-        setActiveTab("cart"); // Switch to cart tab to show the active donation banner
-      } else if (result.reason === "cart_full") {
-        addToast("Your giving list is full (max 10 items).", "warning");
-      }
-    }
+    if (!targetId) return;
+
+    await addToDraft({
+      type: type as "nonprofit" | "category",
+      targetId,
+      targetName,
+      logoUrl: item.nonprofit?.logoUrl,
+      icon: item.category?.icon,
+    });
   };
 
   // Show login prompt for non-authenticated users
@@ -144,11 +140,11 @@ export function FavoritesTab() {
                     Quick view
                   </button>
                   <div className="flex items-center gap-2">
-                    {isInCart(item.nonprofitId) ? (
+                    {isInDraft(item.nonprofitId) ? (
                       <span className="text-xs text-green-600">In giving list</span>
                     ) : (
                       <button
-                        onClick={() => handleAddToCart(item)}
+                        onClick={() => handleAddToGivingList(item)}
                         className="flex items-center gap-1 rounded bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100"
                       >
                         <Plus className="h-3 w-3" />
@@ -202,11 +198,11 @@ export function FavoritesTab() {
 
                   {/* Actions */}
                   <div className="flex items-center gap-2">
-                    {isInCart(undefined, item.categoryId) ? (
+                    {isInDraft(undefined, item.categoryId) ? (
                       <span className="text-xs text-green-600">In giving list</span>
                     ) : (
                       <button
-                        onClick={() => handleAddToCart(item)}
+                        onClick={() => handleAddToGivingList(item)}
                         className="flex items-center gap-1 rounded bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100"
                       >
                         <Plus className="h-3 w-3" />
