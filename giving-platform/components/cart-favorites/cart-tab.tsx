@@ -545,6 +545,13 @@ export function CartTab() {
                     />
                     <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">%</span>
                   </div>
+                  <button
+                    onClick={() => handlePercentageStep(allocation.targetId, allocation.percentage, 1)}
+                    disabled={allocation.percentage >= 100 || isLocked(allocation.targetId)}
+                    className="h-7 w-7 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
                   {/* Lock button */}
                   <button
                     onClick={() => toggleLockAllocation(allocation.targetId)}
@@ -569,13 +576,6 @@ export function CartTab() {
                     ) : (
                       <Unlock className="h-3 w-3" />
                     )}
-                  </button>
-                  <button
-                    onClick={() => handlePercentageStep(allocation.targetId, allocation.percentage, 1)}
-                    disabled={allocation.percentage >= 100 || isLocked(allocation.targetId)}
-                    className="h-7 w-7 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Plus className="h-3 w-3" />
                   </button>
                   {/* Mini progress bar */}
                   <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
