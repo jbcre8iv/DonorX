@@ -46,6 +46,7 @@ export interface TemplateItem {
   targetId: string;
   targetName: string;
   percentage: number;
+  isLocked?: boolean;
 }
 
 export interface DonationTemplate {
@@ -149,6 +150,7 @@ export async function saveTemplate(
       target_id: item.targetId,
       target_name: item.targetName,
       percentage: item.percentage,
+      is_locked: item.isLocked || false,
     }));
 
     const { error: itemsError } = await supabase
@@ -208,7 +210,8 @@ export async function loadTemplates(): Promise<LoadTemplatesResult> {
           type,
           target_id,
           target_name,
-          percentage
+          percentage,
+          is_locked
         )
       `)
       .eq("user_id", user.id)
@@ -230,6 +233,7 @@ export async function loadTemplates(): Promise<LoadTemplatesResult> {
         targetId: item.target_id as string,
         targetName: item.target_name as string,
         percentage: item.percentage as number,
+        isLocked: item.is_locked as boolean | undefined,
       })),
       createdAt: t.created_at as string,
       updatedAt: t.updated_at as string,
@@ -268,7 +272,8 @@ export async function loadTemplateById(templateId: string): Promise<SaveTemplate
           type,
           target_id,
           target_name,
-          percentage
+          percentage,
+          is_locked
         )
       `)
       .eq("id", templateId)
@@ -291,6 +296,7 @@ export async function loadTemplateById(templateId: string): Promise<SaveTemplate
         targetId: item.target_id as string,
         targetName: item.target_name as string,
         percentage: item.percentage as number,
+        isLocked: item.is_locked as boolean | undefined,
       })),
       createdAt: template.created_at as string,
       updatedAt: template.updated_at as string,
@@ -383,6 +389,7 @@ export async function updateTemplate(
       target_id: item.targetId,
       target_name: item.targetName,
       percentage: item.percentage,
+      is_locked: item.isLocked || false,
     }));
 
     const { error: itemsError } = await supabase

@@ -382,6 +382,7 @@ export function DonateClient({
       targetId: a.targetId,
       targetName: a.targetName,
       percentage: a.percentage,
+      isLocked: donationDraft?.lockedIds?.includes(a.targetId) || false,
     }));
 
     let result: SaveTemplateResult;
@@ -460,6 +461,14 @@ export function DonateClient({
     }));
 
     setAllocations(newAllocations);
+
+    // Load locked IDs from template (items where isLocked is true)
+    const templateLockedIds = template.items
+      .filter((item) => item.isLocked)
+      .map((item) => item.targetId);
+
+    // Update the ref so auto-save picks up the locked IDs
+    lockedIdsRef.current = templateLockedIds.length > 0 ? templateLockedIds : undefined;
 
     // Optionally load amount and frequency if saved
     if (template.amountCents) {
