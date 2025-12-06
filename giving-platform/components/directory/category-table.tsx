@@ -137,9 +137,12 @@ function CategoryRow({
                 variant="outline"
                 size="sm"
                 className="h-9 px-3 rounded-xl text-slate-600 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 hover:shadow-md cursor-pointer"
-                onClick={() => onViewOrgs?.(category.id)}
+                onClick={() => {
+                  onViewOrgs?.(category.id);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
               >
-                View Orgs
+                Organizations
               </Button>
               <span className="hidden sm:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
                 View nonprofits in this category
@@ -194,9 +197,12 @@ function CategoryRow({
                 variant="outline"
                 size="sm"
                 className="h-10 px-4 rounded-xl"
-                onClick={() => onViewOrgs?.(category.id)}
+                onClick={() => {
+                  onViewOrgs?.(category.id);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
               >
-                View Orgs
+                Organizations
               </Button>
             </div>
           </td>
