@@ -287,7 +287,76 @@ export default async function HomePage() {
             </div>
             <div className="relative">
               <div className="aspect-square rounded-2xl bg-gradient-to-br from-blue-100 to-emerald-100 p-8">
-                <div className="h-full w-full rounded-xl bg-white shadow-xl" />
+                <div className="h-full w-full rounded-xl bg-white shadow-xl overflow-hidden">
+                  {/* Dashboard mockup illustration */}
+                  <div className="h-full flex flex-col">
+                    {/* Header bar */}
+                    <div className="h-12 bg-slate-800 flex items-center px-4 gap-2">
+                      <div className="w-3 h-3 rounded-full bg-red-400" />
+                      <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                      <div className="w-3 h-3 rounded-full bg-green-400" />
+                      <div className="ml-4 h-5 w-32 bg-slate-600 rounded" />
+                    </div>
+                    {/* Content */}
+                    <div className="flex-1 p-4 bg-slate-50">
+                      {/* Stats row */}
+                      <div className="grid grid-cols-3 gap-3 mb-4">
+                        <div className="bg-white rounded-lg p-3 shadow-sm">
+                          <div className="h-2 w-12 bg-slate-200 rounded mb-2" />
+                          <div className="h-5 w-16 bg-emerald-500 rounded" />
+                        </div>
+                        <div className="bg-white rounded-lg p-3 shadow-sm">
+                          <div className="h-2 w-12 bg-slate-200 rounded mb-2" />
+                          <div className="h-5 w-14 bg-blue-500 rounded" />
+                        </div>
+                        <div className="bg-white rounded-lg p-3 shadow-sm">
+                          <div className="h-2 w-12 bg-slate-200 rounded mb-2" />
+                          <div className="h-5 w-10 bg-purple-500 rounded" />
+                        </div>
+                      </div>
+                      {/* Chart area */}
+                      <div className="bg-white rounded-lg p-4 shadow-sm mb-4">
+                        <div className="h-2 w-24 bg-slate-200 rounded mb-3" />
+                        <div className="flex items-end gap-2 h-20">
+                          <div className="flex-1 bg-emerald-200 rounded-t h-[40%]" />
+                          <div className="flex-1 bg-emerald-300 rounded-t h-[60%]" />
+                          <div className="flex-1 bg-emerald-400 rounded-t h-[45%]" />
+                          <div className="flex-1 bg-emerald-500 rounded-t h-[80%]" />
+                          <div className="flex-1 bg-emerald-400 rounded-t h-[70%]" />
+                          <div className="flex-1 bg-emerald-500 rounded-t h-[90%]" />
+                          <div className="flex-1 bg-emerald-600 rounded-t h-full" />
+                        </div>
+                      </div>
+                      {/* List items */}
+                      <div className="bg-white rounded-lg p-3 shadow-sm space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-blue-100" />
+                          <div className="flex-1">
+                            <div className="h-2 w-24 bg-slate-200 rounded mb-1" />
+                            <div className="h-2 w-16 bg-slate-100 rounded" />
+                          </div>
+                          <div className="h-4 w-12 bg-emerald-100 rounded" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-purple-100" />
+                          <div className="flex-1">
+                            <div className="h-2 w-20 bg-slate-200 rounded mb-1" />
+                            <div className="h-2 w-14 bg-slate-100 rounded" />
+                          </div>
+                          <div className="h-4 w-10 bg-emerald-100 rounded" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-emerald-100" />
+                          <div className="flex-1">
+                            <div className="h-2 w-28 bg-slate-200 rounded mb-1" />
+                            <div className="h-2 w-12 bg-slate-100 rounded" />
+                          </div>
+                          <div className="h-4 w-14 bg-emerald-100 rounded" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

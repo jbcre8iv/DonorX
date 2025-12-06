@@ -113,8 +113,44 @@ export default function AboutPage() {
             </div>
             <div className="relative">
               <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-blue-100 to-emerald-100 p-8">
-                <div className="h-full w-full rounded-xl bg-white shadow-xl flex items-center justify-center">
-                  <TrendingUp className="h-24 w-24 text-blue-200" />
+                <div className="h-full w-full rounded-xl bg-white shadow-xl overflow-hidden p-6">
+                  {/* Strategic giving network illustration */}
+                  <div className="h-full flex flex-col items-center justify-center relative">
+                    {/* Central donor hub */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center shadow-lg z-10">
+                      <Heart className="h-8 w-8 text-white" />
+                    </div>
+
+                    {/* Connection lines */}
+                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 225">
+                      <line x1="150" y1="112" x2="60" y2="45" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" />
+                      <line x1="150" y1="112" x2="240" y2="45" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" />
+                      <line x1="150" y1="112" x2="45" y2="140" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" />
+                      <line x1="150" y1="112" x2="255" y2="140" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" />
+                      <line x1="150" y1="112" x2="80" y2="195" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" />
+                      <line x1="150" y1="112" x2="220" y2="195" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" />
+                    </svg>
+
+                    {/* Nonprofit nodes */}
+                    <div className="absolute top-2 left-8 w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center border-2 border-emerald-300">
+                      <Globe className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div className="absolute top-2 right-8 w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center border-2 border-purple-300">
+                      <Users className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div className="absolute top-1/2 -translate-y-1/2 left-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center border-2 border-blue-300">
+                      <Shield className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div className="absolute top-1/2 -translate-y-1/2 right-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center border-2 border-amber-300">
+                      <Award className="h-4 w-4 text-amber-600" />
+                    </div>
+                    <div className="absolute bottom-2 left-12 w-11 h-11 rounded-full bg-rose-100 flex items-center justify-center border-2 border-rose-300">
+                      <Heart className="h-5 w-5 text-rose-500" />
+                    </div>
+                    <div className="absolute bottom-2 right-12 w-11 h-11 rounded-full bg-teal-100 flex items-center justify-center border-2 border-teal-300">
+                      <TrendingUp className="h-5 w-5 text-teal-600" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
