@@ -419,7 +419,7 @@ export function AllocationBuilder({
   };
 
   // AI Auto-balance: Intelligently adjust percentages to reach exactly 100%
-  // Respects manually adjusted items by only changing non-manual items first
+  // Priority: 1) Locked items NEVER change, 2) Respect manually adjusted unlocked items if possible
   const handleAiAutoBalance = () => {
     if (allocations.length === 0) return;
 
@@ -428,25 +428,32 @@ export function AllocationBuilder({
 
     if (difference === 0) return;
 
-    // Separate manually adjusted items from auto items
-    const manualItems = allocations.filter((a) => manuallyAdjustedIds.has(a.id));
-    const autoItems = allocations.filter((a) => !manuallyAdjustedIds.has(a.id));
+    // First, separate locked from unlocked items (locked items are NEVER touched)
+    const lockedItems = allocations.filter((a) => lockedIds.includes(a.targetId));
+    const unlockedItems = allocations.filter((a) => !lockedIds.includes(a.targetId));
 
-    // Calculate totals
-    const manualTotal = manualItems.reduce((sum, a) => sum + a.percentage, 0);
-    const autoTotal = autoItems.reduce((sum, a) => sum + a.percentage, 0);
-    const targetAutoTotal = 100 - manualTotal;
+    // Calculate locked total - this is fixed and cannot change
+    const lockedTotal = lockedItems.reduce((sum, a) => sum + a.percentage, 0);
+    const targetUnlockedTotal = Math.max(0, 100 - lockedTotal);
 
-    let newAllocations: AllocationItem[];
+    // If no unlocked items, we can't balance
+    if (unlockedItems.length === 0) return;
 
-    // If there are non-manual items, adjust only those
-    if (autoItems.length > 0 && targetAutoTotal > 0) {
-      // Calculate how to distribute the target among auto items
+    // Among unlocked items, separate manually adjusted from auto items
+    const manualUnlockedItems = unlockedItems.filter((a) => manuallyAdjustedIds.has(a.id));
+    const autoUnlockedItems = unlockedItems.filter((a) => !manuallyAdjustedIds.has(a.id));
+
+    let adjustedUnlockedItems: AllocationItem[];
+
+    // If there are non-manual unlocked items, try to adjust only those first
+    if (autoUnlockedItems.length > 0) {
+      const manualUnlockedTotal = manualUnlockedItems.reduce((sum, a) => sum + a.percentage, 0);
+      const targetAutoTotal = Math.max(0, targetUnlockedTotal - manualUnlockedTotal);
+      const autoTotal = autoUnlockedItems.reduce((sum, a) => sum + a.percentage, 0);
+
       let autoRunningTotal = 0;
-
-      const adjustedAutoItems = autoItems.map((alloc, index) => {
-        if (index === autoItems.length - 1) {
-          // Last auto item gets the remainder
+      const adjustedAutoItems = autoUnlockedItems.map((alloc, index) => {
+        if (index === autoUnlockedItems.length - 1) {
           return {
             ...alloc,
             percentage: Math.max(0, targetAutoTotal - autoRunningTotal),
@@ -455,63 +462,66 @@ export function AllocationBuilder({
 
         let newPercentage: number;
         if (autoTotal === 0) {
-          // If all auto items are at 0%, distribute equally
-          const equalPercentage = Math.floor(targetAutoTotal / autoItems.length);
+          const equalPercentage = Math.floor(targetAutoTotal / autoUnlockedItems.length);
           newPercentage = equalPercentage;
         } else {
-          // Scale proportionally
           const proportion = alloc.percentage / autoTotal;
           newPercentage = Math.round(targetAutoTotal * proportion);
         }
 
         autoRunningTotal += newPercentage;
-        return {
-          ...alloc,
-          percentage: newPercentage,
-        };
+        return { ...alloc, percentage: newPercentage };
       });
 
-      // Combine manual items (unchanged) with adjusted auto items
-      newAllocations = allocations.map((alloc) => {
+      // Combine: manual unlocked items unchanged, auto unlocked items adjusted
+      adjustedUnlockedItems = unlockedItems.map((alloc) => {
         if (manuallyAdjustedIds.has(alloc.id)) {
-          return alloc; // Keep manual items unchanged
+          return alloc;
         }
         return adjustedAutoItems.find((a) => a.id === alloc.id) || alloc;
       });
-    } else if (autoItems.length === 0 && manualItems.length > 0) {
-      // All items are manually adjusted - we need to scale them
-      // This is a fallback when user has touched all items
-      const scale = 100 / currentTotal;
-      let runningTotal = 0;
-
-      newAllocations = allocations.map((alloc, index) => {
-        if (index === allocations.length - 1) {
-          return {
-            ...alloc,
-            percentage: 100 - runningTotal,
-          };
-        }
-
-        const newPercentage = Math.round(alloc.percentage * scale);
-        runningTotal += newPercentage;
-
-        return {
-          ...alloc,
-          percentage: newPercentage,
-        };
-      });
-
-      // Clear manual tracking since we had to adjust everything
-      setManuallyAdjustedIds(new Set());
     } else {
-      // Edge case: all items are at 0% and none are manual
-      const equalPercentage = Math.floor(100 / allocations.length);
-      const remainder = 100 - (equalPercentage * allocations.length);
-      newAllocations = allocations.map((alloc, index) => ({
-        ...alloc,
-        percentage: equalPercentage + (index === 0 ? remainder : 0),
-      }));
+      // All unlocked items are manually adjusted - we MUST adjust them anyway
+      // (This is the key fix: locked items are protected, but if only unlocked items
+      // are marked as "manual", we still need to adjust them to reach 100%)
+      const unlockedTotal = unlockedItems.reduce((sum, a) => sum + a.percentage, 0);
+
+      if (unlockedTotal === 0) {
+        // Distribute equally among unlocked items
+        const equalPercentage = Math.floor(targetUnlockedTotal / unlockedItems.length);
+        const remainder = targetUnlockedTotal - (equalPercentage * unlockedItems.length);
+        adjustedUnlockedItems = unlockedItems.map((alloc, index) => ({
+          ...alloc,
+          percentage: equalPercentage + (index === 0 ? remainder : 0),
+        }));
+      } else {
+        // Scale proportionally
+        const scale = targetUnlockedTotal / unlockedTotal;
+        let runningTotal = 0;
+
+        adjustedUnlockedItems = unlockedItems.map((alloc, index) => {
+          if (index === unlockedItems.length - 1) {
+            return { ...alloc, percentage: targetUnlockedTotal - runningTotal };
+          }
+          const newPercentage = Math.round(alloc.percentage * scale);
+          runningTotal += newPercentage;
+          return { ...alloc, percentage: newPercentage };
+        });
+      }
+
+      // Clear manual tracking for unlocked items since we had to adjust them
+      const newManualIds = new Set(manuallyAdjustedIds);
+      unlockedItems.forEach((a) => newManualIds.delete(a.id));
+      setManuallyAdjustedIds(newManualIds);
     }
+
+    // Build final allocations: locked items unchanged, unlocked items adjusted
+    const newAllocations = allocations.map((alloc) => {
+      if (lockedIds.includes(alloc.targetId)) {
+        return alloc; // Locked items NEVER change
+      }
+      return adjustedUnlockedItems.find((a) => a.id === alloc.id) || alloc;
+    });
 
     onAllocationsChange(newAllocations);
   };
