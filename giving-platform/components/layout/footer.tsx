@@ -67,7 +67,7 @@ export function Footer() {
             <h3 className="text-sm font-semibold text-slate-900">Platform</h3>
             <ul className="mt-4 space-y-3">
               {footerLinks.platform.map((link) => (
-                <li key={link.href}>
+                <li key={link.label}>
                   <Link
                     href={link.href}
                     className="text-sm text-slate-600 hover:text-slate-900 transition-colors"
@@ -84,7 +84,7 @@ export function Footer() {
             <h3 className="text-sm font-semibold text-slate-900">Resources</h3>
             <ul className="mt-4 space-y-3">
               {footerLinks.resources.map((link) => (
-                <li key={link.href}>
+                <li key={link.label}>
                   <Link
                     href={link.href}
                     className="text-sm text-slate-600 hover:text-slate-900 transition-colors"
@@ -101,7 +101,7 @@ export function Footer() {
             <h3 className="text-sm font-semibold text-slate-900">Legal</h3>
             <ul className="mt-4 space-y-3">
               {footerLinks.legal.map((link) => (
-                <li key={link.href}>
+                <li key={link.label}>
                   <Link
                     href={link.href}
                     className="text-sm text-slate-600 hover:text-slate-900 transition-colors"
