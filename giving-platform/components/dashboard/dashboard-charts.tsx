@@ -4,7 +4,7 @@ import { useState } from "react";
 import { DonationTrendsChart } from "./donation-trends-chart";
 import { CategoryBreakdownChart } from "./category-breakdown-chart";
 import { TopNonprofitsChart } from "./top-nonprofits-chart";
-import { GivingGoalWidget } from "./giving-goal-widget";
+import { GivingGoalWrapper } from "./giving-goal-wrapper";
 import { GivingStreak } from "./giving-streak";
 import { YearOverYear } from "./year-over-year";
 import { ImpactCounter } from "./impact-counter";
@@ -47,7 +47,6 @@ interface DashboardChartsProps {
     value: number;
     label: string;
   } | null;
-  onGoalChange?: (newGoal: number) => void;
 }
 
 export function DashboardCharts({
@@ -60,7 +59,6 @@ export function DashboardCharts({
   impactData,
   recentDonations,
   milestone,
-  onGoalChange,
 }: DashboardChartsProps) {
   const [showMilestone, setShowMilestone] = useState(!!milestone);
 
@@ -84,11 +82,10 @@ export function DashboardCharts({
 
       {/* Row 2: Goal, Streak, Year-over-Year */}
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-        <GivingGoalWidget
+        <GivingGoalWrapper
           currentAmount={givingGoal.currentAmount}
           goalAmount={givingGoal.goalAmount}
           year={yearOverYear.currentYear}
-          onGoalChange={onGoalChange}
         />
         <GivingStreak
           currentStreak={streakData.currentStreak}

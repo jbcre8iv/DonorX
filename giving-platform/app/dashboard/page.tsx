@@ -95,6 +95,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     redirect("/login");
   }
 
+  // Fetch user profile for giving goal
+  const { data: userProfile } = await supabase
+    .from("users")
+    .select("giving_goal_cents")
+    .eq("id", user.id)
+    .single();
+
   // Parse filter params
   const dateRange = params.range || "all";
   const { startDate, endDate } = getDateRangeFromFilter(dateRange, params.start, params.end);
@@ -278,9 +285,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     .slice(0, 8);
 
   // Giving goal (based on filtered this year data)
+  // Default to $10,000 (1000000 cents) if no goal set
   const givingGoal = {
     currentAmount: thisYearDonations.reduce((sum, d) => sum + d.amount_cents, 0),
-    goalAmount: 1000000, // $10,000 in cents
+    goalAmount: userProfile?.giving_goal_cents || 1000000,
   };
 
   // Streak data (uses all completed, not filtered)
