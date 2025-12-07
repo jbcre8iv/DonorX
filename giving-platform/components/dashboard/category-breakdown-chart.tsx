@@ -38,9 +38,16 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
     }).format(value);
   };
 
-  // Filter out categories with 0 value
-  const filteredData = data.filter((item) => item.value > 0);
+  const totalForFiltering = data.reduce((sum, item) => sum + item.value, 0);
 
+  // Filter out categories that round to 0%
+  const filteredData = data.filter((item) => {
+    if (item.value <= 0) return false;
+    const percentage = (item.value / totalForFiltering) * 100;
+    return Math.round(percentage) > 0;
+  });
+
+  // Recalculate total from filtered data for display percentages
   const total = filteredData.reduce((sum, item) => sum + item.value, 0);
 
   // Add colors to data
