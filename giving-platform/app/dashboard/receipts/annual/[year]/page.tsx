@@ -188,9 +188,9 @@ export default async function AnnualStatementPage({ params }: AnnualStatementPag
             <div className="space-y-2">
               {/* Header */}
               <div className="flex items-center justify-between px-3 py-2 bg-slate-100 rounded-lg text-sm font-medium text-slate-600">
-                <span className="w-24">Date</span>
-                <span className="flex-1">Recipients</span>
-                <span className="w-24 text-right">Amount</span>
+                <span className="w-20 shrink-0">Date</span>
+                <span className="flex-1 min-w-0">Recipients</span>
+                <span className="w-20 shrink-0 text-right">Amount</span>
               </div>
               {/* Donations */}
               {processedDonations.map((donation) => (
@@ -198,11 +198,11 @@ export default async function AnnualStatementPage({ params }: AnnualStatementPag
                   key={donation.id}
                   className="flex items-start justify-between p-3 bg-slate-50 rounded-lg"
                 >
-                  <span className="w-24 text-sm text-slate-600">{donation.date}</span>
-                  <span className="flex-1 text-sm text-slate-900 px-2">
+                  <span className="w-20 shrink-0 text-sm text-slate-600">{donation.date}</span>
+                  <span className="flex-1 min-w-0 text-sm text-slate-900 px-2">
                     {donation.recipients.join(", ")}
                   </span>
-                  <span className="w-24 text-right font-semibold text-slate-900">
+                  <span className="w-20 shrink-0 text-right font-semibold text-slate-900">
                     {formatCurrency(donation.amount)}
                   </span>
                 </div>
