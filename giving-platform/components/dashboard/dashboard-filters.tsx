@@ -83,20 +83,26 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
 
   // Read current values directly from URL params (source of truth)
   const dateRange = searchParams.get("range") || "all";
-  const startDate = searchParams.get("start") || "";
-  const endDate = searchParams.get("end") || "";
   const selectedCategories = searchParams.get("categories")?.split(",").filter(Boolean) || [];
   const selectedNonprofits = searchParams.get("nonprofits")?.split(",").filter(Boolean) || [];
 
-  // Local state only for custom date inputs (before apply)
-  const [customStart, setCustomStart] = useState(startDate);
-  const [customEnd, setCustomEnd] = useState(endDate);
+  // Custom date inputs - local state for editing before apply
+  const urlStart = searchParams.get("start") || "";
+  const urlEnd = searchParams.get("end") || "";
+  const [customStart, setCustomStart] = useState(urlStart);
+  const [customEnd, setCustomEnd] = useState(urlEnd);
 
-  // Sync custom date inputs when URL changes
-  useEffect(() => {
-    setCustomStart(startDate);
-    setCustomEnd(endDate);
-  }, [startDate, endDate]);
+  // Track URL values to detect external changes
+  const [prevUrlStart, setPrevUrlStart] = useState(urlStart);
+  const [prevUrlEnd, setPrevUrlEnd] = useState(urlEnd);
+
+  // Sync local state when URL changes externally (without causing render loop)
+  if (urlStart !== prevUrlStart || urlEnd !== prevUrlEnd) {
+    setCustomStart(urlStart);
+    setCustomEnd(urlEnd);
+    setPrevUrlStart(urlStart);
+    setPrevUrlEnd(urlEnd);
+  }
 
   const hasActiveFilters =
     dateRange !== "all" ||
@@ -113,8 +119,8 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
     const params = new URLSearchParams();
 
     const range = newParams?.range ?? dateRange;
-    const start = newParams?.start ?? startDate;
-    const end = newParams?.end ?? endDate;
+    const start = newParams?.start ?? urlStart;
+    const end = newParams?.end ?? urlEnd;
     const cats = newParams?.categories ?? selectedCategories;
     const nps = newParams?.nonprofits ?? selectedNonprofits;
 
@@ -177,9 +183,9 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
 
   const getDateRangeLabel = () => {
     if (dateRange === "all") return "Date Range";
-    if (dateRange === "custom" && startDate && endDate) {
-      const start = new Date(startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      const end = new Date(endDate).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    if (dateRange === "custom" && urlStart && urlEnd) {
+      const start = new Date(urlStart).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      const end = new Date(urlEnd).toLocaleDateString("en-US", { month: "short", day: "numeric" });
       return `${start} - ${end}`;
     }
     const option = DATE_RANGE_OPTIONS.find((o) => o.value === dateRange);
