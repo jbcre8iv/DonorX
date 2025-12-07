@@ -146,7 +146,7 @@ export function GivingGoalWidget({
                 <div className="text-sm">
                   <span className="text-slate-600">Donated: </span>
                   <span className="font-semibold text-emerald-600">
-                    <AnimatedNumber value={Math.round(currentAmount / 100)} prefix="$" format="currency" />
+                    <AnimatedNumber value={Math.round(currentAmount / 100)} format="currency" />
                   </span>
                 </div>
                 {remaining > 0 ? (

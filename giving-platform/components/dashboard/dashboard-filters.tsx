@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Calendar, Building2, FolderOpen, X, ChevronDown, Check } from "lucide-react";
+import { Calendar, Building2, FolderOpen, X, ChevronDown, Check, Search, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DashboardFiltersProps {
@@ -18,6 +18,15 @@ const DATE_RANGE_OPTIONS = [
   { value: "3m", label: "Last 3 Months" },
   { value: "30d", label: "Last 30 Days" },
   { value: "custom", label: "Custom Range" },
+];
+
+const AMOUNT_RANGE_OPTIONS = [
+  { value: "all", label: "Any Amount" },
+  { value: "0-100", label: "Under $100", min: 0, max: 10000 },
+  { value: "100-500", label: "$100 - $500", min: 10000, max: 50000 },
+  { value: "500-1000", label: "$500 - $1,000", min: 50000, max: 100000 },
+  { value: "1000-5000", label: "$1,000 - $5,000", min: 100000, max: 500000 },
+  { value: "5000+", label: "$5,000+", min: 500000, max: null },
 ];
 
 function FilterDropdown({
@@ -80,9 +89,11 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
   const searchParams = useSearchParams();
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [nonprofitSearch, setNonprofitSearch] = useState("");
 
   // Read current values directly from URL params (source of truth)
   const dateRange = searchParams.get("range") || "all";
+  const amountRange = searchParams.get("amount") || "all";
   const selectedCategories = searchParams.get("categories")?.split(",").filter(Boolean) || [];
   const selectedNonprofits = searchParams.get("nonprofits")?.split(",").filter(Boolean) || [];
 
@@ -106,6 +117,7 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
 
   const hasActiveFilters =
     dateRange !== "all" ||
+    amountRange !== "all" ||
     selectedCategories.length > 0 ||
     selectedNonprofits.length > 0;
 
@@ -113,6 +125,7 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
     range?: string;
     start?: string;
     end?: string;
+    amount?: string;
     categories?: string[];
     nonprofits?: string[];
   }) => {
@@ -121,6 +134,7 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
     const range = newParams?.range ?? dateRange;
     const start = newParams?.start ?? urlStart;
     const end = newParams?.end ?? urlEnd;
+    const amount = newParams?.amount ?? amountRange;
     const cats = newParams?.categories ?? selectedCategories;
     const nps = newParams?.nonprofits ?? selectedNonprofits;
 
@@ -132,6 +146,9 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
     }
     if (range === "custom" && end) {
       params.set("end", end);
+    }
+    if (amount !== "all") {
+      params.set("amount", amount);
     }
     if (cats.length > 0) {
       params.set("categories", cats.join(","));
@@ -176,6 +193,11 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
     }
   };
 
+  const selectAmountRange = (value: string) => {
+    applyFilters({ amount: value });
+    setOpenDropdown(null);
+  };
+
   const applyCustomDateRange = () => {
     applyFilters({ range: "custom", start: customStart, end: customEnd });
     setOpenDropdown(null);
@@ -209,6 +231,12 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
       return name.length > 15 ? name.slice(0, 15) + "..." : name;
     }
     return `${selectedNonprofits.length} Nonprofits`;
+  };
+
+  const getAmountRangeLabel = () => {
+    if (amountRange === "all") return "Amount";
+    const option = AMOUNT_RANGE_OPTIONS.find((o) => o.value === amountRange);
+    return option?.label || "Amount";
   };
 
   return (
@@ -266,6 +294,31 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
         )}
       </FilterDropdown>
 
+      {/* Amount Range Dropdown */}
+      <FilterDropdown
+        label={getAmountRangeLabel()}
+        icon={DollarSign}
+        isOpen={openDropdown === "amount"}
+        onToggle={() => setOpenDropdown(openDropdown === "amount" ? null : "amount")}
+        onClose={() => setOpenDropdown(null)}
+        hasValue={amountRange !== "all"}
+      >
+        <div className="py-1">
+          {AMOUNT_RANGE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => selectAmountRange(option.value)}
+              className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-slate-50 ${
+                amountRange === option.value ? "text-blue-600 bg-blue-50" : "text-slate-700"
+              }`}
+            >
+              <span>{option.label}</span>
+              {amountRange === option.value && <Check className="h-4 w-4" />}
+            </button>
+          ))}
+        </div>
+      </FilterDropdown>
+
       {/* Categories Dropdown */}
       {categories.length > 0 && (
         <FilterDropdown
@@ -309,23 +362,52 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
           label={getNonprofitLabel()}
           icon={Building2}
           isOpen={openDropdown === "nonprofits"}
-          onToggle={() => setOpenDropdown(openDropdown === "nonprofits" ? null : "nonprofits")}
-          onClose={() => setOpenDropdown(null)}
+          onToggle={() => {
+            if (openDropdown === "nonprofits") {
+              setOpenDropdown(null);
+              setNonprofitSearch("");
+            } else {
+              setOpenDropdown("nonprofits");
+            }
+          }}
+          onClose={() => {
+            setOpenDropdown(null);
+            setNonprofitSearch("");
+          }}
           hasValue={selectedNonprofits.length > 0}
         >
+          {/* Search Input */}
+          <div className="p-2 border-b border-slate-200">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search nonprofits..."
+                value={nonprofitSearch}
+                onChange={(e) => setNonprofitSearch(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                autoFocus
+              />
+            </div>
+          </div>
           <div className="py-1 max-h-64 overflow-y-auto">
-            {nonprofits.map((nonprofit) => (
-              <button
-                key={nonprofit.id}
-                onClick={() => toggleNonprofit(nonprofit.id)}
-                className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-slate-50 ${
-                  selectedNonprofits.includes(nonprofit.id) ? "text-blue-600 bg-blue-50" : "text-slate-700"
-                }`}
-              >
-                <span className="truncate pr-2">{nonprofit.name}</span>
-                {selectedNonprofits.includes(nonprofit.id) && <Check className="h-4 w-4 flex-shrink-0" />}
-              </button>
-            ))}
+            {nonprofits
+              .filter((np) => np.name.toLowerCase().includes(nonprofitSearch.toLowerCase()))
+              .map((nonprofit) => (
+                <button
+                  key={nonprofit.id}
+                  onClick={() => toggleNonprofit(nonprofit.id)}
+                  className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-slate-50 ${
+                    selectedNonprofits.includes(nonprofit.id) ? "text-blue-600 bg-blue-50" : "text-slate-700"
+                  }`}
+                >
+                  <span className="truncate pr-2">{nonprofit.name}</span>
+                  {selectedNonprofits.includes(nonprofit.id) && <Check className="h-4 w-4 flex-shrink-0" />}
+                </button>
+              ))}
+            {nonprofits.filter((np) => np.name.toLowerCase().includes(nonprofitSearch.toLowerCase())).length === 0 && (
+              <div className="px-3 py-2 text-sm text-slate-500">No results found</div>
+            )}
           </div>
           {selectedNonprofits.length > 0 && (
             <div className="p-2 border-t border-slate-200">

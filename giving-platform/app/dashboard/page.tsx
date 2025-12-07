@@ -35,9 +35,27 @@ interface DashboardPageProps {
     range?: string;
     start?: string;
     end?: string;
+    amount?: string;
     categories?: string;
     nonprofits?: string;
   }>;
+}
+
+function getAmountRangeFromFilter(amount: string): { minCents: number | null; maxCents: number | null } {
+  switch (amount) {
+    case "0-100":
+      return { minCents: 0, maxCents: 10000 };
+    case "100-500":
+      return { minCents: 10000, maxCents: 50000 };
+    case "500-1000":
+      return { minCents: 50000, maxCents: 100000 };
+    case "1000-5000":
+      return { minCents: 100000, maxCents: 500000 };
+    case "5000+":
+      return { minCents: 500000, maxCents: null };
+    default:
+      return { minCents: null, maxCents: null };
+  }
 }
 
 function getDateRangeFromFilter(range: string, start?: string, end?: string): { startDate: Date | null; endDate: Date | null } {
@@ -93,6 +111,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   // Parse filter params
   const dateRange = params.range || "all";
   const { startDate, endDate } = getDateRangeFromFilter(dateRange, params.start, params.end);
+  const amountRange = params.amount || "all";
+  const { minCents, maxCents } = getAmountRangeFromFilter(amountRange);
   const categoryFilter = params.categories?.split(",").filter(Boolean) || [];
   const nonprofitFilter = params.nonprofits?.split(",").filter(Boolean) || [];
 
@@ -159,6 +179,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     filteredDonations = filteredDonations.filter((d) =>
       d.allocations?.some((a) => a.nonprofit_id && nonprofitFilter.includes(a.nonprofit_id))
     );
+  }
+
+  // Amount filter
+  if (minCents !== null || maxCents !== null) {
+    filteredDonations = filteredDonations.filter((d) => {
+      if (minCents !== null && d.amount_cents < minCents) return false;
+      if (maxCents !== null && d.amount_cents > maxCents) return false;
+      return true;
+    });
   }
 
   // Calculate stats from filtered data
@@ -382,15 +411,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             Welcome back! Here&apos;s your giving overview.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <DashboardFilters
-            categories={filterCategories}
-            nonprofits={filterNonprofits}
-          />
-          <Button asChild size="sm">
-            <Link href="/donate">Make a Donation</Link>
-          </Button>
-        </div>
+        <DashboardFilters
+          categories={filterCategories}
+          nonprofits={filterNonprofits}
+        />
       </div>
 
       {/* Stats Grid */}
