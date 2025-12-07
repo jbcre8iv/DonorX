@@ -29,10 +29,10 @@ export function TopNonprofitsChart({ data, maxItems = 5 }: TopNonprofitsChartPro
     }).format(value);
   };
 
-  // Truncate names for display
+  // Use full names for display
   const processedData = data.slice(0, maxItems).map((item) => ({
     ...item,
-    displayName: item.name.length > 20 ? item.name.substring(0, 18) + "..." : item.name,
+    displayName: item.name,
   }));
 
   // Dynamic height based on number of items (28px per bar + some padding)
@@ -69,7 +69,7 @@ export function TopNonprofitsChart({ data, maxItems = 5 }: TopNonprofitsChartPro
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 11, fill: "#64748b" }}
-                  width={100}
+                  width={140}
                 />
                 <Tooltip
                   formatter={(value: number) => [formatTooltip(value), "Total Donated"]}
