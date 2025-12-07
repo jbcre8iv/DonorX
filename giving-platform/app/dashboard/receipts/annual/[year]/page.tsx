@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, TestTube, Calendar, FileText } from "lucide-react";
+import { ArrowLeft, TestTube } from "lucide-react";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -127,123 +127,86 @@ export default async function AnnualStatementPage({ params }: AnnualStatementPag
 
       {/* Statement Preview - main printable content */}
       <div className={`mx-auto max-w-2xl bg-white rounded-lg border border-slate-200 shadow-sm print:shadow-none print:border-none print-content ${hasSimulated ? "simulated" : ""}`}>
-        {/* Statement Header */}
-        <div className="border-b border-slate-200 p-8 print:p-6">
-          <div className="flex items-start justify-between">
+        {/* Statement Header - compact for print */}
+        <div className="border-b border-slate-200 p-6 print:p-4 print:pb-3">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-blue-700">DonorX</h1>
-              <p className="text-sm text-slate-500">Annual Giving Statement</p>
+              <h1 className="text-xl print:text-lg font-bold text-slate-900">DonorX</h1>
+              <p className="text-xs text-slate-500">Annual Giving Statement</p>
             </div>
             <div className="text-right">
-              <div className="flex items-center gap-2 text-slate-500">
-                <Calendar className="h-4 w-4" />
-                <span className="text-sm">Tax Year</span>
-              </div>
-              <p className="text-2xl font-bold text-slate-900">{yearNum}</p>
+              <p className="text-xs text-slate-500">Tax Year</p>
+              <p className="text-xl print:text-lg font-bold text-slate-900">{yearNum}</p>
             </div>
           </div>
         </div>
 
-        {/* Statement Body */}
-        <div className="p-8 print:p-6 space-y-8">
-          {/* Donor Info */}
-          <div>
-            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
-              Donor Information
-            </h2>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-slate-600">Name</span>
-                <span className="font-medium text-slate-900">{donorName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-600">Email</span>
-                <span className="font-medium text-slate-900">{user.email}</span>
-              </div>
+        {/* Statement Body - compact spacing */}
+        <div className="p-6 print:p-4 space-y-4 print:space-y-3">
+          {/* Donor Info & Summary - combined row for print efficiency */}
+          <div className="flex justify-between items-start gap-4 print:gap-2">
+            <div className="flex-1">
+              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                Donor
+              </h2>
+              <p className="text-sm font-medium text-slate-900">{donorName}</p>
+              <p className="text-xs text-slate-600">{user.email}</p>
+            </div>
+            <div className="text-right bg-emerald-50 border border-emerald-200 rounded px-3 py-2 print:px-2 print:py-1">
+              <p className="text-xs text-emerald-600">{donations.length} Donations</p>
+              <p className="text-lg print:text-base font-bold text-emerald-800">{formatCurrency(totalAmount)}</p>
             </div>
           </div>
 
-          {/* Annual Summary */}
-          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-            <h2 className="text-lg font-semibold text-emerald-800 mb-3">
-              Annual Summary
-            </h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-emerald-600">Total Donations</p>
-                <p className="text-2xl font-bold text-emerald-800">{donations.length}</p>
-              </div>
-              <div>
-                <p className="text-sm text-emerald-600">Total Amount</p>
-                <p className="text-2xl font-bold text-emerald-800">{formatCurrency(totalAmount)}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Donation List */}
+          {/* Donation List - compact table */}
           <div>
-            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
+            <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2 print:mb-1">
               Donation Details
             </h2>
-            <div className="space-y-2">
-              {/* Header */}
-              <div className="flex items-center justify-between px-3 py-2 bg-slate-100 rounded-lg text-sm font-medium text-slate-600">
-                <span className="w-24">Date</span>
-                <span className="flex-1">Recipients</span>
-                <span className="w-24 text-right">Amount</span>
-              </div>
-              {/* Donations */}
-              {processedDonations.map((donation) => (
-                <div
-                  key={donation.id}
-                  className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
-                >
-                  <span className="w-24 text-sm text-slate-600">{donation.date}</span>
-                  <span className="flex-1 text-sm text-slate-900 truncate px-2">
-                    {donation.recipients.slice(0, 2).join(", ")}
-                    {donation.recipients.length > 2 && ` +${donation.recipients.length - 2} more`}
-                  </span>
-                  <span className="w-24 text-right font-semibold text-slate-900">
-                    {formatCurrency(donation.amount)}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Total */}
-            <div className="mt-4 pt-4 border-t-2 border-slate-900 flex justify-between">
-              <span className="text-lg font-bold text-slate-900">Total {yearNum}</span>
-              <span className="text-lg font-bold text-slate-900">
-                {formatCurrency(totalAmount)}
-              </span>
-            </div>
+            <table className="w-full text-sm print:text-xs">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="text-left py-1 pr-2 font-medium text-slate-600 w-20 print:w-16">Date</th>
+                  <th className="text-left py-1 px-2 font-medium text-slate-600">Recipients</th>
+                  <th className="text-right py-1 pl-2 font-medium text-slate-600 w-24 print:w-20">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {processedDonations.map((donation) => (
+                  <tr key={donation.id} className="border-b border-slate-100">
+                    <td className="py-1.5 print:py-1 pr-2 text-slate-600 align-top">{donation.date}</td>
+                    <td className="py-1.5 print:py-1 px-2 text-slate-900 align-top">
+                      {donation.recipients.join(", ")}
+                    </td>
+                    <td className="py-1.5 print:py-1 pl-2 text-right font-medium text-slate-900 align-top">
+                      {formatCurrency(donation.amount)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-slate-900">
+                  <td colSpan={2} className="py-2 print:py-1 font-bold text-slate-900">Total {yearNum}</td>
+                  <td className="py-2 print:py-1 text-right font-bold text-slate-900">
+                    {formatCurrency(totalAmount)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
 
-          {/* Tax Notice */}
-          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-            <h3 className="font-semibold text-emerald-800 mb-2">
-              Tax Deductibility Notice
-            </h3>
-            <p className="text-sm text-emerald-700">
-              This statement summarizes your tax-deductible donations for the {yearNum} tax year.
-              No goods or services were provided in exchange for these contributions. Please retain
-              this statement for your tax records. For donations over $250, individual receipts are
-              available and serve as written acknowledgment as required by the IRS.
+          {/* Tax Notice - compact */}
+          <div className="bg-slate-50 border border-slate-200 rounded p-3 print:p-2 print:mt-2">
+            <p className="text-xs text-slate-600 leading-relaxed print:leading-normal">
+              <span className="font-semibold">Tax Deductibility Notice:</span> This statement summarizes your tax-deductible donations for {yearNum}. No goods or services were provided in exchange for these contributions. Please retain for your tax records.
             </p>
           </div>
         </div>
 
-        {/* Statement Footer */}
-        <div className="border-t border-slate-200 p-6 text-center">
-          <p className="text-sm text-slate-500">
-            DonorX • Tax ID: XX-XXXXXXX • support@donorx.com
-          </p>
-          <p className="text-xs text-slate-400 mt-1">
-            Generated on {new Date().toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
+        {/* Statement Footer - minimal */}
+        <div className="border-t border-slate-200 px-6 py-3 print:px-4 print:py-2 text-center">
+          <p className="text-xs text-slate-500">
+            DonorX • Tax ID: XX-XXXXXXX • Generated {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
           </p>
         </div>
       </div>
