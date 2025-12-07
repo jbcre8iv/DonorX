@@ -41,12 +41,12 @@ export function GivingStreak({
           Giving Streak
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+      <CardContent className="pt-0">
+        <div className="space-y-3">
           {/* Current Streak */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`text-3xl font-bold ${currentStreak > 0 ? "text-orange-500" : "text-slate-300"}`}>
+            <div className="flex items-center gap-2">
+              <div className={`text-2xl font-bold ${currentStreak > 0 ? "text-orange-500" : "text-slate-300"}`}>
                 {currentStreak}
               </div>
               <div>
@@ -56,10 +56,10 @@ export function GivingStreak({
                 <div className="text-xs text-slate-500">Current streak</div>
               </div>
             </div>
-            <div className="text-right">
-              <div className="text-sm text-slate-500">Best: {longestStreak} months</div>
+            <div className="text-right text-xs">
+              <div className="text-slate-500">Best: {longestStreak} months</div>
               {lastDonationDate && (
-                <div className="text-xs text-slate-400 flex items-center justify-end gap-1">
+                <div className="text-slate-400 flex items-center justify-end gap-1">
                   <Calendar className="h-3 w-3" />
                   Last: {new Date(lastDonationDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </div>
@@ -72,35 +72,18 @@ export function GivingStreak({
             {monthsDisplay.map((month) => (
               <div key={month.key} className="flex-1 text-center">
                 <div
-                  className={`h-8 rounded-md flex items-center justify-center text-xs font-medium transition-all ${
+                  className={`h-6 rounded-md flex items-center justify-center text-xs font-medium transition-all ${
                     month.active
-                      ? "bg-orange-100 text-orange-600 ring-2 ring-orange-200"
+                      ? "bg-orange-100 text-orange-600 ring-1 ring-orange-200"
                       : "bg-slate-100 text-slate-400"
                   }`}
                 >
                   {month.active && <Flame className="h-3 w-3" />}
                 </div>
-                <div className="text-xs text-slate-500 mt-1">{month.label}</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">{month.label}</div>
               </div>
             ))}
           </div>
-
-          {/* Encouragement */}
-          {currentStreak === 0 && (
-            <p className="text-xs text-center text-slate-500">
-              Make a donation this month to start your streak!
-            </p>
-          )}
-          {currentStreak > 0 && currentStreak < longestStreak && (
-            <p className="text-xs text-center text-slate-500">
-              {longestStreak - currentStreak} more month{longestStreak - currentStreak !== 1 ? "s" : ""} to beat your record!
-            </p>
-          )}
-          {currentStreak > 0 && currentStreak >= longestStreak && longestStreak > 1 && (
-            <p className="text-xs text-center text-orange-600 font-medium">
-              🔥 You&apos;re on your longest streak!
-            </p>
-          )}
         </div>
       </CardContent>
     </Card>

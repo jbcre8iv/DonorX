@@ -388,45 +388,45 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header with Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
-          <p className="text-slate-600">
+          <h1 className="text-xl font-semibold text-slate-900">Dashboard</h1>
+          <p className="text-sm text-slate-600">
             Welcome back! Here&apos;s your giving overview.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <DashboardFilters
             categories={filterCategories}
             nonprofits={filterNonprofits}
           />
-          <Button asChild>
+          <Button asChild size="sm">
             <Link href="/donate">Make a Donation</Link>
           </Button>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.title}>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-600">{stat.title}</p>
-                  <p className="mt-1 text-2xl font-semibold text-slate-900">
+                  <p className="text-xs text-slate-600">{stat.title}</p>
+                  <p className="mt-0.5 text-xl font-semibold text-slate-900">
                     {stat.value}
                   </p>
                 </div>
                 <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.bgColor}`}
+                  className={`flex h-9 w-9 items-center justify-center rounded-lg ${stat.bgColor}`}
                 >
-                  <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
+                  <stat.icon className={`h-4 w-4 ${stat.iconColor}`} />
                 </div>
               </div>
-              <p className="mt-2 text-sm text-slate-500">{stat.subtitle}</p>
+              <p className="mt-1 text-xs text-slate-500">{stat.subtitle}</p>
             </CardContent>
           </Card>
         ))}
@@ -445,15 +445,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       />
 
       {/* Quick Actions */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3">
         <Link href="/donate">
           <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
-            <CardContent className="p-6 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 mb-4">
-                <CreditCard className="h-6 w-6 text-blue-700" />
+            <CardContent className="p-4 text-center">
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 mb-2">
+                <CreditCard className="h-5 w-5 text-blue-700" />
               </div>
-              <h3 className="font-semibold text-slate-900">New Donation</h3>
-              <p className="mt-1 text-sm text-slate-600">
+              <h3 className="text-sm font-semibold text-slate-900">New Donation</h3>
+              <p className="mt-0.5 text-xs text-slate-600">
                 Support causes you care about
               </p>
             </CardContent>
@@ -461,12 +461,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </Link>
         <Link href="/dashboard/receipts">
           <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
-            <CardContent className="p-6 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-100 mb-4">
-                <FileText className="h-6 w-6 text-emerald-700" />
+            <CardContent className="p-4 text-center">
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 mb-2">
+                <FileText className="h-5 w-5 text-emerald-700" />
               </div>
-              <h3 className="font-semibold text-slate-900">Tax Receipts</h3>
-              <p className="mt-1 text-sm text-slate-600">
+              <h3 className="text-sm font-semibold text-slate-900">Tax Receipts</h3>
+              <p className="mt-0.5 text-xs text-slate-600">
                 Download your tax documents
               </p>
             </CardContent>
@@ -474,12 +474,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </Link>
         <Link href="/dashboard/templates">
           <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
-            <CardContent className="p-6 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100 mb-4">
-                <TrendingUp className="h-6 w-6 text-purple-700" />
+            <CardContent className="p-4 text-center">
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 mb-2">
+                <TrendingUp className="h-5 w-5 text-purple-700" />
               </div>
-              <h3 className="font-semibold text-slate-900">Templates</h3>
-              <p className="mt-1 text-sm text-slate-600">
+              <h3 className="text-sm font-semibold text-slate-900">Templates</h3>
+              <p className="mt-0.5 text-xs text-slate-600">
                 Save your favorite allocations
               </p>
             </CardContent>

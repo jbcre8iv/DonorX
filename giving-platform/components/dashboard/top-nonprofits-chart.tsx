@@ -41,11 +41,11 @@ export function TopNonprofitsChart({ data }: TopNonprofitsChartProps) {
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
-          <div className="flex items-center justify-center h-[200px] text-slate-500">
+          <div className="flex items-center justify-center h-[140px] text-slate-500">
             No nonprofit data yet
           </div>
         ) : (
-          <div className="h-[200px]">
+          <div className="h-[140px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={processedData}

@@ -47,20 +47,20 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
-          <div className="flex items-center justify-center h-[200px] text-slate-500">
+          <div className="flex items-center justify-center h-[140px] text-slate-500">
             No category data yet
           </div>
         ) : (
-          <div className="flex items-center gap-4">
-            <div className="h-[160px] w-[160px] flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="h-[130px] w-[130px] flex-shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={dataWithColors}
                     cx="50%"
                     cy="50%"
-                    innerRadius={45}
-                    outerRadius={70}
+                    innerRadius={35}
+                    outerRadius={55}
                     paddingAngle={2}
                     dataKey="value"
                   >

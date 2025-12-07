@@ -80,15 +80,23 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
   const searchParams = useSearchParams();
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState(searchParams.get("range") || "all");
-  const [startDate, setStartDate] = useState(searchParams.get("start") || "");
-  const [endDate, setEndDate] = useState(searchParams.get("end") || "");
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(
-    searchParams.get("categories")?.split(",").filter(Boolean) || []
-  );
-  const [selectedNonprofits, setSelectedNonprofits] = useState<string[]>(
-    searchParams.get("nonprofits")?.split(",").filter(Boolean) || []
-  );
+
+  // Read current values directly from URL params (source of truth)
+  const dateRange = searchParams.get("range") || "all";
+  const startDate = searchParams.get("start") || "";
+  const endDate = searchParams.get("end") || "";
+  const selectedCategories = searchParams.get("categories")?.split(",").filter(Boolean) || [];
+  const selectedNonprofits = searchParams.get("nonprofits")?.split(",").filter(Boolean) || [];
+
+  // Local state only for custom date inputs (before apply)
+  const [customStart, setCustomStart] = useState(startDate);
+  const [customEnd, setCustomEnd] = useState(endDate);
+
+  // Sync custom date inputs when URL changes
+  useEffect(() => {
+    setCustomStart(startDate);
+    setCustomEnd(endDate);
+  }, [startDate, endDate]);
 
   const hasActiveFilters =
     dateRange !== "all" ||
@@ -131,11 +139,8 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
   };
 
   const clearAllFilters = () => {
-    setDateRange("all");
-    setStartDate("");
-    setEndDate("");
-    setSelectedCategories([]);
-    setSelectedNonprofits([]);
+    setCustomStart("");
+    setCustomEnd("");
     router.push("/dashboard");
   };
 
@@ -143,7 +148,6 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
     const newCategories = selectedCategories.includes(categoryId)
       ? selectedCategories.filter((id) => id !== categoryId)
       : [...selectedCategories, categoryId];
-    setSelectedCategories(newCategories);
     applyFilters({ categories: newCategories });
   };
 
@@ -151,22 +155,23 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
     const newNonprofits = selectedNonprofits.includes(nonprofitId)
       ? selectedNonprofits.filter((id) => id !== nonprofitId)
       : [...selectedNonprofits, nonprofitId];
-    setSelectedNonprofits(newNonprofits);
     applyFilters({ nonprofits: newNonprofits });
   };
 
   const selectDateRange = (value: string) => {
-    setDateRange(value);
     if (value !== "custom") {
-      setStartDate("");
-      setEndDate("");
+      setCustomStart("");
+      setCustomEnd("");
       applyFilters({ range: value, start: "", end: "" });
       setOpenDropdown(null);
+    } else {
+      // For custom, just update the local state without navigating yet
+      applyFilters({ range: "custom" });
     }
   };
 
   const applyCustomDateRange = () => {
-    applyFilters({ range: "custom", start: startDate, end: endDate });
+    applyFilters({ range: "custom", start: customStart, end: customEnd });
     setOpenDropdown(null);
   };
 
@@ -233,8 +238,8 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
                 <label className="block text-xs text-slate-500 mb-1">Start</label>
                 <input
                   type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  value={customStart}
+                  onChange={(e) => setCustomStart(e.target.value)}
                   className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -242,8 +247,8 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
                 <label className="block text-xs text-slate-500 mb-1">End</label>
                 <input
                   type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  value={customEnd}
+                  onChange={(e) => setCustomEnd(e.target.value)}
                   className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -282,10 +287,7 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
           {selectedCategories.length > 0 && (
             <div className="p-2 border-t border-slate-200">
               <button
-                onClick={() => {
-                  setSelectedCategories([]);
-                  applyFilters({ categories: [] });
-                }}
+                onClick={() => applyFilters({ categories: [] })}
                 className="w-full text-xs text-slate-500 hover:text-slate-700"
               >
                 Clear selection
@@ -322,10 +324,7 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
           {selectedNonprofits.length > 0 && (
             <div className="p-2 border-t border-slate-200">
               <button
-                onClick={() => {
-                  setSelectedNonprofits([]);
-                  applyFilters({ nonprofits: [] });
-                }}
+                onClick={() => applyFilters({ nonprofits: [] })}
                 className="w-full text-xs text-slate-500 hover:text-slate-700"
               >
                 Clear selection

@@ -59,27 +59,27 @@ export function YearOverYear({
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold">Year-over-Year</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+      <CardContent className="pt-0">
+        <div className="space-y-3">
           {/* Amount Comparison */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-slate-600">Total Amount</span>
-              <div className={`flex items-center gap-1 text-sm font-medium ${getChangeColor(amountChange)}`}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-slate-600">Total Amount</span>
+              <div className={`flex items-center gap-1 text-xs font-medium ${getChangeColor(amountChange)}`}>
                 {getChangeIcon(amountChange)}
                 {formatChange(amountChange)}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-50 rounded-lg p-3">
-                <div className="text-xs text-slate-500">{currentYear}</div>
-                <div className="text-lg font-bold text-slate-900">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-slate-50 rounded-lg p-2">
+                <div className="text-[10px] text-slate-500">{currentYear}</div>
+                <div className="text-base font-bold text-slate-900">
                   {formatCurrency(currentYearAmount)}
                 </div>
               </div>
-              <div className="bg-slate-50 rounded-lg p-3">
-                <div className="text-xs text-slate-500">{currentYear - 1}</div>
-                <div className="text-lg font-bold text-slate-400">
+              <div className="bg-slate-50 rounded-lg p-2">
+                <div className="text-[10px] text-slate-500">{currentYear - 1}</div>
+                <div className="text-base font-bold text-slate-400">
                   {formatCurrency(previousYearAmount)}
                 </div>
               </div>
@@ -88,23 +88,23 @@ export function YearOverYear({
 
           {/* Donation Count Comparison */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-slate-600">Donations Made</span>
-              <div className={`flex items-center gap-1 text-sm font-medium ${getChangeColor(donationsChange)}`}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-slate-600">Donations Made</span>
+              <div className={`flex items-center gap-1 text-xs font-medium ${getChangeColor(donationsChange)}`}>
                 {getChangeIcon(donationsChange)}
                 {formatChange(donationsChange)}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-50 rounded-lg p-3">
-                <div className="text-xs text-slate-500">{currentYear}</div>
-                <div className="text-lg font-bold text-slate-900">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-slate-50 rounded-lg p-2">
+                <div className="text-[10px] text-slate-500">{currentYear}</div>
+                <div className="text-base font-bold text-slate-900">
                   {currentYearDonations}
                 </div>
               </div>
-              <div className="bg-slate-50 rounded-lg p-3">
-                <div className="text-xs text-slate-500">{currentYear - 1}</div>
-                <div className="text-lg font-bold text-slate-400">
+              <div className="bg-slate-50 rounded-lg p-2">
+                <div className="text-[10px] text-slate-500">{currentYear - 1}</div>
+                <div className="text-base font-bold text-slate-400">
                   {previousYearDonations}
                 </div>
               </div>

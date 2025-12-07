@@ -72,11 +72,11 @@ export function DonationTrendsChart({ data }: DonationTrendsChartProps) {
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
-          <div className="flex items-center justify-center h-[200px] text-slate-500">
+          <div className="flex items-center justify-center h-[160px] text-slate-500">
             No donation data yet
           </div>
         ) : (
-          <div className="h-[200px]">
+          <div className="h-[160px]">
             <ResponsiveContainer width="100%" height="100%">
               {chartType === "bar" ? (
                 <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>

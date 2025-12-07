@@ -71,11 +71,11 @@ export function GivingGoalWidget({
           )}
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-6">
+      <CardContent className="pt-0">
+        <div className="flex items-center gap-4">
           {/* Progress Ring */}
-          <div className="relative w-[100px] h-[100px] flex-shrink-0">
-            <svg className="w-full h-full transform -rotate-90">
+          <div className="relative w-[80px] h-[80px] flex-shrink-0">
+            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
               {/* Background circle */}
               <circle
                 cx="50"
@@ -101,7 +101,7 @@ export function GivingGoalWidget({
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
-                <span className="text-xl font-bold text-slate-900">
+                <span className="text-lg font-bold text-slate-900">
                   {Math.round(animatedPercentage)}%
                 </span>
               </div>
@@ -109,7 +109,7 @@ export function GivingGoalWidget({
           </div>
 
           {/* Goal Info */}
-          <div className="flex-1 space-y-2">
+          <div className="flex-1 space-y-1">
             {isEditing ? (
               <div className="flex items-center gap-2">
                 <span className="text-slate-500">$</span>

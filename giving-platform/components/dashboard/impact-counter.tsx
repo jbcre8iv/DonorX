@@ -93,23 +93,23 @@ export function ImpactCounter({
         <CardTitle className="text-base font-semibold">Your Impact</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-2">
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg"
+              className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg"
             >
-              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              <div className={`p-1.5 rounded-lg ${stat.bgColor}`}>
+                <stat.icon className={`h-3.5 w-3.5 ${stat.color}`} />
               </div>
               <div>
-                <div className={`text-xl font-bold ${stat.color}`}>
+                <div className={`text-base font-bold ${stat.color}`}>
                   <AnimatedNumber
                     value={stat.value}
                     prefix={stat.prefix || ""}
                   />
                 </div>
-                <div className="text-xs text-slate-500">{stat.label}</div>
+                <div className="text-[10px] text-slate-500">{stat.label}</div>
               </div>
             </div>
           ))}

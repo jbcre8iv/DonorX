@@ -75,13 +75,13 @@ export function DashboardCharts({
       )}
 
       {/* Row 1: Trends Chart and Category Breakdown */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         <DonationTrendsChart data={trendData} />
         <CategoryBreakdownChart data={categoryData} />
       </div>
 
       {/* Row 2: Goal, Streak, Year-over-Year */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         <GivingGoalWidget
           currentAmount={givingGoal.currentAmount}
           goalAmount={givingGoal.goalAmount}
@@ -104,7 +104,7 @@ export function DashboardCharts({
       </div>
 
       {/* Row 3: Top Nonprofits and Impact Counter */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         <TopNonprofitsChart data={topNonprofits} />
         <ImpactCounter
           totalDonated={impactData.totalDonated}
