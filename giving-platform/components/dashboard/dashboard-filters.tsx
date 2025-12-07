@@ -57,22 +57,17 @@ function FilterDropdown({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen, onClose]);
 
-  // Adjust position to prevent overflow on mobile
+  // Adjust position to center dropdown on mobile
   useEffect(() => {
-    if (isOpen && contentRef.current) {
-      const contentRect = contentRef.current.getBoundingClientRect();
+    if (isOpen && dropdownRef.current) {
       const viewportWidth = window.innerWidth;
-      const padding = 8;
+      const isMobile = viewportWidth < 640;
 
-      // Check if dropdown extends past right edge
-      if (contentRect.right > viewportWidth - padding) {
-        const overflow = contentRect.right - (viewportWidth - padding);
-        setLeftOffset(-overflow);
-      }
-      // Check if dropdown extends past left edge
-      else if (contentRect.left < padding) {
-        const overflow = padding - contentRect.left;
-        setLeftOffset(overflow);
+      if (isMobile) {
+        // Center the dropdown: offset = 16px (1rem margin) - button's left position
+        const buttonRect = dropdownRef.current.getBoundingClientRect();
+        const targetLeft = 16; // 1rem margin from left edge
+        setLeftOffset(targetLeft - buttonRect.left);
       } else {
         setLeftOffset(0);
       }
@@ -99,9 +94,8 @@ function FilterDropdown({
       {isOpen && (
         <div
           ref={contentRef}
-          className={`absolute top-full mt-1 bg-white rounded-lg border border-slate-200 shadow-lg z-50 w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[280px] left-0 sm:left-auto ${alignRight ? "sm:right-0" : "sm:left-0"}`}
+          className={`absolute top-full mt-1 bg-white rounded-lg border border-slate-200 shadow-lg z-50 w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[280px] left-0 ${alignRight ? "sm:right-0 sm:left-auto" : "sm:left-0"}`}
           style={{
-            maxWidth: 'calc(100vw - 1rem)',
             transform: leftOffset !== 0 ? `translateX(${leftOffset}px)` : undefined
           }}
         >
