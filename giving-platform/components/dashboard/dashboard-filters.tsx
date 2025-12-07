@@ -85,15 +85,15 @@ function FilterDropdown({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={onToggle}
-        className={`flex items-center gap-2 px-3 py-2 text-sm border rounded-lg transition-colors ${
+        className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm border rounded-lg transition-colors ${
           hasValue
             ? "border-blue-500 bg-blue-50 text-blue-700"
             : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
         }`}
       >
-        <Icon className="h-4 w-4" />
-        <span>{label}</span>
-        <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <Icon className="h-4 w-4 flex-shrink-0" />
+        <span className="truncate max-w-[70px] sm:max-w-none">{label}</span>
+        <ChevronDown className={`h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen && (
@@ -240,14 +240,14 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
   };
 
   const getDateRangeLabel = () => {
-    if (dateRange === "all") return "Date Range";
+    if (dateRange === "all") return "Date";
     if (dateRange === "custom" && urlStart && urlEnd) {
       const start = new Date(urlStart).toLocaleDateString("en-US", { month: "short", day: "numeric" });
       const end = new Date(urlEnd).toLocaleDateString("en-US", { month: "short", day: "numeric" });
       return `${start} - ${end}`;
     }
     const option = DATE_RANGE_OPTIONS.find((o) => o.value === dateRange);
-    return option?.label || "Date Range";
+    return option?.label || "Date";
   };
 
   const getCategoryLabel = () => {
@@ -270,7 +270,7 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
   };
 
   const getAmountRangeLabel = () => {
-    if (minAmount === null && maxAmount === null) return "Donation Amount";
+    if (minAmount === null && maxAmount === null) return "Amount";
     const formatAmount = (amt: number) => {
       if (amt >= 1000000) return `$${(amt / 1000000).toFixed(amt % 1000000 === 0 ? 0 : 1)}M`;
       if (amt >= 1000) return `$${(amt / 1000).toFixed(amt % 1000 === 0 ? 0 : 1)}K`;
@@ -282,7 +282,7 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
   };
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
       {/* Date Range Dropdown */}
       <FilterDropdown
         label={getDateRangeLabel()}
