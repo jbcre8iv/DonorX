@@ -102,7 +102,7 @@ export function AmountRangeFilter({
   return (
     <div className="p-4 space-y-4 min-w-[280px]">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-slate-700">Amount Range</span>
+        <span className="text-sm font-medium text-slate-700">Donation Amount</span>
         <span className="text-sm font-medium text-blue-600">{getRangeLabel()}</span>
       </div>
 

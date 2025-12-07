@@ -235,7 +235,7 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
   };
 
   const getAmountRangeLabel = () => {
-    if (minAmount === null && maxAmount === null) return "Amount";
+    if (minAmount === null && maxAmount === null) return "Donation Amount";
     const formatAmount = (amt: number) => {
       if (amt >= 1000000) return `$${(amt / 1000000).toFixed(amt % 1000000 === 0 ? 0 : 1)}M`;
       if (amt >= 1000) return `$${(amt / 1000).toFixed(amt % 1000 === 0 ? 0 : 1)}K`;
