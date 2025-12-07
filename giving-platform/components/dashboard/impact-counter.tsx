@@ -1,0 +1,120 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Heart, Building2, Calendar, DollarSign } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface ImpactCounterProps {
+  totalDonated: number;
+  nonprofitsSupported: number;
+  totalDonations: number;
+  yearsGiving: number;
+}
+
+function AnimatedNumber({ value, prefix = "", suffix = "" }: { value: number; prefix?: string; suffix?: string }) {
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    const duration = 1500; // Animation duration in ms
+    const steps = 60;
+    const stepDuration = duration / steps;
+    const increment = value / steps;
+    let current = 0;
+    let step = 0;
+
+    const timer = setInterval(() => {
+      step++;
+      current = Math.min(Math.round(increment * step), value);
+      setDisplayValue(current);
+
+      if (step >= steps) {
+        clearInterval(timer);
+        setDisplayValue(value);
+      }
+    }, stepDuration);
+
+    return () => clearInterval(timer);
+  }, [value]);
+
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+    if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+    return num.toLocaleString();
+  };
+
+  return (
+    <span className="tabular-nums">
+      {prefix}{formatNumber(displayValue)}{suffix}
+    </span>
+  );
+}
+
+export function ImpactCounter({
+  totalDonated,
+  nonprofitsSupported,
+  totalDonations,
+  yearsGiving,
+}: ImpactCounterProps) {
+  const stats = [
+    {
+      label: "Total Given",
+      value: Math.round(totalDonated / 100), // Convert cents to dollars
+      prefix: "$",
+      icon: DollarSign,
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-100",
+    },
+    {
+      label: "Organizations",
+      value: nonprofitsSupported,
+      icon: Building2,
+      color: "text-blue-600",
+      bgColor: "bg-blue-100",
+    },
+    {
+      label: "Donations",
+      value: totalDonations,
+      icon: Heart,
+      color: "text-pink-600",
+      bgColor: "bg-pink-100",
+    },
+    {
+      label: "Years Giving",
+      value: yearsGiving,
+      icon: Calendar,
+      color: "text-purple-600",
+      bgColor: "bg-purple-100",
+    },
+  ];
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-semibold">Your Impact</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-4">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg"
+            >
+              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              </div>
+              <div>
+                <div className={`text-xl font-bold ${stat.color}`}>
+                  <AnimatedNumber
+                    value={stat.value}
+                    prefix={stat.prefix || ""}
+                  />
+                </div>
+                <div className="text-xs text-slate-500">{stat.label}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

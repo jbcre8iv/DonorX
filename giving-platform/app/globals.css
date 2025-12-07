@@ -127,6 +127,22 @@ body {
   animation: bounceSubtle 0.6s ease-out;
 }
 
+/* Confetti animation */
+@keyframes confetti {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.animate-confetti {
+  animation: confetti 3s ease-out forwards;
+}
+
 /* Tooltip animation - fades in, stays briefly, fades out */
 @keyframes tooltipFadeInOut {
   0% {
