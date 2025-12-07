@@ -1,8 +1,9 @@
 "use client";
 
-import { TestTube, X } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { TestTube, X, Power } from "lucide-react";
+import { useState, useEffect, useRef, useTransition } from "react";
 import Link from "next/link";
+import { toggleSimulationMode } from "@/app/admin/settings/actions";
 
 interface SimulationModeBannerProps {
   enabled: boolean;
@@ -13,7 +14,15 @@ export function SimulationModeBanner({ enabled, isAdmin }: SimulationModeBannerP
   const [collapsed, setCollapsed] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleDisableSimulation = () => {
+    startTransition(async () => {
+      await toggleSimulationMode();
+      setShowDropdown(false);
+    });
+  };
 
   // Auto-collapse after 1.5 seconds for admins
   useEffect(() => {
@@ -77,7 +86,17 @@ export function SimulationModeBanner({ enabled, isAdmin }: SimulationModeBannerP
                   Donations will not process real payments
                 </p>
               </div>
-              <div className="p-2">
+              <div className="p-2 space-y-1">
+                {isAdmin && (
+                  <button
+                    onClick={handleDisableSimulation}
+                    disabled={isPending}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
+                  >
+                    <Power className="h-4 w-4" />
+                    <span>{isPending ? "Disabling..." : "Disable Simulation"}</span>
+                  </button>
+                )}
                 <Link
                   href="/admin/settings"
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-md transition-colors"
