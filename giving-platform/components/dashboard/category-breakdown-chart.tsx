@@ -117,7 +117,7 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
                   ) : (
                     <>
                       <ChevronDown className="h-3 w-3" />
-                      +{dataWithColors.length - MAX_VISIBLE} more categories
+                      +{dataWithColors.length - MAX_VISIBLE} more {dataWithColors.length - MAX_VISIBLE === 1 ? "category" : "categories"}
                     </>
                   )}
                 </button>
