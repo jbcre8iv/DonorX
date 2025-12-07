@@ -16,7 +16,7 @@ interface Allocation {
   amount_cents: number;
   nonprofit_id?: string | null;
   category_id?: string | null;
-  nonprofit?: { name: string } | null;
+  nonprofit?: { name: string; category_id?: string | null; category?: { name: string } | null } | null;
   category?: { name: string } | null;
 }
 
@@ -117,7 +117,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         amount_cents,
         nonprofit_id,
         category_id,
-        nonprofit:nonprofits(name),
+        nonprofit:nonprofits(name, category_id, category:categories(name)),
         category:categories(name)
       )
     `)
@@ -128,13 +128,19 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const completedDonations = allDonations.filter((d) => d.status === "completed");
 
   // Get unique categories and nonprofits for filter options
+  // Include categories from both direct allocations AND from nonprofits
   const categoriesSet = new Map<string, string>();
   const nonprofitsSet = new Map<string, string>();
 
   completedDonations.forEach((d) => {
     d.allocations?.forEach((a) => {
+      // Direct category on allocation
       if (a.category_id && a.category?.name) {
         categoriesSet.set(a.category_id, a.category.name);
+      }
+      // Category from nonprofit
+      if (a.nonprofit?.category_id && a.nonprofit?.category?.name) {
+        categoriesSet.set(a.nonprofit.category_id, a.nonprofit.category.name);
       }
       if (a.nonprofit_id && a.nonprofit?.name) {
         nonprofitsSet.set(a.nonprofit_id, a.nonprofit.name);
@@ -158,10 +164,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     });
   }
 
-  // Category filter
+  // Category filter - check both allocation's category and nonprofit's category
   if (categoryFilter.length > 0) {
     filteredDonations = filteredDonations.filter((d) =>
-      d.allocations?.some((a) => a.category_id && categoryFilter.includes(a.category_id))
+      d.allocations?.some((a) => {
+        const effectiveCategoryId = a.category_id || a.nonprofit?.category_id;
+        return effectiveCategoryId && categoryFilter.includes(effectiveCategoryId);
+      })
     );
   }
 
@@ -214,7 +223,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   );
   if (categoryFilter.length > 0) {
     lastYearDonations = lastYearDonations.filter((d) =>
-      d.allocations?.some((a) => a.category_id && categoryFilter.includes(a.category_id))
+      d.allocations?.some((a) => {
+        const effectiveCategoryId = a.category_id || a.nonprofit?.category_id;
+        return effectiveCategoryId && categoryFilter.includes(effectiveCategoryId);
+      })
     );
   }
   if (nonprofitFilter.length > 0) {
@@ -302,15 +314,19 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   })();
 
   // Prepare category breakdown data (filtered)
+  // Use allocation's category first, then fall back to nonprofit's category
   const categoryData = (() => {
     const categories = new Map<string, number>();
     filteredDonations.forEach((d) => {
       d.allocations?.forEach((a) => {
+        // Get category name: allocation's direct category OR nonprofit's category OR "Uncategorized"
+        const categoryName = a.category?.name || a.nonprofit?.category?.name || "Uncategorized";
+        const effectiveCategoryId = a.category_id || a.nonprofit?.category_id;
+
         // Apply category filter
-        if (categoryFilter.length === 0 || (a.category_id && categoryFilter.includes(a.category_id))) {
-          const name = a.category?.name || "Uncategorized";
-          const current = categories.get(name) || 0;
-          categories.set(name, current + (a.amount_cents || 0));
+        if (categoryFilter.length === 0 || (effectiveCategoryId && categoryFilter.includes(effectiveCategoryId))) {
+          const current = categories.get(categoryName) || 0;
+          categories.set(categoryName, current + (a.amount_cents || 0));
         }
       });
     });
