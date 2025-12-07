@@ -107,16 +107,16 @@ export function AmountRangeFilter({
       </div>
 
       {/* Dual Range Slider */}
-      <div className="relative pt-2 pb-6">
+      {/* Thumb is 20px wide (w-5), so we need 10px padding on each side for proper alignment */}
+      <div className="relative pt-2 pb-6 px-[10px]">
         {/* Track background */}
-        <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-2 bg-slate-200 rounded-full" />
+        <div className="absolute top-1/2 -translate-y-1/2 left-[10px] right-[10px] h-2 bg-slate-200 rounded-full" />
 
-        {/* Active track */}
+        {/* Active track - positioned within the inset track area */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 h-2 bg-blue-600 rounded-full"
+          className="absolute top-1/2 -translate-y-1/2 h-2 bg-blue-600 rounded-full left-[10px] right-[10px]"
           style={{
-            left: `${minPercent}%`,
-            right: `${100 - maxPercent}%`,
+            clipPath: `inset(0 ${100 - maxPercent}% 0 ${minPercent}%)`,
           }}
         />
 
@@ -130,7 +130,7 @@ export function AmountRangeFilter({
           onChange={handleMinChange}
           onMouseUp={applyFilter}
           onTouchEnd={applyFilter}
-          className="absolute w-full h-2 appearance-none bg-transparent cursor-pointer pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-blue-600 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:cursor-pointer"
+          className="absolute left-0 right-0 h-2 appearance-none bg-transparent cursor-pointer pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-blue-600 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:cursor-pointer"
           style={{ zIndex: localMinTier > localMaxTier - 1 ? 5 : 3 }}
         />
 
@@ -144,12 +144,12 @@ export function AmountRangeFilter({
           onChange={handleMaxChange}
           onMouseUp={applyFilter}
           onTouchEnd={applyFilter}
-          className="absolute w-full h-2 appearance-none bg-transparent cursor-pointer pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-blue-600 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:cursor-pointer"
+          className="absolute left-0 right-0 h-2 appearance-none bg-transparent cursor-pointer pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-blue-600 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:cursor-pointer"
           style={{ zIndex: 4 }}
         />
 
-        {/* Tick marks */}
-        <div className="absolute top-6 left-0 right-0 flex justify-between px-[2px]">
+        {/* Tick marks - aligned with thumb center positions */}
+        <div className="absolute top-6 left-[10px] right-[10px] flex justify-between">
           {TIERS.map((tier, i) => (
             <div
               key={tier.value}
@@ -161,10 +161,10 @@ export function AmountRangeFilter({
           ))}
         </div>
 
-        {/* Labels */}
-        <div className="absolute top-9 left-0 right-0 flex justify-between">
-          <span className="text-[10px] text-slate-400">$0</span>
-          <span className="text-[10px] text-slate-400">$50M</span>
+        {/* Labels - aligned with tick marks */}
+        <div className="absolute top-9 left-[10px] right-[10px] flex justify-between">
+          <span className="text-[10px] text-slate-400 -ml-2">$0</span>
+          <span className="text-[10px] text-slate-400 -mr-2">$50M</span>
         </div>
       </div>
 
