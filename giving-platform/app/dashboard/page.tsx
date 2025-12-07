@@ -35,27 +35,11 @@ interface DashboardPageProps {
     range?: string;
     start?: string;
     end?: string;
-    amount?: string;
+    minAmount?: string;
+    maxAmount?: string;
     categories?: string;
     nonprofits?: string;
   }>;
-}
-
-function getAmountRangeFromFilter(amount: string): { minCents: number | null; maxCents: number | null } {
-  switch (amount) {
-    case "0-100":
-      return { minCents: 0, maxCents: 10000 };
-    case "100-500":
-      return { minCents: 10000, maxCents: 50000 };
-    case "500-1000":
-      return { minCents: 50000, maxCents: 100000 };
-    case "1000-5000":
-      return { minCents: 100000, maxCents: 500000 };
-    case "5000+":
-      return { minCents: 500000, maxCents: null };
-    default:
-      return { minCents: null, maxCents: null };
-  }
 }
 
 function getDateRangeFromFilter(range: string, start?: string, end?: string): { startDate: Date | null; endDate: Date | null } {
@@ -111,8 +95,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   // Parse filter params
   const dateRange = params.range || "all";
   const { startDate, endDate } = getDateRangeFromFilter(dateRange, params.start, params.end);
-  const amountRange = params.amount || "all";
-  const { minCents, maxCents } = getAmountRangeFromFilter(amountRange);
+  // Amount filter uses dollars from URL, convert to cents for comparison
+  const minAmount = params.minAmount ? parseInt(params.minAmount, 10) : null;
+  const maxAmount = params.maxAmount ? parseInt(params.maxAmount, 10) : null;
+  const minCents = minAmount !== null ? minAmount * 100 : null;
+  const maxCents = maxAmount !== null ? maxAmount * 100 : null;
   const categoryFilter = params.categories?.split(",").filter(Boolean) || [];
   const nonprofitFilter = params.nonprofits?.split(",").filter(Boolean) || [];
 

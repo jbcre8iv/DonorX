@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Calendar, Building2, FolderOpen, X, ChevronDown, Check, Search, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AmountRangeFilter } from "./amount-range-filter";
 
 interface DashboardFiltersProps {
   categories: { id: string; name: string }[];
@@ -20,14 +21,6 @@ const DATE_RANGE_OPTIONS = [
   { value: "custom", label: "Custom Range" },
 ];
 
-const AMOUNT_RANGE_OPTIONS = [
-  { value: "all", label: "Any Amount" },
-  { value: "0-100", label: "Under $100", min: 0, max: 10000 },
-  { value: "100-500", label: "$100 - $500", min: 10000, max: 50000 },
-  { value: "500-1000", label: "$500 - $1,000", min: 50000, max: 100000 },
-  { value: "1000-5000", label: "$1,000 - $5,000", min: 100000, max: 500000 },
-  { value: "5000+", label: "$5,000+", min: 500000, max: null },
-];
 
 function FilterDropdown({
   label,
@@ -93,7 +86,10 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
 
   // Read current values directly from URL params (source of truth)
   const dateRange = searchParams.get("range") || "all";
-  const amountRange = searchParams.get("amount") || "all";
+  const minAmountParam = searchParams.get("minAmount");
+  const maxAmountParam = searchParams.get("maxAmount");
+  const minAmount = minAmountParam ? parseInt(minAmountParam, 10) : null;
+  const maxAmount = maxAmountParam ? parseInt(maxAmountParam, 10) : null;
   const selectedCategories = searchParams.get("categories")?.split(",").filter(Boolean) || [];
   const selectedNonprofits = searchParams.get("nonprofits")?.split(",").filter(Boolean) || [];
 
@@ -117,7 +113,8 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
 
   const hasActiveFilters =
     dateRange !== "all" ||
-    amountRange !== "all" ||
+    minAmount !== null ||
+    maxAmount !== null ||
     selectedCategories.length > 0 ||
     selectedNonprofits.length > 0;
 
@@ -125,7 +122,8 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
     range?: string;
     start?: string;
     end?: string;
-    amount?: string;
+    minAmount?: number | null;
+    maxAmount?: number | null;
     categories?: string[];
     nonprofits?: string[];
   }) => {
@@ -134,7 +132,8 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
     const range = newParams?.range ?? dateRange;
     const start = newParams?.start ?? urlStart;
     const end = newParams?.end ?? urlEnd;
-    const amount = newParams?.amount ?? amountRange;
+    const newMinAmount = newParams?.minAmount !== undefined ? newParams.minAmount : minAmount;
+    const newMaxAmount = newParams?.maxAmount !== undefined ? newParams.maxAmount : maxAmount;
     const cats = newParams?.categories ?? selectedCategories;
     const nps = newParams?.nonprofits ?? selectedNonprofits;
 
@@ -147,8 +146,11 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
     if (range === "custom" && end) {
       params.set("end", end);
     }
-    if (amount !== "all") {
-      params.set("amount", amount);
+    if (newMinAmount !== null) {
+      params.set("minAmount", newMinAmount.toString());
+    }
+    if (newMaxAmount !== null) {
+      params.set("maxAmount", newMaxAmount.toString());
     }
     if (cats.length > 0) {
       params.set("categories", cats.join(","));
@@ -193,9 +195,8 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
     }
   };
 
-  const selectAmountRange = (value: string) => {
-    applyFilters({ amount: value });
-    setOpenDropdown(null);
+  const handleAmountRangeChange = (newMin: number | null, newMax: number | null) => {
+    applyFilters({ minAmount: newMin, maxAmount: newMax });
   };
 
   const applyCustomDateRange = () => {
@@ -234,9 +235,15 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
   };
 
   const getAmountRangeLabel = () => {
-    if (amountRange === "all") return "Amount";
-    const option = AMOUNT_RANGE_OPTIONS.find((o) => o.value === amountRange);
-    return option?.label || "Amount";
+    if (minAmount === null && maxAmount === null) return "Amount";
+    const formatAmount = (amt: number) => {
+      if (amt >= 1000000) return `$${(amt / 1000000).toFixed(amt % 1000000 === 0 ? 0 : 1)}M`;
+      if (amt >= 1000) return `$${(amt / 1000).toFixed(amt % 1000 === 0 ? 0 : 1)}K`;
+      return `$${amt}`;
+    };
+    const minLabel = minAmount !== null ? formatAmount(minAmount) : "$0";
+    const maxLabel = maxAmount !== null ? formatAmount(maxAmount) : "$50M+";
+    return `${minLabel} - ${maxLabel}`;
   };
 
   return (
@@ -301,22 +308,13 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
         isOpen={openDropdown === "amount"}
         onToggle={() => setOpenDropdown(openDropdown === "amount" ? null : "amount")}
         onClose={() => setOpenDropdown(null)}
-        hasValue={amountRange !== "all"}
+        hasValue={minAmount !== null || maxAmount !== null}
       >
-        <div className="py-1">
-          {AMOUNT_RANGE_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => selectAmountRange(option.value)}
-              className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-slate-50 ${
-                amountRange === option.value ? "text-blue-600 bg-blue-50" : "text-slate-700"
-              }`}
-            >
-              <span>{option.label}</span>
-              {amountRange === option.value && <Check className="h-4 w-4" />}
-            </button>
-          ))}
-        </div>
+        <AmountRangeFilter
+          minAmount={minAmount}
+          maxAmount={maxAmount}
+          onChange={handleAmountRangeChange}
+        />
       </FilterDropdown>
 
       {/* Categories Dropdown */}
