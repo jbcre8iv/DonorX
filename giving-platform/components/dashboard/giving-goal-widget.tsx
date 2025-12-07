@@ -144,7 +144,7 @@ export function GivingGoalWidget({
                   <Target className="h-4 w-4 text-slate-400" />
                   <span className="text-sm text-slate-600">Goal:</span>
                   <span className="font-semibold text-slate-900">
-                    {formatCurrency(goalAmount)}
+                    {formatCurrency(goalAmount / 100)}
                   </span>
                 </div>
                 <div className="text-sm">
@@ -155,7 +155,7 @@ export function GivingGoalWidget({
                 </div>
                 {remaining > 0 ? (
                   <div className="text-sm text-slate-500">
-                    {formatCurrency(remaining)} to go
+                    {formatCurrency(remaining / 100)} to go
                   </div>
                 ) : (
                   <div className="text-sm text-emerald-600 font-medium">
