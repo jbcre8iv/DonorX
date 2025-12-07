@@ -42,6 +42,8 @@ function FilterDropdown({
   alignRight?: boolean;
 }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [leftOffset, setLeftOffset] = useState(0);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -54,6 +56,30 @@ function FilterDropdown({
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen, onClose]);
+
+  // Adjust position to prevent overflow on mobile
+  useEffect(() => {
+    if (isOpen && contentRef.current) {
+      const contentRect = contentRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const padding = 8;
+
+      // Check if dropdown extends past right edge
+      if (contentRect.right > viewportWidth - padding) {
+        const overflow = contentRect.right - (viewportWidth - padding);
+        setLeftOffset(-overflow);
+      }
+      // Check if dropdown extends past left edge
+      else if (contentRect.left < padding) {
+        const overflow = padding - contentRect.left;
+        setLeftOffset(overflow);
+      } else {
+        setLeftOffset(0);
+      }
+    } else {
+      setLeftOffset(0);
+    }
+  }, [isOpen]);
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -71,7 +97,14 @@ function FilterDropdown({
       </button>
 
       {isOpen && (
-        <div className={`absolute top-full mt-1 bg-white rounded-lg border border-slate-200 shadow-lg z-50 min-w-[200px] ${alignRight ? "right-0" : "left-0"}`}>
+        <div
+          ref={contentRef}
+          className={`absolute top-full mt-1 bg-white rounded-lg border border-slate-200 shadow-lg z-50 min-w-[200px] sm:min-w-[280px] ${alignRight ? "right-0" : "left-0"}`}
+          style={{
+            maxWidth: 'calc(100vw - 1rem)',
+            transform: leftOffset !== 0 ? `translateX(${leftOffset}px)` : undefined
+          }}
+        >
           {children}
         </div>
       )}
@@ -387,7 +420,6 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
                 value={nonprofitSearch}
                 onChange={(e) => setNonprofitSearch(e.target.value)}
                 className="w-full pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                autoFocus
               />
             </div>
           </div>
