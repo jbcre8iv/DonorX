@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Target, Edit2, Check, X, History, CheckCircle, Circle } from "lucide-react";
+import { Target, Edit2, Check, X, History } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedNumber } from "@/components/ui/animated-number";
 import { Modal, ModalHeader, ModalBody } from "@/components/ui/modal";
@@ -211,17 +211,8 @@ export function GivingGoalWidget({
               return (
                 <div
                   key={goal.year}
-                  className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg"
+                  className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg"
                 >
-                  {/* Achievement indicator */}
-                  <div className="flex-shrink-0">
-                    {achieved ? (
-                      <CheckCircle className="h-6 w-6 text-emerald-500" />
-                    ) : (
-                      <Circle className="h-6 w-6 text-slate-300" />
-                    )}
-                  </div>
-
                   {/* Goal details */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
