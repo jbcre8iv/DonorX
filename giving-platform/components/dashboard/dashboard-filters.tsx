@@ -99,7 +99,7 @@ function FilterDropdown({
       {isOpen && (
         <div
           ref={contentRef}
-          className={`absolute top-full mt-1 bg-white rounded-lg border border-slate-200 shadow-lg z-50 min-w-[200px] sm:min-w-[280px] ${alignRight ? "right-0" : "left-0"}`}
+          className={`absolute top-full mt-1 bg-white rounded-lg border border-slate-200 shadow-lg z-50 w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[280px] left-0 sm:left-auto ${alignRight ? "sm:right-0" : "sm:left-0"}`}
           style={{
             maxWidth: 'calc(100vw - 1rem)',
             transform: leftOffset !== 0 ? `translateX(${leftOffset}px)` : undefined
