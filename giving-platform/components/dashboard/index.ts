@@ -7,3 +7,4 @@ export { YearOverYear } from "./year-over-year";
 export { ImpactCounter } from "./impact-counter";
 export { RecentDonationsCompact } from "./recent-donations-compact";
 export { MilestoneCelebration } from "./milestone-celebration";
+export { DashboardFilters } from "./dashboard-filters";

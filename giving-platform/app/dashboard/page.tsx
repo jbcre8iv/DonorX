@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
+import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 
 export const metadata = {
   title: "Dashboard",
@@ -14,6 +15,8 @@ export const metadata = {
 interface Allocation {
   percentage: number;
   amount_cents: number;
+  nonprofit_id?: string | null;
+  category_id?: string | null;
   nonprofit?: { name: string } | null;
   category?: { name: string } | null;
 }
@@ -27,7 +30,56 @@ interface Donation {
   allocations: Allocation[] | null;
 }
 
-export default async function DashboardPage() {
+interface DashboardPageProps {
+  searchParams: Promise<{
+    range?: string;
+    start?: string;
+    end?: string;
+    categories?: string;
+    nonprofits?: string;
+  }>;
+}
+
+function getDateRangeFromFilter(range: string, start?: string, end?: string): { startDate: Date | null; endDate: Date | null } {
+  const now = new Date();
+  let startDate: Date | null = null;
+  let endDate: Date | null = new Date();
+
+  switch (range) {
+    case "ytd":
+      startDate = new Date(now.getFullYear(), 0, 1);
+      break;
+    case "12m":
+      startDate = new Date(now);
+      startDate.setMonth(startDate.getMonth() - 12);
+      break;
+    case "6m":
+      startDate = new Date(now);
+      startDate.setMonth(startDate.getMonth() - 6);
+      break;
+    case "3m":
+      startDate = new Date(now);
+      startDate.setMonth(startDate.getMonth() - 3);
+      break;
+    case "30d":
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 30);
+      break;
+    case "custom":
+      if (start) startDate = new Date(start);
+      if (end) endDate = new Date(end);
+      break;
+    default:
+      // "all" - no date filter
+      startDate = null;
+      endDate = null;
+  }
+
+  return { startDate, endDate };
+}
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const params = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -38,6 +90,12 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  // Parse filter params
+  const dateRange = params.range || "all";
+  const { startDate, endDate } = getDateRangeFromFilter(dateRange, params.start, params.end);
+  const categoryFilter = params.categories?.split(",").filter(Boolean) || [];
+  const nonprofitFilter = params.nonprofits?.split(",").filter(Boolean) || [];
+
   // Fetch user's donations with allocations
   const { data: donations } = await supabase
     .from("donations")
@@ -46,6 +104,8 @@ export default async function DashboardPage() {
       allocations(
         percentage,
         amount_cents,
+        nonprofit_id,
+        category_id,
         nonprofit:nonprofits(name),
         category:categories(name)
       )
@@ -56,26 +116,74 @@ export default async function DashboardPage() {
   const allDonations = (donations || []) as Donation[];
   const completedDonations = allDonations.filter((d) => d.status === "completed");
 
-  // Calculate stats
-  const totalDonatedCents = completedDonations.reduce(
-    (sum, d) => sum + d.amount_cents,
-    0
-  );
+  // Get unique categories and nonprofits for filter options
+  const categoriesSet = new Map<string, string>();
+  const nonprofitsSet = new Map<string, string>();
 
-  // Get unique nonprofits supported
-  const nonprofitCounts = new Map<string, number>();
   completedDonations.forEach((d) => {
     d.allocations?.forEach((a) => {
-      if (a.nonprofit?.name) {
-        const current = nonprofitCounts.get(a.nonprofit.name) || 0;
-        nonprofitCounts.set(a.nonprofit.name, current + (a.amount_cents || 0));
+      if (a.category_id && a.category?.name) {
+        categoriesSet.set(a.category_id, a.category.name);
+      }
+      if (a.nonprofit_id && a.nonprofit?.name) {
+        nonprofitsSet.set(a.nonprofit_id, a.nonprofit.name);
       }
     });
   });
 
-  // Current year donations
+  const filterCategories = Array.from(categoriesSet.entries()).map(([id, name]) => ({ id, name }));
+  const filterNonprofits = Array.from(nonprofitsSet.entries()).map(([id, name]) => ({ id, name }));
+
+  // Apply filters to completed donations
+  let filteredDonations = completedDonations;
+
+  // Date filter
+  if (startDate || endDate) {
+    filteredDonations = filteredDonations.filter((d) => {
+      const donationDate = new Date(d.completed_at || d.created_at);
+      if (startDate && donationDate < startDate) return false;
+      if (endDate && donationDate > endDate) return false;
+      return true;
+    });
+  }
+
+  // Category filter
+  if (categoryFilter.length > 0) {
+    filteredDonations = filteredDonations.filter((d) =>
+      d.allocations?.some((a) => a.category_id && categoryFilter.includes(a.category_id))
+    );
+  }
+
+  // Nonprofit filter
+  if (nonprofitFilter.length > 0) {
+    filteredDonations = filteredDonations.filter((d) =>
+      d.allocations?.some((a) => a.nonprofit_id && nonprofitFilter.includes(a.nonprofit_id))
+    );
+  }
+
+  // Calculate stats from filtered data
+  const totalDonatedCents = filteredDonations.reduce(
+    (sum, d) => sum + d.amount_cents,
+    0
+  );
+
+  // Get unique nonprofits supported (filtered)
+  const nonprofitCounts = new Map<string, number>();
+  filteredDonations.forEach((d) => {
+    d.allocations?.forEach((a) => {
+      if (a.nonprofit?.name) {
+        // Apply nonprofit filter to allocations too
+        if (nonprofitFilter.length === 0 || (a.nonprofit_id && nonprofitFilter.includes(a.nonprofit_id))) {
+          const current = nonprofitCounts.get(a.nonprofit.name) || 0;
+          nonprofitCounts.set(a.nonprofit.name, current + (a.amount_cents || 0));
+        }
+      }
+    });
+  });
+
+  // Current year donations (from filtered set)
   const currentYear = new Date().getFullYear();
-  const thisYearDonations = completedDonations.filter(
+  const thisYearDonations = filteredDonations.filter(
     (d) => new Date(d.created_at).getFullYear() === currentYear
   );
   const lastYearDonations = completedDonations.filter(
@@ -87,15 +195,15 @@ export default async function DashboardPage() {
     {
       title: "Total Donated",
       value: formatCurrency(totalDonatedCents),
-      subtitle: "All time",
+      subtitle: dateRange === "all" ? "All time" : "Filtered",
       icon: TrendingUp,
       bgColor: "bg-blue-100",
       iconColor: "text-blue-700",
     },
     {
-      title: "Donations This Year",
-      value: thisYearDonations.length.toString(),
-      subtitle: currentYear.toString(),
+      title: "Donations",
+      value: filteredDonations.length.toString(),
+      subtitle: dateRange === "all" ? currentYear.toString() : "Filtered",
       icon: CreditCard,
       bgColor: "bg-emerald-100",
       iconColor: "text-emerald-700",
@@ -110,7 +218,7 @@ export default async function DashboardPage() {
     },
     {
       title: "Tax Receipts",
-      value: completedDonations.length.toString(),
+      value: filteredDonations.length.toString(),
       subtitle: "Available",
       icon: FileText,
       bgColor: "bg-amber-100",
@@ -118,7 +226,7 @@ export default async function DashboardPage() {
     },
   ];
 
-  // Prepare trend data (last 12 months)
+  // Prepare trend data (last 12 months from filtered data)
   const trendData = (() => {
     const months: { month: string; amount: number; count: number }[] = [];
     for (let i = 11; i >= 0; i--) {
@@ -127,7 +235,7 @@ export default async function DashboardPage() {
       const monthKey = date.toISOString().slice(0, 7);
       const monthLabel = date.toLocaleDateString("en-US", { month: "short" });
 
-      const monthDonations = completedDonations.filter((d) => {
+      const monthDonations = filteredDonations.filter((d) => {
         const donationDate = new Date(d.completed_at || d.created_at);
         return donationDate.toISOString().slice(0, 7) === monthKey;
       });
@@ -141,14 +249,17 @@ export default async function DashboardPage() {
     return months;
   })();
 
-  // Prepare category breakdown data
+  // Prepare category breakdown data (filtered)
   const categoryData = (() => {
     const categories = new Map<string, number>();
-    completedDonations.forEach((d) => {
+    filteredDonations.forEach((d) => {
       d.allocations?.forEach((a) => {
-        const name = a.category?.name || "Uncategorized";
-        const current = categories.get(name) || 0;
-        categories.set(name, current + (a.amount_cents || 0));
+        // Apply category filter
+        if (categoryFilter.length === 0 || (a.category_id && categoryFilter.includes(a.category_id))) {
+          const name = a.category?.name || "Uncategorized";
+          const current = categories.get(name) || 0;
+          categories.set(name, current + (a.amount_cents || 0));
+        }
       });
     });
     return Array.from(categories.entries())
@@ -156,19 +267,19 @@ export default async function DashboardPage() {
       .sort((a, b) => b.value - a.value);
   })();
 
-  // Top nonprofits
+  // Top nonprofits (filtered)
   const topNonprofits = Array.from(nonprofitCounts.entries())
     .map(([name, amount]) => ({ name, amount: amount / 100 }))
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 5);
 
-  // Giving goal (default $10,000 per year)
+  // Giving goal (based on filtered this year data)
   const givingGoal = {
     currentAmount: thisYearDonations.reduce((sum, d) => sum + d.amount_cents, 0),
     goalAmount: 1000000, // $10,000 in cents
   };
 
-  // Streak data
+  // Streak data (uses all completed, not filtered)
   const streakData = (() => {
     const monthsWithDonations = new Set<string>();
     completedDonations.forEach((d) => {
@@ -188,10 +299,8 @@ export default async function DashboardPage() {
 
     // If no donation this month, check if streak was broken
     if (!monthsWithDonations.has(now.toISOString().slice(0, 7))) {
-      // Check last month
       const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       if (monthsWithDonations.has(lastMonth.toISOString().slice(0, 7))) {
-        // Streak continues from last month
         currentStreak = 0;
         checkDate = lastMonth;
         while (monthsWithDonations.has(checkDate.toISOString().slice(0, 7))) {
@@ -245,7 +354,7 @@ export default async function DashboardPage() {
     };
   })();
 
-  // Year over year
+  // Year over year (uses all data for comparison)
   const yearOverYear = {
     currentYear,
     currentYearAmount: thisYearDonations.reduce((sum, d) => sum + d.amount_cents, 0),
@@ -254,21 +363,21 @@ export default async function DashboardPage() {
     previousYearDonations: lastYearDonations.length,
   };
 
-  // Impact data
+  // Impact data (from filtered data)
   const yearsWithDonations = new Set<number>();
-  completedDonations.forEach((d) => {
+  filteredDonations.forEach((d) => {
     yearsWithDonations.add(new Date(d.created_at).getFullYear());
   });
 
   const impactData = {
     totalDonated: totalDonatedCents,
     nonprofitsSupported: nonprofitCounts.size,
-    totalDonations: completedDonations.length,
+    totalDonations: filteredDonations.length,
     yearsGiving: yearsWithDonations.size,
   };
 
-  // Recent donations for compact view
-  const recentDonations = allDonations.slice(0, 5).map((d) => ({
+  // Recent donations for compact view (from filtered data)
+  const recentDonations = filteredDonations.slice(0, 5).map((d) => ({
     id: d.id,
     amount_cents: d.amount_cents,
     status: d.status,
@@ -280,17 +389,23 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header with Filters */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
           <p className="text-slate-600">
             Welcome back! Here&apos;s your giving overview.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/donate">Make a Donation</Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          <DashboardFilters
+            categories={filterCategories}
+            nonprofits={filterNonprofits}
+          />
+          <Button asChild>
+            <Link href="/donate">Make a Donation</Link>
+          </Button>
+        </div>
       </div>
 
       {/* Stats Grid */}
