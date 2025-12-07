@@ -62,7 +62,7 @@ export function GivingGoalWidget({
           {onGoalChange && !isEditing && (
             <button
               onClick={() => {
-                setEditValue((goalAmount / 100).toString());
+                setEditValue((goalAmount / 100).toLocaleString());
                 setIsEditing(true);
               }}
               className="p-1 text-slate-400 hover:text-slate-600 transition-colors"
@@ -117,8 +117,12 @@ export function GivingGoalWidget({
                 <input
                   type="text"
                   value={editValue}
-                  onChange={(e) => setEditValue(e.target.value.replace(/[^0-9]/g, ""))}
-                  className="w-24 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/[^0-9]/g, "");
+                    const formatted = rawValue ? parseInt(rawValue, 10).toLocaleString() : "";
+                    setEditValue(formatted);
+                  }}
+                  className="w-28 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   autoFocus
                 />
                 <button
