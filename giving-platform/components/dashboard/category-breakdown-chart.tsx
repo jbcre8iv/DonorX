@@ -24,7 +24,7 @@ const COLORS = [
   "#84cc16", // lime
 ];
 
-const MAX_VISIBLE = 6;
+const MAX_VISIBLE = 5;
 
 export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
   const [isExpanded, setIsExpanded] = useState(false);
