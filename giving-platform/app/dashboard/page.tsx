@@ -1,9 +1,5 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CreditCard, TrendingUp, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 import { StatsGrid } from "@/components/dashboard/stats-grid";
@@ -487,49 +483,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         impactData={impactData}
         recentDonations={recentDonations}
       />
-
-      {/* Quick Actions */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Link href="/donate">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
-            <CardContent className="p-4 text-center">
-              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 mb-2">
-                <CreditCard className="h-5 w-5 text-blue-700" />
-              </div>
-              <h3 className="text-sm font-semibold text-slate-900">New Donation</h3>
-              <p className="mt-0.5 text-xs text-slate-600">
-                Support causes you care about
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/dashboard/receipts">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
-            <CardContent className="p-4 text-center">
-              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 mb-2">
-                <FileText className="h-5 w-5 text-emerald-700" />
-              </div>
-              <h3 className="text-sm font-semibold text-slate-900">Tax Receipts</h3>
-              <p className="mt-0.5 text-xs text-slate-600">
-                Download your tax documents
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/dashboard/templates">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
-            <CardContent className="p-4 text-center">
-              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 mb-2">
-                <TrendingUp className="h-5 w-5 text-purple-700" />
-              </div>
-              <h3 className="text-sm font-semibold text-slate-900">Templates</h3>
-              <p className="mt-0.5 text-xs text-slate-600">
-                Save your favorite allocations
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
     </div>
   );
 }
