@@ -126,7 +126,7 @@ export function StatsGrid({
   const receiptsRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {/* Total Donated - Not clickable */}
       <Card>
         <CardContent className="p-4">
@@ -232,7 +232,7 @@ export function StatsGrid({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-600">Nonprofits Supported</p>
+                <p className="text-xs text-slate-600">Supported</p>
                 <p className="mt-0.5 text-xl font-semibold text-slate-900">
                   <AnimatedNumber value={nonprofitsCount} format="number" />
                 </p>
@@ -241,7 +241,7 @@ export function StatsGrid({
                 <Building2 className="h-4 w-4 text-purple-700" />
               </div>
             </div>
-            <p className="mt-1 text-xs text-slate-500">Organizations</p>
+            <p className="mt-1 text-xs text-slate-500">Nonprofits</p>
           </CardContent>
         </Card>
         <StatFlyout
