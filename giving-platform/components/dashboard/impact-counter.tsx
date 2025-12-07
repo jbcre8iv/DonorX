@@ -27,7 +27,7 @@ export function ImpactCounter({
       bgColor: "bg-emerald-100",
     },
     {
-      label: nonprofitsSupported === 1 ? "Organization" : "Organizations",
+      label: nonprofitsSupported === 1 ? "Nonprofit" : "Nonprofits",
       value: nonprofitsSupported,
       icon: Building2,
       color: "text-blue-600",
