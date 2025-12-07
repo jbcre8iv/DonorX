@@ -46,25 +46,30 @@ function StatFlyout({
   onClose,
   children,
   title,
+  containerRef,
 }: {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
   title: string;
+  containerRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const flyoutRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (flyoutRef.current && !flyoutRef.current.contains(event.target as Node)) {
-        onClose();
+      const target = event.target as Node;
+      // Don't close if clicking inside the flyout or the parent card container
+      if (flyoutRef.current?.contains(target) || containerRef.current?.contains(target)) {
+        return;
       }
+      onClose();
     }
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, containerRef]);
 
   if (!isOpen) return null;
 
@@ -116,9 +121,12 @@ export function StatsGrid({
   lastDonationDate,
 }: StatsGridProps) {
   const [openFlyout, setOpenFlyout] = useState<string | null>(null);
+  const donationsRef = useRef<HTMLDivElement>(null);
+  const nonprofitsRef = useRef<HTMLDivElement>(null);
+  const receiptsRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {/* Total Donated - Not clickable */}
       <Card>
         <CardContent className="p-4">
@@ -138,7 +146,7 @@ export function StatsGrid({
       </Card>
 
       {/* Donations - Clickable */}
-      <div className="relative">
+      <div className="relative" ref={donationsRef}>
         <Card
           className="cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => setOpenFlyout(openFlyout === "donations" ? null : "donations")}
@@ -162,6 +170,7 @@ export function StatsGrid({
           isOpen={openFlyout === "donations"}
           onClose={() => setOpenFlyout(null)}
           title="Donation Insights"
+          containerRef={donationsRef}
         >
           <div className="space-y-4">
             {/* Summary Stats */}
@@ -215,7 +224,7 @@ export function StatsGrid({
       </div>
 
       {/* Nonprofits Supported - Clickable */}
-      <div className="relative">
+      <div className="relative" ref={nonprofitsRef}>
         <Card
           className="cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => setOpenFlyout(openFlyout === "nonprofits" ? null : "nonprofits")}
@@ -239,6 +248,7 @@ export function StatsGrid({
           isOpen={openFlyout === "nonprofits"}
           onClose={() => setOpenFlyout(null)}
           title="Nonprofits Supported"
+          containerRef={nonprofitsRef}
         >
           <div className="space-y-3">
             {nonprofitSummaries.length > 0 ? (
@@ -277,7 +287,7 @@ export function StatsGrid({
       </div>
 
       {/* Tax Receipts - Clickable */}
-      <div className="relative">
+      <div className="relative" ref={receiptsRef}>
         <Card
           className="cursor-pointer hover:shadow-md transition-shadow"
           onClick={() => setOpenFlyout(openFlyout === "receipts" ? null : "receipts")}
@@ -301,6 +311,7 @@ export function StatsGrid({
           isOpen={openFlyout === "receipts"}
           onClose={() => setOpenFlyout(null)}
           title="Tax Receipt Summary"
+          containerRef={receiptsRef}
         >
           <div className="space-y-3">
             {receiptSummaries.length > 0 ? (
