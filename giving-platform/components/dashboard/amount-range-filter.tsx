@@ -50,42 +50,54 @@ export function AmountRangeFilter({
   maxAmount,
   onChange,
 }: AmountRangeFilterProps) {
-  // Convert amounts to tier indices
-  const minTier = minAmount !== null ? getTierForAmount(minAmount) : 0;
-  const maxTier = maxAmount !== null ? getTierForAmount(maxAmount) : TIERS.length - 1;
+  // Convert props to tier indices for initial state
+  const propMinTier = minAmount !== null ? getTierForAmount(minAmount) : 0;
+  const propMaxTier = maxAmount !== null ? getTierForAmount(maxAmount) : TIERS.length - 1;
 
+  // Local state for smooth sliding
+  const [localMinTier, setLocalMinTier] = React.useState(propMinTier);
+  const [localMaxTier, setLocalMaxTier] = React.useState(propMaxTier);
+
+  // Sync local state when props change (e.g., from URL or reset)
+  React.useEffect(() => {
+    setLocalMinTier(propMinTier);
+    setLocalMaxTier(propMaxTier);
+  }, [propMinTier, propMaxTier]);
+
+  // Handle real-time sliding (local state only)
   const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newMinTier = parseInt(e.target.value, 10);
-    const newMin = newMinTier === 0 ? null : getAmountForTier(newMinTier);
-    const newMax = maxTier === TIERS.length - 1 ? null : getAmountForTier(maxTier);
-
     // Ensure min doesn't exceed max
-    if (newMinTier <= maxTier) {
-      onChange(newMin, newMax);
+    if (newMinTier <= localMaxTier) {
+      setLocalMinTier(newMinTier);
     }
   };
 
   const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newMaxTier = parseInt(e.target.value, 10);
-    const newMin = minTier === 0 ? null : getAmountForTier(minTier);
-    const newMax = newMaxTier === TIERS.length - 1 ? null : getAmountForTier(newMaxTier);
-
     // Ensure max doesn't go below min
-    if (newMaxTier >= minTier) {
-      onChange(newMin, newMax);
+    if (newMaxTier >= localMinTier) {
+      setLocalMaxTier(newMaxTier);
     }
   };
 
-  // Calculate the range label
+  // Apply filter on mouse/touch release
+  const applyFilter = () => {
+    const newMin = localMinTier === 0 ? null : getAmountForTier(localMinTier);
+    const newMax = localMaxTier === TIERS.length - 1 ? null : getAmountForTier(localMaxTier);
+    onChange(newMin, newMax);
+  };
+
+  // Calculate the range label using local state for real-time updates
   const getRangeLabel = () => {
-    const minLabel = minAmount !== null ? formatAmount(minAmount) : "$0";
-    const maxLabel = maxAmount !== null ? formatAmount(maxAmount) : "$50M+";
+    const minLabel = localMinTier === 0 ? "$0" : formatAmount(getAmountForTier(localMinTier));
+    const maxLabel = localMaxTier === TIERS.length - 1 ? "$50M+" : formatAmount(getAmountForTier(localMaxTier));
     return `${minLabel} - ${maxLabel}`;
   };
 
-  // Calculate gradient positions
-  const minPercent = (minTier / (TIERS.length - 1)) * 100;
-  const maxPercent = (maxTier / (TIERS.length - 1)) * 100;
+  // Calculate gradient positions using local state
+  const minPercent = (localMinTier / (TIERS.length - 1)) * 100;
+  const maxPercent = (localMaxTier / (TIERS.length - 1)) * 100;
 
   return (
     <div className="p-4 space-y-4 min-w-[280px]">
@@ -114,10 +126,12 @@ export function AmountRangeFilter({
           min="0"
           max={TIERS.length - 1}
           step="1"
-          value={minTier}
+          value={localMinTier}
           onChange={handleMinChange}
+          onMouseUp={applyFilter}
+          onTouchEnd={applyFilter}
           className="absolute w-full h-2 appearance-none bg-transparent cursor-pointer pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-blue-600 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:cursor-pointer"
-          style={{ zIndex: minTier > maxTier - 1 ? 5 : 3 }}
+          style={{ zIndex: localMinTier > localMaxTier - 1 ? 5 : 3 }}
         />
 
         {/* Max slider */}
@@ -126,8 +140,10 @@ export function AmountRangeFilter({
           min="0"
           max={TIERS.length - 1}
           step="1"
-          value={maxTier}
+          value={localMaxTier}
           onChange={handleMaxChange}
+          onMouseUp={applyFilter}
+          onTouchEnd={applyFilter}
           className="absolute w-full h-2 appearance-none bg-transparent cursor-pointer pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-blue-600 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:cursor-pointer"
           style={{ zIndex: 4 }}
         />
@@ -139,7 +155,7 @@ export function AmountRangeFilter({
               key={tier.value}
               className={cn(
                 "w-px h-2",
-                i >= minTier && i <= maxTier ? "bg-blue-400" : "bg-slate-300"
+                i >= localMinTier && i <= localMaxTier ? "bg-blue-400" : "bg-slate-300"
               )}
             />
           ))}
