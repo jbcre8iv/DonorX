@@ -4,9 +4,9 @@ import { CreditCard, TrendingUp, Building2, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/utils";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
+import { AnimatedStatCard } from "@/components/dashboard/animated-stat-card";
 
 export const metadata = {
   title: "Dashboard",
@@ -190,39 +190,43 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     (d) => new Date(d.created_at).getFullYear() === currentYear - 1
   );
 
-  // Stats cards
+  // Stats cards - using numeric values for animation
   const stats = [
     {
       title: "Total Donated",
-      value: formatCurrency(totalDonatedCents),
+      value: Math.round(totalDonatedCents / 100), // Convert to dollars
       subtitle: dateRange === "all" ? "All time" : "Filtered",
       icon: TrendingUp,
       bgColor: "bg-blue-100",
       iconColor: "text-blue-700",
+      isCurrency: true,
     },
     {
       title: "Donations",
-      value: filteredDonations.length.toString(),
+      value: filteredDonations.length,
       subtitle: dateRange === "all" ? currentYear.toString() : "Filtered",
       icon: CreditCard,
       bgColor: "bg-emerald-100",
       iconColor: "text-emerald-700",
+      isCurrency: false,
     },
     {
       title: "Nonprofits Supported",
-      value: nonprofitCounts.size.toString(),
+      value: nonprofitCounts.size,
       subtitle: "Organizations",
       icon: Building2,
       bgColor: "bg-purple-100",
       iconColor: "text-purple-700",
+      isCurrency: false,
     },
     {
       title: "Tax Receipts",
-      value: filteredDonations.length.toString(),
+      value: filteredDonations.length,
       subtitle: "Available",
       icon: FileText,
       bgColor: "bg-amber-100",
       iconColor: "text-amber-700",
+      isCurrency: false,
     },
   ];
 
@@ -411,24 +415,16 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       {/* Stats Grid */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-slate-600">{stat.title}</p>
-                  <p className="mt-0.5 text-xl font-semibold text-slate-900">
-                    {stat.value}
-                  </p>
-                </div>
-                <div
-                  className={`flex h-9 w-9 items-center justify-center rounded-lg ${stat.bgColor}`}
-                >
-                  <stat.icon className={`h-4 w-4 ${stat.iconColor}`} />
-                </div>
-              </div>
-              <p className="mt-1 text-xs text-slate-500">{stat.subtitle}</p>
-            </CardContent>
-          </Card>
+          <AnimatedStatCard
+            key={stat.title}
+            title={stat.title}
+            value={stat.value}
+            subtitle={stat.subtitle}
+            icon={stat.icon}
+            bgColor={stat.bgColor}
+            iconColor={stat.iconColor}
+            isCurrency={stat.isCurrency}
+          />
         ))}
       </div>
 

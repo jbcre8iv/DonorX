@@ -2,6 +2,7 @@
 
 import { Flame, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 
 interface GivingStreakProps {
   currentStreak: number;
@@ -47,7 +48,7 @@ export function GivingStreak({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className={`text-2xl font-bold ${currentStreak > 0 ? "text-orange-500" : "text-slate-300"}`}>
-                {currentStreak}
+                <AnimatedNumber value={currentStreak} format="number" />
               </div>
               <div>
                 <div className="text-sm font-medium text-slate-900">

@@ -2,6 +2,7 @@
 
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 
 interface YearOverYearProps {
   currentYear: number;
@@ -74,7 +75,7 @@ export function YearOverYear({
               <div className="bg-slate-50 rounded-lg p-2">
                 <div className="text-[10px] text-slate-500">{currentYear}</div>
                 <div className="text-base font-bold text-slate-900">
-                  {formatCurrency(currentYearAmount)}
+                  <AnimatedNumber value={Math.round(currentYearAmount / 100)} prefix="$" />
                 </div>
               </div>
               <div className="bg-slate-50 rounded-lg p-2">
@@ -99,7 +100,7 @@ export function YearOverYear({
               <div className="bg-slate-50 rounded-lg p-2">
                 <div className="text-[10px] text-slate-500">{currentYear}</div>
                 <div className="text-base font-bold text-slate-900">
-                  {currentYearDonations}
+                  <AnimatedNumber value={currentYearDonations} />
                 </div>
               </div>
               <div className="bg-slate-50 rounded-lg p-2">

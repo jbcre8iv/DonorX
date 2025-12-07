@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Target, Edit2, Check, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 
 interface GivingGoalWidgetProps {
   currentAmount: number;
@@ -145,7 +146,7 @@ export function GivingGoalWidget({
                 <div className="text-sm">
                   <span className="text-slate-600">Donated: </span>
                   <span className="font-semibold text-emerald-600">
-                    {formatCurrency(currentAmount)}
+                    <AnimatedNumber value={Math.round(currentAmount / 100)} prefix="$" format="currency" />
                   </span>
                 </div>
                 {remaining > 0 ? (

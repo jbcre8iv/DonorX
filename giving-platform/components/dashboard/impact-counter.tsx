@@ -1,52 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Heart, Building2, Calendar, DollarSign } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 
 interface ImpactCounterProps {
   totalDonated: number;
   nonprofitsSupported: number;
   totalDonations: number;
   yearsGiving: number;
-}
-
-function AnimatedNumber({ value, prefix = "", suffix = "" }: { value: number; prefix?: string; suffix?: string }) {
-  const [displayValue, setDisplayValue] = useState(0);
-
-  useEffect(() => {
-    const duration = 1500; // Animation duration in ms
-    const steps = 60;
-    const stepDuration = duration / steps;
-    const increment = value / steps;
-    let current = 0;
-    let step = 0;
-
-    const timer = setInterval(() => {
-      step++;
-      current = Math.min(Math.round(increment * step), value);
-      setDisplayValue(current);
-
-      if (step >= steps) {
-        clearInterval(timer);
-        setDisplayValue(value);
-      }
-    }, stepDuration);
-
-    return () => clearInterval(timer);
-  }, [value]);
-
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
-    if (num >= 1000) return (num / 1000).toFixed(1) + "K";
-    return num.toLocaleString();
-  };
-
-  return (
-    <span className="tabular-nums">
-      {prefix}{formatNumber(displayValue)}{suffix}
-    </span>
-  );
 }
 
 export function ImpactCounter({
