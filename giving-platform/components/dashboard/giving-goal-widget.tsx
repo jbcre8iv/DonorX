@@ -1,15 +1,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Target, Edit2, Check, X } from "lucide-react";
+import { Target, Edit2, Check, X, History, CheckCircle, Circle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedNumber } from "@/components/ui/animated-number";
+import { Modal, ModalHeader, ModalBody } from "@/components/ui/modal";
+
+interface GoalHistory {
+  year: number;
+  goal_cents: number;
+  donated_cents: number;
+}
 
 interface GivingGoalWidgetProps {
   currentAmount: number;
   goalAmount: number;
   year: number;
   onGoalChange?: (newGoal: number) => void;
+  allGoals?: GoalHistory[];
 }
 
 export function GivingGoalWidget({
@@ -17,10 +25,15 @@ export function GivingGoalWidget({
   goalAmount,
   year,
   onGoalChange,
+  allGoals = [],
 }: GivingGoalWidgetProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
   const [animatedPercentage, setAnimatedPercentage] = useState(0);
+  const [showHistory, setShowHistory] = useState(false);
+
+  // Filter out current year from history and get only past years
+  const pastGoals = allGoals.filter((g) => g.year < year);
 
   const percentage = goalAmount > 0 ? Math.min((currentAmount / goalAmount) * 100, 100) : 0;
   const remaining = Math.max(goalAmount - currentAmount, 0);
@@ -159,14 +172,92 @@ export function GivingGoalWidget({
                   </div>
                 ) : (
                   <div className="text-sm text-emerald-600 font-medium">
-                    🎉 Goal reached!
+                    Goal reached!
                   </div>
                 )}
               </>
             )}
           </div>
         </div>
+
+        {/* View Past Goals Button */}
+        {pastGoals.length > 0 && (
+          <button
+            onClick={() => setShowHistory(true)}
+            className="mt-3 w-full flex items-center justify-center gap-2 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors border border-slate-200"
+          >
+            <History className="h-4 w-4" />
+            View Past Goals
+          </button>
+        )}
       </CardContent>
+
+      {/* Past Goals History Modal */}
+      <Modal open={showHistory} onClose={() => setShowHistory(false)}>
+        <ModalHeader>
+          <h2 className="text-lg font-semibold text-slate-900">Giving Goal History</h2>
+          <p className="text-sm text-slate-500 mt-1">
+            Your past giving goals and achievements
+          </p>
+        </ModalHeader>
+        <ModalBody>
+          <div className="space-y-3">
+            {pastGoals.map((goal) => {
+              const goalPercentage = goal.goal_cents > 0
+                ? Math.round((goal.donated_cents / goal.goal_cents) * 100)
+                : 0;
+              const achieved = goal.donated_cents >= goal.goal_cents;
+
+              return (
+                <div
+                  key={goal.year}
+                  className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg"
+                >
+                  {/* Achievement indicator */}
+                  <div className="flex-shrink-0">
+                    {achieved ? (
+                      <CheckCircle className="h-6 w-6 text-emerald-500" />
+                    ) : (
+                      <Circle className="h-6 w-6 text-slate-300" />
+                    )}
+                  </div>
+
+                  {/* Goal details */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-slate-900">{goal.year}</span>
+                      <span className={`text-sm font-medium ${achieved ? "text-emerald-600" : "text-slate-500"}`}>
+                        {goalPercentage}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 mt-1 text-sm">
+                      <span className="text-slate-600">
+                        Goal: {formatCurrency(goal.goal_cents / 100)}
+                      </span>
+                      <span className={achieved ? "text-emerald-600" : "text-slate-500"}>
+                        Donated: {formatCurrency(goal.donated_cents / 100)}
+                      </span>
+                    </div>
+                    {/* Progress bar */}
+                    <div className="mt-2 h-2 bg-slate-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${achieved ? "bg-emerald-500" : "bg-blue-500"}`}
+                        style={{ width: `${Math.min(goalPercentage, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {pastGoals.length === 0 && (
+              <div className="text-center py-8 text-slate-500">
+                No past goals yet. Your goal history will appear here after this year.
+              </div>
+            )}
+          </div>
+        </ModalBody>
+      </Modal>
     </Card>
   );
 }

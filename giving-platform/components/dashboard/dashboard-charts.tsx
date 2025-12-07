@@ -15,7 +15,7 @@ interface DashboardChartsProps {
   trendData: { month: string; amount: number; count: number }[];
   categoryData: { name: string; value: number; color: string }[];
   topNonprofits: { name: string; amount: number }[];
-  givingGoal: { currentAmount: number; goalAmount: number };
+  givingGoal: { currentAmount: number; goalAmount: number; allGoals: { year: number; goal_cents: number; donated_cents: number }[] };
   streakData: {
     currentStreak: number;
     longestStreak: number;
@@ -86,6 +86,7 @@ export function DashboardCharts({
           currentAmount={givingGoal.currentAmount}
           goalAmount={givingGoal.goalAmount}
           year={yearOverYear.currentYear}
+          allGoals={givingGoal.allGoals}
         />
         <GivingStreak
           currentStreak={streakData.currentStreak}

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-export async function updateGivingGoal(goalCents: number) {
+export async function updateGivingGoal(goalCents: number, year?: number) {
   const supabase = await createClient();
 
   const {
@@ -18,10 +18,20 @@ export async function updateGivingGoal(goalCents: number) {
     return { error: "Goal must be a positive amount" };
   }
 
+  const targetYear = year || new Date().getFullYear();
+
+  // Upsert into giving_goals table
   const { error } = await supabase
-    .from("users")
-    .update({ giving_goal_cents: goalCents })
-    .eq("id", user.id);
+    .from("giving_goals")
+    .upsert(
+      {
+        user_id: user.id,
+        year: targetYear,
+        goal_cents: goalCents,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,year" }
+    );
 
   if (error) {
     console.error("Update giving goal error:", error);

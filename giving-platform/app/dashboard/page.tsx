@@ -91,12 +91,21 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     redirect("/login");
   }
 
-  // Fetch user profile for giving goal
-  const { data: userProfile } = await supabase
-    .from("users")
-    .select("giving_goal_cents")
-    .eq("id", user.id)
+  // Fetch current year's giving goal from giving_goals table
+  const currentYear = new Date().getFullYear();
+  const { data: currentYearGoal } = await supabase
+    .from("giving_goals")
+    .select("goal_cents")
+    .eq("user_id", user.id)
+    .eq("year", currentYear)
     .single();
+
+  // Fetch all goals for history (past years)
+  const { data: allGoals } = await supabase
+    .from("giving_goals")
+    .select("year, goal_cents")
+    .eq("user_id", user.id)
+    .order("year", { ascending: false });
 
   // Parse filter params
   const dateRange = params.range || "all";
@@ -222,7 +231,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   });
 
   // Current year donations (from filtered set)
-  const currentYear = new Date().getFullYear();
   const thisYearDonations = filteredDonations.filter(
     (d) => new Date(d.created_at).getFullYear() === currentYear
   );
@@ -364,9 +372,21 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   // Giving goal (based on filtered this year data)
   // Default to $10,000 (1000000 cents) if no goal set
+  // Calculate donations per year for past goals
+  const donationsByYear = new Map<number, number>();
+  completedDonations.forEach((d) => {
+    const year = new Date(d.completed_at || d.created_at).getFullYear();
+    const current = donationsByYear.get(year) || 0;
+    donationsByYear.set(year, current + d.amount_cents);
+  });
+
   const givingGoal = {
     currentAmount: thisYearDonations.reduce((sum, d) => sum + d.amount_cents, 0),
-    goalAmount: userProfile?.giving_goal_cents || 1000000,
+    goalAmount: currentYearGoal?.goal_cents || 1000000,
+    allGoals: (allGoals || []).map((g) => ({
+      ...g,
+      donated_cents: donationsByYear.get(g.year) || 0,
+    })),
   };
 
   // Streak data (uses all completed, not filtered)
