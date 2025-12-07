@@ -185,37 +185,34 @@ export default async function AnnualStatementPage({ params }: AnnualStatementPag
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
               Donation Details
             </h2>
-            <div className="space-y-2">
-              {/* Header */}
-              <div className="flex items-center justify-between px-3 py-2 bg-slate-100 rounded-lg text-sm font-medium text-slate-600">
-                <span className="w-20 shrink-0">Date</span>
-                <span className="flex-1 min-w-0">Recipients</span>
-                <span className="w-20 shrink-0 text-right">Amount</span>
-              </div>
-              {/* Donations */}
-              {processedDonations.map((donation) => (
-                <div
-                  key={donation.id}
-                  className="flex items-start justify-between p-3 bg-slate-50 rounded-lg"
-                >
-                  <span className="w-20 shrink-0 text-sm text-slate-600">{donation.date}</span>
-                  <span className="flex-1 min-w-0 text-sm text-slate-900 px-2">
-                    {donation.recipients.join(", ")}
-                  </span>
-                  <span className="w-20 shrink-0 text-right font-semibold text-slate-900">
-                    {formatCurrency(donation.amount)}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Total */}
-            <div className="mt-4 pt-4 border-t-2 border-slate-900 flex justify-between">
-              <span className="text-lg font-bold text-slate-900">Total {yearNum}</span>
-              <span className="text-lg font-bold text-slate-900">
-                {formatCurrency(totalAmount)}
-              </span>
-            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-100">
+                  <th className="text-left px-3 py-2 font-medium text-slate-600 w-[70px]">Date</th>
+                  <th className="text-left px-3 py-2 font-medium text-slate-600">Recipients</th>
+                  <th className="text-right px-3 py-2 font-medium text-slate-600 w-[90px]">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {processedDonations.map((donation) => (
+                  <tr key={donation.id} className="bg-slate-50 border-t border-slate-200">
+                    <td className="px-3 py-2 text-slate-600 align-top">{donation.date}</td>
+                    <td className="px-3 py-2 text-slate-900 align-top">{donation.recipients.join(", ")}</td>
+                    <td className="px-3 py-2 text-right font-semibold text-slate-900 align-top whitespace-nowrap">
+                      {formatCurrency(donation.amount)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-slate-900">
+                  <td colSpan={2} className="px-3 py-3 text-lg font-bold text-slate-900">Total {yearNum}</td>
+                  <td className="px-3 py-3 text-right text-lg font-bold text-slate-900 whitespace-nowrap">
+                    {formatCurrency(totalAmount)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
 
           {/* Tax Notice */}
