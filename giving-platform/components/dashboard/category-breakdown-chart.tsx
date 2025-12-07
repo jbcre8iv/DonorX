@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface CategoryBreakdownChartProps {
   data: {
@@ -22,7 +24,11 @@ const COLORS = [
   "#84cc16", // lime
 ];
 
+const MAX_VISIBLE = 6;
+
 export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -39,6 +45,9 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
     ...item,
     color: COLORS[index % COLORS.length],
   }));
+
+  const visibleCategories = isExpanded ? dataWithColors : dataWithColors.slice(0, MAX_VISIBLE);
+  const hasMore = dataWithColors.length > MAX_VISIBLE;
 
   return (
     <Card>
@@ -80,8 +89,8 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex-1 space-y-2 overflow-hidden">
-              {dataWithColors.slice(0, 5).map((item) => (
+            <div className="flex-1 space-y-1.5 overflow-hidden">
+              {visibleCategories.map((item) => (
                 <div key={item.name} className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2 min-w-0">
                     <div
@@ -95,10 +104,23 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
                   </span>
                 </div>
               ))}
-              {dataWithColors.length > 5 && (
-                <div className="text-xs text-slate-500">
-                  +{dataWithColors.length - 5} more categories
-                </div>
+              {hasMore && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium mt-1"
+                >
+                  {isExpanded ? (
+                    <>
+                      <ChevronUp className="h-3 w-3" />
+                      Show less
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-3 w-3" />
+                      +{dataWithColors.length - MAX_VISIBLE} more categories
+                    </>
+                  )}
+                </button>
               )}
             </div>
           </div>
