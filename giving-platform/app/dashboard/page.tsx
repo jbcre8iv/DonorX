@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts";
 import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 import { StatsGrid } from "@/components/dashboard/stats-grid";
@@ -90,6 +90,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   if (!user) {
     redirect("/login");
   }
+
+  // Check if simulation mode is enabled
+  const adminClient = createAdminClient();
+  const { data: simulationSetting } = await adminClient
+    .from("system_settings")
+    .select("value")
+    .eq("key", "simulation_mode")
+    .single();
+  const isSimulationMode = simulationSetting?.value?.enabled === true;
 
   // Fetch current year's giving goal from giving_goals table
   const currentYear = new Date().getFullYear();
@@ -380,13 +389,28 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     donationsByYear.set(year, current + d.amount_cents);
   });
 
+  // Build allGoals array with donated amounts
+  let enrichedGoals = (allGoals || []).map((g) => ({
+    ...g,
+    donated_cents: donationsByYear.get(g.year) || 0,
+  }));
+
+  // In simulation mode, add sample 2024 goal data for demo purposes
+  if (isSimulationMode) {
+    const has2024Goal = enrichedGoals.some((g) => g.year === 2024);
+    if (!has2024Goal) {
+      // Sample 2024 goal: $2,000,000 goal, donated $1,850,000 (92.5% achieved)
+      enrichedGoals = [
+        ...enrichedGoals,
+        { year: 2024, goal_cents: 200000000, donated_cents: 185000000 },
+      ].sort((a, b) => b.year - a.year);
+    }
+  }
+
   const givingGoal = {
     currentAmount: thisYearDonations.reduce((sum, d) => sum + d.amount_cents, 0),
     goalAmount: currentYearGoal?.goal_cents || 1000000,
-    allGoals: (allGoals || []).map((g) => ({
-      ...g,
-      donated_cents: donationsByYear.get(g.year) || 0,
-    })),
+    allGoals: enrichedGoals,
   };
 
   // Streak data (uses all completed, not filtered)
