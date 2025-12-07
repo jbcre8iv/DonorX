@@ -58,7 +58,7 @@ export function GivingStreak({
               </div>
             </div>
             <div className="text-right text-xs">
-              <div className="text-slate-500">Best: {longestStreak} months</div>
+              <div className="text-slate-500">Best: {longestStreak} {longestStreak === 1 ? "month" : "months"}</div>
               {lastDonationDate && (
                 <div className="text-slate-400 flex items-center justify-end gap-1">
                   <Calendar className="h-3 w-3" />
