@@ -12,6 +12,9 @@ export const metadata = {
   title: "Dashboard",
 };
 
+// Force dynamic rendering to ensure filters work correctly
+export const dynamic = "force-dynamic";
+
 interface Allocation {
   percentage: number;
   amount_cents: number;
