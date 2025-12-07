@@ -117,6 +117,7 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
   const searchParams = useSearchParams();
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [categorySearch, setCategorySearch] = useState("");
   const [nonprofitSearch, setNonprofitSearch] = useState("");
 
   // Read current values directly from URL params (source of truth)
@@ -358,23 +359,51 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
           label={getCategoryLabel()}
           icon={FolderOpen}
           isOpen={openDropdown === "categories"}
-          onToggle={() => setOpenDropdown(openDropdown === "categories" ? null : "categories")}
-          onClose={() => setOpenDropdown(null)}
+          onToggle={() => {
+            if (openDropdown === "categories") {
+              setOpenDropdown(null);
+              setCategorySearch("");
+            } else {
+              setOpenDropdown("categories");
+            }
+          }}
+          onClose={() => {
+            setOpenDropdown(null);
+            setCategorySearch("");
+          }}
           hasValue={selectedCategories.length > 0}
         >
+          {/* Search Input */}
+          <div className="p-2 border-b border-slate-200">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search categories..."
+                value={categorySearch}
+                onChange={(e) => setCategorySearch(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
           <div className="py-1 max-h-64 overflow-y-auto">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => toggleCategory(category.id)}
-                className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-slate-50 ${
-                  selectedCategories.includes(category.id) ? "text-blue-600 bg-blue-50" : "text-slate-700"
-                }`}
-              >
-                <span>{category.name}</span>
-                {selectedCategories.includes(category.id) && <Check className="h-4 w-4" />}
-              </button>
-            ))}
+            {categories
+              .filter((cat) => cat.name.toLowerCase().includes(categorySearch.toLowerCase()))
+              .map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => toggleCategory(category.id)}
+                  className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-slate-50 ${
+                    selectedCategories.includes(category.id) ? "text-blue-600 bg-blue-50" : "text-slate-700"
+                  }`}
+                >
+                  <span>{category.name}</span>
+                  {selectedCategories.includes(category.id) && <Check className="h-4 w-4" />}
+                </button>
+              ))}
+            {categories.filter((cat) => cat.name.toLowerCase().includes(categorySearch.toLowerCase())).length === 0 && (
+              <div className="px-3 py-2 text-sm text-slate-500">No results found</div>
+            )}
           </div>
           {selectedCategories.length > 0 && (
             <div className="p-2 border-t border-slate-200">
