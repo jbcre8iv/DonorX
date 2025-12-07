@@ -206,7 +206,8 @@ export default async function AnnualStatementPage({ params }: AnnualStatementPag
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-slate-900">
-                  <td colSpan={2} className="px-3 py-3 text-lg font-bold text-slate-900">Total {yearNum}</td>
+                  <td className="px-3 py-3 text-lg font-bold text-slate-900">Total {yearNum}</td>
+                  <td className="px-3 py-3"></td>
                   <td className="px-3 py-3 text-right text-lg font-bold text-slate-900 whitespace-nowrap">
                     {formatCurrency(totalAmount)}
                   </td>
