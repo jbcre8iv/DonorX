@@ -98,11 +98,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   // Parse filter params
   const dateRange = params.range || "all";
   const { startDate, endDate } = getDateRangeFromFilter(dateRange, params.start, params.end);
-  // Amount filter uses dollars from URL, convert to cents for comparison
-  const minAmount = params.minAmount ? parseInt(params.minAmount, 10) : null;
-  const maxAmount = params.maxAmount ? parseInt(params.maxAmount, 10) : null;
-  const minCents = minAmount !== null ? minAmount * 100 : null;
-  const maxCents = maxAmount !== null ? maxAmount * 100 : null;
+  // Amount filter - values from URL are in dollars, database amount_cents is also in dollars (misnomer)
+  const minAmountFilter = params.minAmount ? parseInt(params.minAmount, 10) : null;
+  const maxAmountFilter = params.maxAmount ? parseInt(params.maxAmount, 10) : null;
   const categoryFilter = params.categories?.split(",").filter(Boolean) || [];
   const nonprofitFilter = params.nonprofits?.split(",").filter(Boolean) || [];
 
@@ -171,11 +169,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     );
   }
 
-  // Amount filter
-  if (minCents !== null || maxCents !== null) {
+  // Amount filter - values are in dollars, amount_cents is actually in dollars (misnomer)
+  if (minAmountFilter !== null || maxAmountFilter !== null) {
     filteredDonations = filteredDonations.filter((d) => {
-      if (minCents !== null && d.amount_cents < minCents) return false;
-      if (maxCents !== null && d.amount_cents > maxCents) return false;
+      // Convert amount_cents (which is actually in cents) to dollars for comparison
+      const amountDollars = d.amount_cents / 100;
+      if (minAmountFilter !== null && amountDollars < minAmountFilter) return false;
+      if (maxAmountFilter !== null && amountDollars > maxAmountFilter) return false;
       return true;
     });
   }
