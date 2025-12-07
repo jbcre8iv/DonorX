@@ -237,6 +237,51 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     subtitleDonations: dateRange === "all" ? currentYear.toString() : "Filtered",
   };
 
+  // Calculate additional stats for flyouts
+  const averageDonation = filteredDonations.length > 0
+    ? Math.round(totalDonatedCents / filteredDonations.length / 100)
+    : 0;
+  const largestDonation = filteredDonations.length > 0
+    ? Math.round(Math.max(...filteredDonations.map(d => d.amount_cents)) / 100)
+    : 0;
+  const lastDonationDate = filteredDonations[0]?.completed_at || filteredDonations[0]?.created_at || null;
+
+  // Nonprofit summaries for flyout (with donation counts)
+  const nonprofitDonationCounts = new Map<string, number>();
+  filteredDonations.forEach((d) => {
+    d.allocations?.forEach((a) => {
+      if (a.nonprofit?.name) {
+        const current = nonprofitDonationCounts.get(a.nonprofit.name) || 0;
+        nonprofitDonationCounts.set(a.nonprofit.name, current + 1);
+      }
+    });
+  });
+  const nonprofitSummaries = Array.from(nonprofitCounts.entries())
+    .map(([name, amount]) => ({
+      name,
+      amount: amount / 100,
+      donationCount: nonprofitDonationCounts.get(name) || 0,
+    }))
+    .sort((a, b) => b.amount - a.amount);
+
+  // Receipt summaries by year
+  const receiptsByYear = new Map<number, { count: number; total: number }>();
+  filteredDonations.forEach((d) => {
+    const year = new Date(d.completed_at || d.created_at).getFullYear();
+    const current = receiptsByYear.get(year) || { count: 0, total: 0 };
+    receiptsByYear.set(year, {
+      count: current.count + 1,
+      total: current.total + d.amount_cents,
+    });
+  });
+  const receiptSummaries = Array.from(receiptsByYear.entries())
+    .map(([year, data]) => ({
+      year,
+      count: data.count,
+      total: data.total / 100,
+    }))
+    .sort((a, b) => b.year - a.year);
+
   // Prepare trend data (last 12 months from filtered data)
   const trendData = (() => {
     const months: { month: string; amount: number; count: number }[] = [];
@@ -423,6 +468,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         receiptsCount={statsData.receiptsCount}
         subtitleTotal={statsData.subtitleTotal}
         subtitleDonations={statsData.subtitleDonations}
+        recentDonations={recentDonations}
+        nonprofitSummaries={nonprofitSummaries}
+        receiptSummaries={receiptSummaries}
+        averageDonation={averageDonation}
+        largestDonation={largestDonation}
+        lastDonationDate={lastDonationDate}
       />
 
       {/* Dashboard Charts and Widgets */}
