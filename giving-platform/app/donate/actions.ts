@@ -1,10 +1,35 @@
 "use server";
 
 // redirect import removed - not currently used
+import { headers } from "next/headers";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getStripeServer } from "@/lib/stripe/client";
 import { config } from "@/lib/config";
 import type { RecurringInterval } from "@/types/database";
+
+// Get the base URL for redirects - works on localhost and Vercel
+async function getBaseUrl(): Promise<string> {
+  // First check for explicit app URL
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+
+  // On Vercel, use the VERCEL_URL (automatically set by Vercel)
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  // Try to get the host from request headers
+  const headersList = await headers();
+  const host = headersList.get("host");
+  if (host) {
+    const protocol = host.includes("localhost") ? "http" : "https";
+    return `${protocol}://${host}`;
+  }
+
+  // Fallback to localhost for development
+  return "http://localhost:3000";
+}
 
 async function isSimulationModeEnabled(): Promise<boolean> {
   try {
@@ -725,9 +750,11 @@ export async function createCheckoutSession(
       return { success: false, error: "Failed to create allocation records" };
     }
 
+    // Get base URL for redirects
+    const baseUrl = await getBaseUrl();
+
     // If simulation mode is enabled, skip Stripe and go directly to success page
     if (simulationMode) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
       return { success: true, url: `${baseUrl}/donate/success?donation_id=${donation.id}&simulated=true` };
     }
 
@@ -745,9 +772,6 @@ export async function createCheckoutSession(
       quarterly: { interval: "month", interval_count: 3 },
       annually: { interval: "year", interval_count: 1 },
     };
-
-    // Create Stripe Checkout Session
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     if (isRecurring && recurringInterval) {
       // Create subscription checkout
