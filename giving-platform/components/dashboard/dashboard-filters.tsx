@@ -30,6 +30,7 @@ function FilterDropdown({
   onClose,
   children,
   hasValue,
+  alignRight,
 }: {
   label: string;
   icon: React.ElementType;
@@ -38,6 +39,7 @@ function FilterDropdown({
   onClose: () => void;
   children: React.ReactNode;
   hasValue?: boolean;
+  alignRight?: boolean;
 }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -69,7 +71,7 @@ function FilterDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 bg-white rounded-lg border border-slate-200 shadow-lg z-50 min-w-[200px]">
+        <div className={`absolute top-full mt-1 bg-white rounded-lg border border-slate-200 shadow-lg z-50 min-w-[200px] ${alignRight ? "right-0" : "left-0"}`}>
           {children}
         </div>
       )}
@@ -373,6 +375,7 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
             setNonprofitSearch("");
           }}
           hasValue={selectedNonprofits.length > 0}
+          alignRight
         >
           {/* Search Input */}
           <div className="p-2 border-b border-slate-200">
