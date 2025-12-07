@@ -85,15 +85,15 @@ function FilterDropdown({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={onToggle}
-        className={`flex items-center gap-1 sm:gap-2 px-1.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg transition-colors ${
+        className={`flex items-center justify-center gap-2 px-3 py-2 text-sm border rounded-lg transition-colors w-full sm:w-auto ${
           hasValue
             ? "border-blue-500 bg-blue-50 text-blue-700"
             : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
         }`}
       >
-        <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-        <span className="truncate max-w-[50px] sm:max-w-none">{label}</span>
-        <ChevronDown className={`h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <Icon className="h-4 w-4 flex-shrink-0" />
+        <span className="truncate">{label}</span>
+        <ChevronDown className={`h-4 w-4 flex-shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen && (
@@ -252,22 +252,22 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
   };
 
   const getCategoryLabel = () => {
-    if (selectedCategories.length === 0) return "Category";
+    if (selectedCategories.length === 0) return "Categories";
     if (selectedCategories.length === 1) {
       const cat = categories.find((c) => c.id === selectedCategories[0]);
-      return cat?.name || "1";
+      return cat?.name || "1 Category";
     }
-    return `${selectedCategories.length}`;
+    return `${selectedCategories.length} Categories`;
   };
 
   const getNonprofitLabel = () => {
-    if (selectedNonprofits.length === 0) return "Orgs";
+    if (selectedNonprofits.length === 0) return "Nonprofits";
     if (selectedNonprofits.length === 1) {
       const np = nonprofits.find((n) => n.id === selectedNonprofits[0]);
-      const name = np?.name || "1";
-      return name.length > 10 ? name.slice(0, 10) + "..." : name;
+      const name = np?.name || "1 Nonprofit";
+      return name.length > 15 ? name.slice(0, 15) + "..." : name;
     }
-    return `${selectedNonprofits.length}`;
+    return `${selectedNonprofits.length} Nonprofits`;
   };
 
   const getAmountRangeLabel = () => {
@@ -283,7 +283,7 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
   };
 
   return (
-    <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+    <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2 sm:flex-wrap">
       {/* Date Range Dropdown */}
       <FilterDropdown
         label={getDateRangeLabel()}
@@ -488,10 +488,10 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
       {hasActiveFilters && (
         <button
           onClick={clearAllFilters}
-          className="flex items-center gap-1 px-2 py-2 text-sm text-slate-500 hover:text-slate-700"
+          className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1 px-2 py-2 text-sm text-slate-500 hover:text-slate-700 sm:justify-start"
         >
           <X className="h-4 w-4" />
-          <span className="hidden sm:inline">Clear</span>
+          <span>Clear</span>
         </button>
       )}
     </div>
