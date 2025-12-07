@@ -14,17 +14,18 @@ async function getBaseUrl(): Promise<string> {
     return process.env.NEXT_PUBLIC_APP_URL;
   }
 
-  // On Vercel, use the VERCEL_URL (automatically set by Vercel)
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-
-  // Try to get the host from request headers
+  // Try to get the host from request headers first
+  // This is the domain the user is actually on, which is important for auth cookies
   const headersList = await headers();
   const host = headersList.get("host");
   if (host) {
     const protocol = host.includes("localhost") ? "http" : "https";
     return `${protocol}://${host}`;
+  }
+
+  // On Vercel, use the VERCEL_URL as fallback (automatically set by Vercel)
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
   }
 
   // Fallback to localhost for development
