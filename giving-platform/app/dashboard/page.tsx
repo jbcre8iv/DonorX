@@ -199,15 +199,24 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   );
 
   // Get unique nonprofits supported (filtered)
+  // When category filter is active, only count nonprofits that belong to those categories
   const nonprofitCounts = new Map<string, number>();
   filteredDonations.forEach((d) => {
     d.allocations?.forEach((a) => {
       if (a.nonprofit?.name) {
-        // Apply nonprofit filter to allocations too
-        if (nonprofitFilter.length === 0 || (a.nonprofit_id && nonprofitFilter.includes(a.nonprofit_id))) {
-          const current = nonprofitCounts.get(a.nonprofit.name) || 0;
-          nonprofitCounts.set(a.nonprofit.name, current + (a.amount_cents || 0));
+        // Apply nonprofit filter
+        if (nonprofitFilter.length > 0 && (!a.nonprofit_id || !nonprofitFilter.includes(a.nonprofit_id))) {
+          return;
         }
+        // Apply category filter - check if nonprofit belongs to selected categories
+        if (categoryFilter.length > 0) {
+          const effectiveCategoryId = a.category_id || a.nonprofit?.category_id;
+          if (!effectiveCategoryId || !categoryFilter.includes(effectiveCategoryId)) {
+            return;
+          }
+        }
+        const current = nonprofitCounts.get(a.nonprofit.name) || 0;
+        nonprofitCounts.set(a.nonprofit.name, current + (a.amount_cents || 0));
       }
     });
   });
@@ -255,10 +264,22 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const lastDonationDate = filteredDonations[0]?.completed_at || filteredDonations[0]?.created_at || null;
 
   // Nonprofit summaries for flyout (with donation counts)
+  // Apply same category/nonprofit filters as nonprofitCounts
   const nonprofitDonationCounts = new Map<string, number>();
   filteredDonations.forEach((d) => {
     d.allocations?.forEach((a) => {
       if (a.nonprofit?.name) {
+        // Apply nonprofit filter
+        if (nonprofitFilter.length > 0 && (!a.nonprofit_id || !nonprofitFilter.includes(a.nonprofit_id))) {
+          return;
+        }
+        // Apply category filter
+        if (categoryFilter.length > 0) {
+          const effectiveCategoryId = a.category_id || a.nonprofit?.category_id;
+          if (!effectiveCategoryId || !categoryFilter.includes(effectiveCategoryId)) {
+            return;
+          }
+        }
         const current = nonprofitDonationCounts.get(a.nonprofit.name) || 0;
         nonprofitDonationCounts.set(a.nonprofit.name, current + 1);
       }
