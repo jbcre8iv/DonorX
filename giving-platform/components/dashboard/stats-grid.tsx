@@ -77,7 +77,7 @@ export function StatsGrid({
                 <p className="text-xs text-slate-600">{stat.title}</p>
                 <p className="mt-0.5 text-xl font-semibold text-slate-900">
                   {stat.isCurrency ? (
-                    <AnimatedNumber value={stat.value} prefix="$" format="currency" />
+                    <AnimatedNumber value={stat.value} format="currency" />
                   ) : (
                     <AnimatedNumber value={stat.value} format="number" />
                   )}

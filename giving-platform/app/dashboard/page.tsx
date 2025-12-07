@@ -186,9 +186,20 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const thisYearDonations = filteredDonations.filter(
     (d) => new Date(d.created_at).getFullYear() === currentYear
   );
-  const lastYearDonations = completedDonations.filter(
+  // Last year donations - apply same category/nonprofit filters for consistent comparison
+  let lastYearDonations = completedDonations.filter(
     (d) => new Date(d.created_at).getFullYear() === currentYear - 1
   );
+  if (categoryFilter.length > 0) {
+    lastYearDonations = lastYearDonations.filter((d) =>
+      d.allocations?.some((a) => a.category_id && categoryFilter.includes(a.category_id))
+    );
+  }
+  if (nonprofitFilter.length > 0) {
+    lastYearDonations = lastYearDonations.filter((d) =>
+      d.allocations?.some((a) => a.nonprofit_id && nonprofitFilter.includes(a.nonprofit_id))
+    );
+  }
 
   // Stats values for animated grid
   const statsData = {
