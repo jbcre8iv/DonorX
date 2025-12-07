@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Calendar, Filter, X, ChevronDown } from "lucide-react";
+import { Calendar, Building2, FolderOpen, X, ChevronDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DashboardFiltersProps {
@@ -20,11 +20,66 @@ const DATE_RANGE_OPTIONS = [
   { value: "custom", label: "Custom Range" },
 ];
 
+function FilterDropdown({
+  label,
+  icon: Icon,
+  isOpen,
+  onToggle,
+  onClose,
+  children,
+  hasValue,
+}: {
+  label: string;
+  icon: React.ElementType;
+  isOpen: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  children: React.ReactNode;
+  hasValue?: boolean;
+}) {
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen, onClose]);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={onToggle}
+        className={`flex items-center gap-2 px-3 py-2 text-sm border rounded-lg transition-colors ${
+          hasValue
+            ? "border-blue-500 bg-blue-50 text-blue-700"
+            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+        }`}
+      >
+        <Icon className="h-4 w-4" />
+        <span>{label}</span>
+        <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1 bg-white rounded-lg border border-slate-200 shadow-lg z-50 min-w-[200px]">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DashboardFilters({ categories, nonprofits }: DashboardFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [showFilters, setShowFilters] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState(searchParams.get("range") || "all");
   const [startDate, setStartDate] = useState(searchParams.get("start") || "");
   const [endDate, setEndDate] = useState(searchParams.get("end") || "");
@@ -40,262 +95,255 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
     selectedCategories.length > 0 ||
     selectedNonprofits.length > 0;
 
-  const applyFilters = () => {
+  const applyFilters = (newParams?: {
+    range?: string;
+    start?: string;
+    end?: string;
+    categories?: string[];
+    nonprofits?: string[];
+  }) => {
     const params = new URLSearchParams();
 
-    if (dateRange !== "all") {
-      params.set("range", dateRange);
+    const range = newParams?.range ?? dateRange;
+    const start = newParams?.start ?? startDate;
+    const end = newParams?.end ?? endDate;
+    const cats = newParams?.categories ?? selectedCategories;
+    const nps = newParams?.nonprofits ?? selectedNonprofits;
+
+    if (range !== "all") {
+      params.set("range", range);
     }
-    if (dateRange === "custom" && startDate) {
-      params.set("start", startDate);
+    if (range === "custom" && start) {
+      params.set("start", start);
     }
-    if (dateRange === "custom" && endDate) {
-      params.set("end", endDate);
+    if (range === "custom" && end) {
+      params.set("end", end);
     }
-    if (selectedCategories.length > 0) {
-      params.set("categories", selectedCategories.join(","));
+    if (cats.length > 0) {
+      params.set("categories", cats.join(","));
     }
-    if (selectedNonprofits.length > 0) {
-      params.set("nonprofits", selectedNonprofits.join(","));
+    if (nps.length > 0) {
+      params.set("nonprofits", nps.join(","));
     }
 
     const queryString = params.toString();
     router.push(`/dashboard${queryString ? `?${queryString}` : ""}`);
-    setShowFilters(false);
   };
 
-  const clearFilters = () => {
+  const clearAllFilters = () => {
     setDateRange("all");
     setStartDate("");
     setEndDate("");
     setSelectedCategories([]);
     setSelectedNonprofits([]);
     router.push("/dashboard");
-    setShowFilters(false);
   };
 
   const toggleCategory = (categoryId: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId]
-    );
+    const newCategories = selectedCategories.includes(categoryId)
+      ? selectedCategories.filter((id) => id !== categoryId)
+      : [...selectedCategories, categoryId];
+    setSelectedCategories(newCategories);
+    applyFilters({ categories: newCategories });
   };
 
   const toggleNonprofit = (nonprofitId: string) => {
-    setSelectedNonprofits((prev) =>
-      prev.includes(nonprofitId)
-        ? prev.filter((id) => id !== nonprofitId)
-        : [...prev, nonprofitId]
-    );
+    const newNonprofits = selectedNonprofits.includes(nonprofitId)
+      ? selectedNonprofits.filter((id) => id !== nonprofitId)
+      : [...selectedNonprofits, nonprofitId];
+    setSelectedNonprofits(newNonprofits);
+    applyFilters({ nonprofits: newNonprofits });
+  };
+
+  const selectDateRange = (value: string) => {
+    setDateRange(value);
+    if (value !== "custom") {
+      setStartDate("");
+      setEndDate("");
+      applyFilters({ range: value, start: "", end: "" });
+      setOpenDropdown(null);
+    }
+  };
+
+  const applyCustomDateRange = () => {
+    applyFilters({ range: "custom", start: startDate, end: endDate });
+    setOpenDropdown(null);
   };
 
   const getDateRangeLabel = () => {
-    const option = DATE_RANGE_OPTIONS.find((o) => o.value === dateRange);
+    if (dateRange === "all") return "Date Range";
     if (dateRange === "custom" && startDate && endDate) {
-      return `${startDate} - ${endDate}`;
+      const start = new Date(startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      const end = new Date(endDate).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      return `${start} - ${end}`;
     }
-    return option?.label || "All Time";
+    const option = DATE_RANGE_OPTIONS.find((o) => o.value === dateRange);
+    return option?.label || "Date Range";
+  };
+
+  const getCategoryLabel = () => {
+    if (selectedCategories.length === 0) return "Categories";
+    if (selectedCategories.length === 1) {
+      const cat = categories.find((c) => c.id === selectedCategories[0]);
+      return cat?.name || "1 Category";
+    }
+    return `${selectedCategories.length} Categories`;
+  };
+
+  const getNonprofitLabel = () => {
+    if (selectedNonprofits.length === 0) return "Nonprofits";
+    if (selectedNonprofits.length === 1) {
+      const np = nonprofits.find((n) => n.id === selectedNonprofits[0]);
+      const name = np?.name || "1 Nonprofit";
+      return name.length > 15 ? name.slice(0, 15) + "..." : name;
+    }
+    return `${selectedNonprofits.length} Nonprofits`;
   };
 
   return (
-    <div className="relative">
-      {/* Filter Toggle Button */}
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowFilters(!showFilters)}
-          className={`gap-2 ${hasActiveFilters ? "border-blue-500 bg-blue-50 text-blue-700" : ""}`}
-        >
-          <Filter className="h-4 w-4" />
-          <span className="hidden sm:inline">Filters</span>
-          {hasActiveFilters && (
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs text-white">
-              {(dateRange !== "all" ? 1 : 0) +
-               (selectedCategories.length > 0 ? 1 : 0) +
-               (selectedNonprofits.length > 0 ? 1 : 0)}
-            </span>
-          )}
-          <ChevronDown className={`h-4 w-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
-        </Button>
-
-        {/* Quick filter chips for active filters */}
-        {hasActiveFilters && (
-          <div className="hidden md:flex items-center gap-2">
-            {dateRange !== "all" && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                <Calendar className="h-3 w-3" />
-                {getDateRangeLabel()}
-                <button
-                  onClick={() => {
-                    setDateRange("all");
-                    setStartDate("");
-                    setEndDate("");
-                    applyFilters();
-                  }}
-                  className="ml-1 hover:text-blue-900"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            )}
-            {selectedCategories.length > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full">
-                {selectedCategories.length} {selectedCategories.length === 1 ? "category" : "categories"}
-                <button
-                  onClick={() => {
-                    setSelectedCategories([]);
-                    applyFilters();
-                  }}
-                  className="ml-1 hover:text-emerald-900"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            )}
-            {selectedNonprofits.length > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
-                {selectedNonprofits.length} {selectedNonprofits.length === 1 ? "nonprofit" : "nonprofits"}
-                <button
-                  onClick={() => {
-                    setSelectedNonprofits([]);
-                    applyFilters();
-                  }}
-                  className="ml-1 hover:text-purple-900"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            )}
+    <div className="flex items-center gap-2 flex-wrap">
+      {/* Date Range Dropdown */}
+      <FilterDropdown
+        label={getDateRangeLabel()}
+        icon={Calendar}
+        isOpen={openDropdown === "date"}
+        onToggle={() => setOpenDropdown(openDropdown === "date" ? null : "date")}
+        onClose={() => setOpenDropdown(null)}
+        hasValue={dateRange !== "all"}
+      >
+        <div className="py-1">
+          {DATE_RANGE_OPTIONS.map((option) => (
             <button
-              onClick={clearFilters}
-              className="text-xs text-slate-500 hover:text-slate-700 underline"
+              key={option.value}
+              onClick={() => selectDateRange(option.value)}
+              className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-slate-50 ${
+                dateRange === option.value ? "text-blue-600 bg-blue-50" : "text-slate-700"
+              }`}
             >
-              Clear all
+              <span>{option.label}</span>
+              {dateRange === option.value && <Check className="h-4 w-4" />}
             </button>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
 
-      {/* Filter Panel */}
-      {showFilters && (
-        <div className="absolute top-full left-0 mt-2 w-[360px] bg-white rounded-lg border border-slate-200 shadow-lg z-50">
-          <div className="p-4 border-b border-slate-200">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-slate-900">Filter Dashboard</h3>
-              <button onClick={() => setShowFilters(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          <div className="p-4 space-y-4 max-h-[400px] overflow-y-auto">
-            {/* Date Range */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Date Range
-              </label>
-              <select
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {DATE_RANGE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-
-              {dateRange === "custom" && (
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Start Date</label>
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">End Date</label>
-                    <input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Categories */}
-            {categories.length > 0 && (
+        {dateRange === "custom" && (
+          <div className="p-3 border-t border-slate-200">
+            <div className="grid grid-cols-2 gap-2 mb-2">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Categories
-                </label>
-                <div className="space-y-1 max-h-32 overflow-y-auto">
-                  {categories.map((category) => (
-                    <label
-                      key={category.id}
-                      className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-50 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedCategories.includes(category.id)}
-                        onChange={() => toggleCategory(category.id)}
-                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-slate-700">{category.name}</span>
-                    </label>
-                  ))}
-                </div>
+                <label className="block text-xs text-slate-500 mb-1">Start</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
-            )}
-
-            {/* Nonprofits */}
-            {nonprofits.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Nonprofits
-                </label>
-                <div className="space-y-1 max-h-32 overflow-y-auto">
-                  {nonprofits.map((nonprofit) => (
-                    <label
-                      key={nonprofit.id}
-                      className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-50 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedNonprofits.includes(nonprofit.id)}
-                        onChange={() => toggleNonprofit(nonprofit.id)}
-                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-slate-700 truncate">{nonprofit.name}</span>
-                    </label>
-                  ))}
-                </div>
+                <label className="block text-xs text-slate-500 mb-1">End</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="p-4 border-t border-slate-200 flex items-center justify-between">
-            <button
-              onClick={clearFilters}
-              className="text-sm text-slate-500 hover:text-slate-700"
-            >
-              Clear all
-            </button>
-            <Button onClick={applyFilters} size="sm">
-              Apply Filters
+            </div>
+            <Button size="sm" onClick={applyCustomDateRange} className="w-full">
+              Apply
             </Button>
           </div>
-        </div>
+        )}
+      </FilterDropdown>
+
+      {/* Categories Dropdown */}
+      {categories.length > 0 && (
+        <FilterDropdown
+          label={getCategoryLabel()}
+          icon={FolderOpen}
+          isOpen={openDropdown === "categories"}
+          onToggle={() => setOpenDropdown(openDropdown === "categories" ? null : "categories")}
+          onClose={() => setOpenDropdown(null)}
+          hasValue={selectedCategories.length > 0}
+        >
+          <div className="py-1 max-h-64 overflow-y-auto">
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => toggleCategory(category.id)}
+                className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-slate-50 ${
+                  selectedCategories.includes(category.id) ? "text-blue-600 bg-blue-50" : "text-slate-700"
+                }`}
+              >
+                <span>{category.name}</span>
+                {selectedCategories.includes(category.id) && <Check className="h-4 w-4" />}
+              </button>
+            ))}
+          </div>
+          {selectedCategories.length > 0 && (
+            <div className="p-2 border-t border-slate-200">
+              <button
+                onClick={() => {
+                  setSelectedCategories([]);
+                  applyFilters({ categories: [] });
+                }}
+                className="w-full text-xs text-slate-500 hover:text-slate-700"
+              >
+                Clear selection
+              </button>
+            </div>
+          )}
+        </FilterDropdown>
+      )}
+
+      {/* Nonprofits Dropdown */}
+      {nonprofits.length > 0 && (
+        <FilterDropdown
+          label={getNonprofitLabel()}
+          icon={Building2}
+          isOpen={openDropdown === "nonprofits"}
+          onToggle={() => setOpenDropdown(openDropdown === "nonprofits" ? null : "nonprofits")}
+          onClose={() => setOpenDropdown(null)}
+          hasValue={selectedNonprofits.length > 0}
+        >
+          <div className="py-1 max-h-64 overflow-y-auto">
+            {nonprofits.map((nonprofit) => (
+              <button
+                key={nonprofit.id}
+                onClick={() => toggleNonprofit(nonprofit.id)}
+                className={`w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-slate-50 ${
+                  selectedNonprofits.includes(nonprofit.id) ? "text-blue-600 bg-blue-50" : "text-slate-700"
+                }`}
+              >
+                <span className="truncate pr-2">{nonprofit.name}</span>
+                {selectedNonprofits.includes(nonprofit.id) && <Check className="h-4 w-4 flex-shrink-0" />}
+              </button>
+            ))}
+          </div>
+          {selectedNonprofits.length > 0 && (
+            <div className="p-2 border-t border-slate-200">
+              <button
+                onClick={() => {
+                  setSelectedNonprofits([]);
+                  applyFilters({ nonprofits: [] });
+                }}
+                className="w-full text-xs text-slate-500 hover:text-slate-700"
+              >
+                Clear selection
+              </button>
+            </div>
+          )}
+        </FilterDropdown>
+      )}
+
+      {/* Clear All Button */}
+      {hasActiveFilters && (
+        <button
+          onClick={clearAllFilters}
+          className="flex items-center gap-1 px-2 py-2 text-sm text-slate-500 hover:text-slate-700"
+        >
+          <X className="h-4 w-4" />
+          <span className="hidden sm:inline">Clear</span>
+        </button>
       )}
     </div>
   );
