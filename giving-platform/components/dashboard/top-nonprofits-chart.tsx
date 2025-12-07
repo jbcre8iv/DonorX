@@ -8,11 +8,12 @@ interface TopNonprofitsChartProps {
     name: string;
     amount: number;
   }[];
+  maxItems?: number;
 }
 
-const COLORS = ["#3b82f6", "#60a5fa", "#93c5fd", "#bfdbfe", "#dbeafe"];
+const COLORS = ["#3b82f6", "#60a5fa", "#93c5fd", "#bfdbfe", "#dbeafe", "#eff6ff", "#c7d2fe", "#a5b4fc"];
 
-export function TopNonprofitsChart({ data }: TopNonprofitsChartProps) {
+export function TopNonprofitsChart({ data, maxItems = 5 }: TopNonprofitsChartProps) {
   const formatCurrency = (value: number) => {
     if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
     if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
@@ -29,10 +30,13 @@ export function TopNonprofitsChart({ data }: TopNonprofitsChartProps) {
   };
 
   // Truncate names for display
-  const processedData = data.slice(0, 5).map((item) => ({
+  const processedData = data.slice(0, maxItems).map((item) => ({
     ...item,
     displayName: item.name.length > 20 ? item.name.substring(0, 18) + "..." : item.name,
   }));
+
+  // Dynamic height based on number of items (28px per bar + some padding)
+  const chartHeight = Math.max(140, processedData.length * 32);
 
   return (
     <Card>
@@ -45,7 +49,7 @@ export function TopNonprofitsChart({ data }: TopNonprofitsChartProps) {
             No nonprofit data yet
           </div>
         ) : (
-          <div className="h-[140px]">
+          <div style={{ height: chartHeight }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={processedData}

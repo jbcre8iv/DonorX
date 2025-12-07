@@ -271,11 +271,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       .sort((a, b) => b.value - a.value);
   })();
 
-  // Top nonprofits (filtered)
+  // Top nonprofits (filtered) - get top 8 for expanded chart
   const topNonprofits = Array.from(nonprofitCounts.entries())
     .map(([name, amount]) => ({ name, amount: amount / 100 }))
     .sort((a, b) => b.amount - a.amount)
-    .slice(0, 5);
+    .slice(0, 8);
 
   // Giving goal (based on filtered this year data)
   const givingGoal = {

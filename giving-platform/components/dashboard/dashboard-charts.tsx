@@ -74,9 +74,11 @@ export function DashboardCharts({
         />
       )}
 
-      {/* Row 1: Trends Chart and Category Breakdown */}
-      <div className="grid gap-3 lg:grid-cols-2">
-        <DonationTrendsChart data={trendData} />
+      {/* Row 1: Trends Chart (wider) and Category Breakdown (narrower) */}
+      <div className="grid gap-3 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <DonationTrendsChart data={trendData} />
+        </div>
         <CategoryBreakdownChart data={categoryData} />
       </div>
 
@@ -103,9 +105,11 @@ export function DashboardCharts({
         />
       </div>
 
-      {/* Row 3: Top Nonprofits and Impact Counter */}
-      <div className="grid gap-3 lg:grid-cols-2">
-        <TopNonprofitsChart data={topNonprofits} />
+      {/* Row 3: Top Nonprofits (wider/taller) and Impact Counter */}
+      <div className="grid gap-3 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <TopNonprofitsChart data={topNonprofits} maxItems={8} />
+        </div>
         <ImpactCounter
           totalDonated={impactData.totalDonated}
           nonprofitsSupported={impactData.nonprofitsSupported}
