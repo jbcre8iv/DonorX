@@ -38,16 +38,9 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
     }).format(value);
   };
 
-  const totalForFiltering = data.reduce((sum, item) => sum + item.value, 0);
+  // Filter out categories with zero value
+  const filteredData = data.filter((item) => item.value > 0);
 
-  // Filter out categories that round to 0%
-  const filteredData = data.filter((item) => {
-    if (item.value <= 0) return false;
-    const percentage = (item.value / totalForFiltering) * 100;
-    return Math.round(percentage) > 0;
-  });
-
-  // Recalculate total from filtered data for display percentages
   const total = filteredData.reduce((sum, item) => sum + item.value, 0);
 
   // Add colors to data
@@ -110,7 +103,10 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
                     <span className="text-slate-600 truncate">{item.name}</span>
                   </div>
                   <span className="font-medium text-slate-900 ml-2">
-                    {((item.value / total) * 100).toFixed(0)}%
+                    {(() => {
+                      const pct = (item.value / total) * 100;
+                      return pct > 0 && pct < 1 ? "<1%" : `${Math.round(pct)}%`;
+                    })()}
                   </span>
                 </div>
               ))}
