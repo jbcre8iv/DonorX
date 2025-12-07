@@ -254,14 +254,14 @@ export function StatsGrid({
             {nonprofitSummaries.length > 0 ? (
               <>
                 {nonprofitSummaries.slice(0, 5).map((np, i) => (
-                  <div key={np.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className={`h-2 w-2 rounded-full flex-shrink-0 ${
+                  <div key={np.name} className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2 min-w-0 flex-1">
+                      <div className={`h-2 w-2 rounded-full flex-shrink-0 mt-1.5 ${
                         i === 0 ? "bg-purple-600" : i === 1 ? "bg-purple-400" : "bg-purple-200"
                       }`} />
-                      <span className="text-sm text-slate-700 truncate">{np.name}</span>
+                      <span className="text-sm text-slate-700">{np.name}</span>
                     </div>
-                    <div className="text-right ml-2">
+                    <div className="text-right flex-shrink-0">
                       <p className="text-sm font-medium text-slate-900">{formatCurrency(np.amount)}</p>
                       <p className="text-xs text-slate-500">{np.donationCount} donation{np.donationCount !== 1 ? "s" : ""}</p>
                     </div>
