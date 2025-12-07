@@ -108,7 +108,7 @@ export function AmountRangeFilter({
 
       {/* Dual Range Slider */}
       {/* Thumb is 20px wide (w-5), so we need 10px padding on each side for proper alignment */}
-      <div className="relative pt-2 pb-6 px-[10px]">
+      <div className="relative pt-2 pb-8 px-[10px]">
         {/* Track background */}
         <div className="absolute top-1/2 -translate-y-1/2 left-[10px] right-[10px] h-2 bg-slate-200 rounded-full" />
 
