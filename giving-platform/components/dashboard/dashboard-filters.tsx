@@ -85,15 +85,15 @@ function FilterDropdown({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={onToggle}
-        className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm border rounded-lg transition-colors ${
+        className={`flex items-center gap-1 sm:gap-2 px-1.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded-lg transition-colors ${
           hasValue
             ? "border-blue-500 bg-blue-50 text-blue-700"
             : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
         }`}
       >
-        <Icon className="h-4 w-4 flex-shrink-0" />
-        <span className="truncate max-w-[70px] sm:max-w-none">{label}</span>
-        <ChevronDown className={`h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+        <span className="truncate max-w-[50px] sm:max-w-none">{label}</span>
+        <ChevronDown className={`h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen && (
@@ -252,22 +252,22 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
   };
 
   const getCategoryLabel = () => {
-    if (selectedCategories.length === 0) return "Categories";
+    if (selectedCategories.length === 0) return "Category";
     if (selectedCategories.length === 1) {
       const cat = categories.find((c) => c.id === selectedCategories[0]);
-      return cat?.name || "1 Category";
+      return cat?.name || "1";
     }
-    return `${selectedCategories.length} Categories`;
+    return `${selectedCategories.length}`;
   };
 
   const getNonprofitLabel = () => {
-    if (selectedNonprofits.length === 0) return "Nonprofits";
+    if (selectedNonprofits.length === 0) return "Orgs";
     if (selectedNonprofits.length === 1) {
       const np = nonprofits.find((n) => n.id === selectedNonprofits[0]);
-      const name = np?.name || "1 Nonprofit";
-      return name.length > 15 ? name.slice(0, 15) + "..." : name;
+      const name = np?.name || "1";
+      return name.length > 10 ? name.slice(0, 10) + "..." : name;
     }
-    return `${selectedNonprofits.length} Nonprofits`;
+    return `${selectedNonprofits.length}`;
   };
 
   const getAmountRangeLabel = () => {
@@ -283,7 +283,7 @@ export function DashboardFilters({ categories, nonprofits }: DashboardFiltersPro
   };
 
   return (
-    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+    <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
       {/* Date Range Dropdown */}
       <FilterDropdown
         label={getDateRangeLabel()}
