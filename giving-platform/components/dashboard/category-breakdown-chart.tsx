@@ -38,10 +38,13 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
     }).format(value);
   };
 
-  const total = data.reduce((sum, item) => sum + item.value, 0);
+  // Filter out categories with 0 value
+  const filteredData = data.filter((item) => item.value > 0);
+
+  const total = filteredData.reduce((sum, item) => sum + item.value, 0);
 
   // Add colors to data
-  const dataWithColors = data.map((item, index) => ({
+  const dataWithColors = filteredData.map((item, index) => ({
     ...item,
     color: COLORS[index % COLORS.length],
   }));
@@ -55,7 +58,7 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
         <CardTitle className="text-base font-semibold">Giving by Category</CardTitle>
       </CardHeader>
       <CardContent>
-        {data.length === 0 ? (
+        {filteredData.length === 0 ? (
           <div className="flex items-center justify-center h-[140px] text-slate-500">
             No category data yet
           </div>

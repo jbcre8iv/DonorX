@@ -35,16 +35,17 @@ export function GivingGoalWidget({
   // Filter out current year from history and get only past years
   const pastGoals = allGoals.filter((g) => g.year < year);
 
-  const percentage = goalAmount > 0 ? Math.min((currentAmount / goalAmount) * 100, 100) : 0;
+  const percentage = goalAmount > 0 ? (currentAmount / goalAmount) * 100 : 0;
+  const displayPercentage = Math.min(percentage, 100); // Cap ring at 100% for visual
   const remaining = Math.max(goalAmount - currentAmount, 0);
 
   // Animate the progress ring
   useEffect(() => {
     const timer = setTimeout(() => {
-      setAnimatedPercentage(percentage);
+      setAnimatedPercentage(displayPercentage);
     }, 100);
     return () => clearTimeout(timer);
-  }, [percentage]);
+  }, [displayPercentage]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -115,8 +116,8 @@ export function GivingGoalWidget({
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
-                <span className="text-lg font-bold text-slate-900">
-                  {Math.round(animatedPercentage)}%
+                <span className={`font-bold text-slate-900 ${percentage >= 1000 ? "text-sm" : percentage >= 100 ? "text-base" : "text-lg"}`}>
+                  {Math.round(percentage).toLocaleString()}%
                 </span>
               </div>
             </div>
