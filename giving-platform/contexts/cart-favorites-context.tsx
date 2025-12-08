@@ -209,11 +209,16 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  // Fetch from database for logged-in users
-  const fetchFromDatabase = useCallback(async (uid: string) => {
+  // Fetch from database for logged-in users with built-in timeout
+  const fetchFromDatabase = useCallback(async (uid: string, timeoutMs = 10000) => {
+    console.log("[CartFavorites] fetchFromDatabase starting for user:", uid);
+    const startTime = Date.now();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
-      // Fetch cart items with related data
-      const { data: dbCartItems } = await supabase
+      // Fetch cart items and favorites in parallel
+      const cartPromise = supabase
         .from("cart_items")
         .select(`
           id,
@@ -224,10 +229,10 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           nonprofits:nonprofit_id (id, name, logo_url, mission),
           categories:category_id (id, name, icon)
         `)
-        .eq("user_id", uid);
+        .eq("user_id", uid)
+        .abortSignal(controller.signal);
 
-      // Fetch favorites with related data
-      const { data: dbFavorites } = await supabase
+      const favoritesPromise = supabase
         .from("user_favorites")
         .select(`
           id,
@@ -237,7 +242,21 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           nonprofits:nonprofit_id (id, name, logo_url, mission, website),
           categories:category_id (id, name, icon)
         `)
-        .eq("user_id", uid);
+        .eq("user_id", uid)
+        .abortSignal(controller.signal);
+
+      // Run cart and favorites queries in parallel
+      const [cartResult, favoritesResult] = await Promise.all([cartPromise, favoritesPromise]);
+      clearTimeout(timeoutId);
+
+      const dbCartItems = cartResult.data;
+      const dbFavorites = favoritesResult.data;
+
+      console.log("[CartFavorites] Queries completed in", Date.now() - startTime, "ms");
+      console.log("[CartFavorites] Cart items:", dbCartItems?.length ?? 0, "Favorites:", dbFavorites?.length ?? 0);
+
+      if (cartResult.error) console.error("[CartFavorites] Cart query error:", cartResult.error);
+      if (favoritesResult.error) console.error("[CartFavorites] Favorites query error:", favoritesResult.error);
 
       // Transform database format to our format
       const transformedCart: CartItem[] = (dbCartItems || []).map((item: any) => ({
@@ -293,6 +312,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         .from("donation_drafts")
         .select("*")
         .eq("user_id", uid)
+        .abortSignal(controller.signal)
         .single();
 
       const transformedDraft: DonationDraft | null = dbDraft
@@ -313,8 +333,13 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         : null;
 
       return { cart: transformedCart, favorites: transformedFavorites, draft: transformedDraft };
-    } catch (error) {
-      console.error("Error fetching from database:", error);
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error?.name === 'AbortError') {
+        console.error("[CartFavorites] Database fetch aborted (timeout)");
+      } else {
+        console.error("[CartFavorites] Error fetching from database:", error);
+      }
       return { cart: [], favorites: [], draft: null };
     }
   }, [supabase]);
@@ -472,11 +497,11 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     const channels: ReturnType<typeof supabase.channel>[] = [];
 
     // Safety timeout to ensure loading never gets stuck
-    // This is a last resort - should rarely fire since we wait for database when needed
+    // With AbortController on queries, this should rarely fire
     const loadingTimeout = setTimeout(() => {
-      console.warn("[CartFavorites] Initialization timed out after 30s, forcing loading to false");
+      console.warn("[CartFavorites] Initialization timed out after 15s, forcing loading to false");
       setIsLoading(false);
-    }, 30000);
+    }, 15000);
 
     const initialize = async () => {
       try {
@@ -529,30 +554,11 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         // If no local data, we MUST wait for database (no timeout) to avoid showing empty state
         let dbData: { cart: CartItem[]; favorites: FavoriteItem[]; draft: DonationDraft | null };
 
-        if (hasLocalData) {
-          // We have local data showing, so timeout is OK - database will update in background
-          const dbDataPromise = fetchFromDatabase(user.id);
-          const timeoutPromise = new Promise<{ cart: CartItem[]; favorites: FavoriteItem[]; draft: DonationDraft | null } | null>((resolve) =>
-            setTimeout(() => {
-              console.warn("[CartFavorites] Database fetch timed out after 10s, keeping local data");
-              resolve(null);
-            }, 10000)
-          );
-          const result = await Promise.race([dbDataPromise, timeoutPromise]);
-
-          if (result === null) {
-            // Timeout - keep local data, we're done
-            clearTimeout(loadingTimeout);
-            setIsLoading(false);
-            return;
-          }
-          dbData = result;
-        } else {
-          // No local data - we MUST wait for database, no timeout
-          // This is the first load on this device/browser
-          console.log("[CartFavorites] No local data, waiting for database...");
-          dbData = await fetchFromDatabase(user.id);
-        }
+        // Fetch from database - fetchFromDatabase has built-in 10s timeout with AbortController
+        // If we have local data, it's already showing (loading=false), so this updates in background
+        // If no local data, user sees loading state until this completes or times out
+        console.log("[CartFavorites] Fetching from database, hasLocalData:", hasLocalData);
+        dbData = await fetchFromDatabase(user.id);
 
         // Merge: database items take precedence, add any local-only items
         const mergedCart = [...dbData.cart];
