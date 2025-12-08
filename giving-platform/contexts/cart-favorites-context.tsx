@@ -210,7 +210,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   );
 
   // Fetch from database for logged-in users with built-in timeout
-  const fetchFromDatabase = useCallback(async (uid: string, timeoutMs = 8000) => {
+  const fetchFromDatabase = useCallback(async (uid: string, timeoutMs = 5000) => {
     const startTime = Date.now();
 
     // Helper to wrap a promise with a timeout
@@ -224,8 +224,8 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     };
 
     try {
-      // Fetch cart items and favorites in parallel with individual timeouts
-      // Wrap with Promise.resolve() to convert Supabase PromiseLike to proper Promise
+      // Run ALL queries in parallel with individual timeouts using Promise.allSettled
+      // This way one slow/failed query doesn't block others
       const cartPromise = withTimeout(
         Promise.resolve(
           supabase
@@ -263,14 +263,37 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         "Favorites query"
       );
 
-      // Run cart and favorites queries in parallel
-      const [cartResult, favoritesResult] = await Promise.all([cartPromise, favoritesPromise]);
+      const draftPromise = withTimeout(
+        Promise.resolve(
+          supabase
+            .from("donation_drafts")
+            .select("*")
+            .eq("user_id", uid)
+            .single()
+        ),
+        timeoutMs,
+        "Draft query"
+      );
 
-      const dbCartItems = (cartResult as any).data;
-      const dbFavorites = (favoritesResult as any).data;
+      // Use allSettled so one failure doesn't block others
+      const [cartSettled, favoritesSettled, draftSettled] = await Promise.allSettled([
+        cartPromise,
+        favoritesPromise,
+        draftPromise,
+      ]);
 
-      if ((cartResult as any).error) console.error("[CartFavorites] Cart query error:", (cartResult as any).error);
-      if ((favoritesResult as any).error) console.error("[CartFavorites] Favorites query error:", (favoritesResult as any).error);
+      // Extract data, defaulting to empty/null on failure
+      const dbCartItems = cartSettled.status === "fulfilled" ? (cartSettled.value as any).data : null;
+      const dbFavorites = favoritesSettled.status === "fulfilled" ? (favoritesSettled.value as any).data : null;
+      const dbDraft = draftSettled.status === "fulfilled" ? (draftSettled.value as any).data : null;
+
+      // Log errors but don't fail
+      if (cartSettled.status === "rejected") console.warn("[CartFavorites] Cart query failed:", cartSettled.reason?.message);
+      if (favoritesSettled.status === "rejected") console.warn("[CartFavorites] Favorites query failed:", favoritesSettled.reason?.message);
+      if (draftSettled.status === "rejected" && !draftSettled.reason?.message?.includes("timed out")) {
+        // Don't log draft timeout - it's expected if no draft exists
+        console.warn("[CartFavorites] Draft query failed:", draftSettled.reason?.message);
+      }
 
       // Transform database format to our format
       const transformedCart: CartItem[] = (dbCartItems || []).map((item: any) => ({
@@ -321,20 +344,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         })
       );
 
-      // Fetch donation draft
-      const draftResult = await withTimeout(
-        Promise.resolve(
-          supabase
-            .from("donation_drafts")
-            .select("*")
-            .eq("user_id", uid)
-            .single()
-        ),
-        timeoutMs,
-        "Draft query"
-      );
-      const dbDraft = (draftResult as any).data;
-
+      // Transform draft (already fetched in parallel above)
       const transformedDraft: DonationDraft | null = dbDraft
         ? {
             id: dbDraft.id,
