@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CreditCard, Download, Eye, Search } from "lucide-react";
+import { CreditCard, Download, Eye } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { HistoryFilters } from "./history-filters";
 
 export const metadata = {
   title: "Donation History",
@@ -91,37 +92,7 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <form action="/dashboard/history" method="get" className="flex flex-col gap-4 sm:flex-row">
-            <div className="flex gap-4">
-              <select
-                name="status"
-                defaultValue={params.status || "all"}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-              >
-                <option value="all">All Status</option>
-                <option value="completed">Completed</option>
-                <option value="pending">Pending</option>
-                <option value="failed">Failed</option>
-                <option value="refunded">Refunded</option>
-              </select>
-              <select
-                name="year"
-                defaultValue={params.year || "all"}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-              >
-                <option value="all">All Time</option>
-                {years.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-              <Button type="submit" variant="outline" size="sm">
-                <Search className="h-4 w-4 mr-2" />
-                Filter
-              </Button>
-            </div>
-          </form>
+          <HistoryFilters years={years} />
         </CardContent>
       </Card>
 
