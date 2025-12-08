@@ -212,8 +212,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   // Fetch from database for logged-in users
   const fetchFromDatabase = useCallback(async (uid: string) => {
     try {
+      console.log("[CartFavorites] fetchFromDatabase: starting cart_items query");
       // Fetch cart items with related data
-      const { data: dbCartItems } = await supabase
+      const { data: dbCartItems, error: cartError } = await supabase
         .from("cart_items")
         .select(`
           id,
@@ -226,8 +227,11 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         `)
         .eq("user_id", uid);
 
+      if (cartError) console.error("[CartFavorites] cart_items query error:", cartError);
+      console.log("[CartFavorites] fetchFromDatabase: cart_items done, starting user_favorites");
+
       // Fetch favorites with related data
-      const { data: dbFavorites } = await supabase
+      const { data: dbFavorites, error: favError } = await supabase
         .from("user_favorites")
         .select(`
           id,
@@ -238,6 +242,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           categories:category_id (id, name, icon)
         `)
         .eq("user_id", uid);
+
+      if (favError) console.error("[CartFavorites] user_favorites query error:", favError);
+      console.log("[CartFavorites] fetchFromDatabase: user_favorites done, starting donation_drafts");
 
       // Transform database format to our format
       const transformedCart: CartItem[] = (dbCartItems || []).map((item: any) => ({
@@ -289,11 +296,16 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       );
 
       // Fetch donation draft
-      const { data: dbDraft } = await supabase
+      const { data: dbDraft, error: draftError } = await supabase
         .from("donation_drafts")
         .select("*")
         .eq("user_id", uid)
         .single();
+
+      if (draftError && draftError.code !== "PGRST116") {
+        console.error("[CartFavorites] donation_drafts query error:", draftError);
+      }
+      console.log("[CartFavorites] fetchFromDatabase: all queries complete");
 
       const transformedDraft: DonationDraft | null = dbDraft
         ? {
@@ -510,7 +522,8 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           : [];
 
         // Fetch from database with timeout
-        console.log("[CartFavorites] Fetching from database...");
+        console.log("[CartFavorites] Starting database fetch...");
+        const startTime = Date.now();
         const dbDataPromise = fetchFromDatabase(user.id);
         const timeoutPromise = new Promise<{ cart: CartItem[]; favorites: FavoriteItem[]; draft: DonationDraft | null }>((resolve) =>
           setTimeout(() => {
@@ -519,7 +532,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           }, 10000)
         );
         const dbData = await Promise.race([dbDataPromise, timeoutPromise]);
-        console.log("[CartFavorites] Database fetch complete");
+        console.log(`[CartFavorites] Database fetch complete in ${Date.now() - startTime}ms, cart: ${dbData.cart.length}, favorites: ${dbData.favorites.length}`);
 
         // Merge: database items take precedence, add any local-only items
         const mergedCart = [...dbData.cart];
