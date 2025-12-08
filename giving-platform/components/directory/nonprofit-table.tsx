@@ -16,6 +16,7 @@ interface NonprofitTableProps {
   onQuickView?: (nonprofit: Nonprofit) => void;
   sortBy?: SortOption;
   onSortChange?: (sort: SortOption) => void;
+  hideCategory?: boolean;
 }
 
 // Action buttons component - defined outside to avoid recreating during render
@@ -126,11 +127,13 @@ function NonprofitRow({
   onQuickView,
   isExpanded,
   onToggleExpand,
+  hideCategory,
 }: {
   nonprofit: Nonprofit;
   onQuickView?: (nonprofit: Nonprofit) => void;
   isExpanded: boolean;
   onToggleExpand: () => void;
+  hideCategory?: boolean;
 }) {
   const { toggleFavorite, isFavorite, hasDraft, addToDraft, removeFromDraft, isInDraft, userId } = useCartFavorites();
   const { addToast } = useToast();
@@ -248,18 +251,20 @@ function NonprofitRow({
             </div>
           </div>
         </td>
-        <td className="py-3 pr-4 hidden sm:table-cell">
-          {nonprofit.category && (
-            <Badge variant="secondary">
-              {nonprofit.category.icon && (
-                <span className="mr-1">{nonprofit.category.icon}</span>
-              )}
-              {nonprofit.category.name}
-            </Badge>
-          )}
-        </td>
-        <td className="py-3 pr-4 hidden lg:table-cell">
-          <p className="text-slate-600 line-clamp-2 max-w-md">
+        {!hideCategory && (
+          <td className="py-3 pr-4 hidden sm:table-cell">
+            {nonprofit.category && (
+              <Badge variant="secondary">
+                {nonprofit.category.icon && (
+                  <span className="mr-1">{nonprofit.category.icon}</span>
+                )}
+                {nonprofit.category.name}
+              </Badge>
+            )}
+          </td>
+        )}
+        <td className={`py-3 pr-4 ${hideCategory ? "hidden sm:table-cell" : "hidden lg:table-cell"}`}>
+          <p className="text-slate-600">
             {nonprofit.mission || nonprofit.description || "No description"}
           </p>
         </td>
@@ -322,7 +327,7 @@ function NonprofitRow({
   );
 }
 
-export function NonprofitTable({ nonprofits, onQuickView, sortBy, onSortChange }: NonprofitTableProps) {
+export function NonprofitTable({ nonprofits, onQuickView, sortBy, onSortChange, hideCategory }: NonprofitTableProps) {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
 
   if (nonprofits.length === 0) {
@@ -382,20 +387,22 @@ export function NonprofitTable({ nonprofits, onQuickView, sortBy, onSortChange }
                 "Organization"
               )}
             </th>
-            <th className="pb-3 font-medium hidden sm:table-cell">
-              {onSortChange ? (
-                <button
-                  onClick={handleCategorySort}
-                  className="flex items-center gap-1.5 hover:text-slate-900 transition-colors"
-                >
-                  Category
-                  {renderSortIcon("category")}
-                </button>
-              ) : (
-                "Category"
-              )}
-            </th>
-            <th className="pb-3 font-medium hidden lg:table-cell">Mission</th>
+            {!hideCategory && (
+              <th className="pb-3 font-medium hidden sm:table-cell">
+                {onSortChange ? (
+                  <button
+                    onClick={handleCategorySort}
+                    className="flex items-center gap-1.5 hover:text-slate-900 transition-colors"
+                  >
+                    Category
+                    {renderSortIcon("category")}
+                  </button>
+                ) : (
+                  "Category"
+                )}
+              </th>
+            )}
+            <th className={`pb-3 font-medium ${hideCategory ? "hidden sm:table-cell" : "hidden lg:table-cell"}`}>Mission</th>
             <th className="pb-3 pr-6 font-medium text-right hidden sm:table-cell">Actions</th>
             <th className="pb-3 sm:hidden w-10"></th>
           </tr>
@@ -408,6 +415,7 @@ export function NonprofitTable({ nonprofits, onQuickView, sortBy, onSortChange }
               onQuickView={onQuickView}
               isExpanded={expandedId === nonprofit.id}
               onToggleExpand={() => handleToggleExpand(nonprofit.id)}
+              hideCategory={hideCategory}
             />
           ))}
         </tbody>

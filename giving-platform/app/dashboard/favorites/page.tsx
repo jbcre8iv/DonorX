@@ -378,6 +378,7 @@ export default function FavoritesPage() {
                   onQuickView={handleQuickView}
                   sortBy={sortBy}
                   onSortChange={setSortBy}
+                  hideCategory
                 />
               )}
             </div>
