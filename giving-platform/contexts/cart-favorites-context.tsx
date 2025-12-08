@@ -211,7 +211,8 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
   // Fetch from database for logged-in users with built-in timeout
   const fetchFromDatabase = useCallback(async (uid: string, timeoutMs = 5000) => {
-    const startTime = Date.now();
+    // Create a fresh client for this fetch to avoid stale connection issues
+    const client = createClient();
 
     // Helper to wrap a promise with a timeout
     const withTimeout = <T,>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
@@ -228,7 +229,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       // This way one slow/failed query doesn't block others
       const cartPromise = withTimeout(
         Promise.resolve(
-          supabase
+          client
             .from("cart_items")
             .select(`
               id,
@@ -247,7 +248,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
       const favoritesPromise = withTimeout(
         Promise.resolve(
-          supabase
+          client
             .from("user_favorites")
             .select(`
               id,
@@ -265,7 +266,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
       const draftPromise = withTimeout(
         Promise.resolve(
-          supabase
+          client
             .from("donation_drafts")
             .select("*")
             .eq("user_id", uid)
@@ -367,7 +368,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       console.error("[CartFavorites] Error fetching from database:", error?.message || error);
       return { cart: [], favorites: [], draft: null };
     }
-  }, [supabase]);
+  }, []);
 
   // Sync localStorage items to database
   const syncToDatabase = useCallback(
