@@ -11,6 +11,7 @@ import {
   formatQuarterlyReportAsText,
 } from "@/lib/reports/quarterly-generator";
 import { formatCurrency } from "@/lib/utils";
+import { DebugDonations } from "./debug-donations";
 
 export const metadata = {
   title: "Quarterly Reports",
@@ -114,6 +115,7 @@ export default async function QuarterlyReportsPage({
               <p>Total: ${(report.totalDonated / 100).toFixed(2)}</p>
             </>
           )}
+          <DebugDonations userId={user.id} quarter={selectedQuarter} year={selectedYear} />
         </CardContent>
       </Card>
 
