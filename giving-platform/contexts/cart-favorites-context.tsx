@@ -212,9 +212,8 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   // Fetch from database for logged-in users
   const fetchFromDatabase = useCallback(async (uid: string) => {
     try {
-      console.log("[CartFavorites] fetchFromDatabase: starting cart_items query");
       // Fetch cart items with related data
-      const { data: dbCartItems, error: cartError } = await supabase
+      const { data: dbCartItems } = await supabase
         .from("cart_items")
         .select(`
           id,
@@ -227,11 +226,8 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         `)
         .eq("user_id", uid);
 
-      if (cartError) console.error("[CartFavorites] cart_items query error:", cartError);
-      console.log("[CartFavorites] fetchFromDatabase: cart_items done, starting user_favorites");
-
       // Fetch favorites with related data
-      const { data: dbFavorites, error: favError } = await supabase
+      const { data: dbFavorites } = await supabase
         .from("user_favorites")
         .select(`
           id,
@@ -242,9 +238,6 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           categories:category_id (id, name, icon)
         `)
         .eq("user_id", uid);
-
-      if (favError) console.error("[CartFavorites] user_favorites query error:", favError);
-      console.log("[CartFavorites] fetchFromDatabase: user_favorites done, starting donation_drafts");
 
       // Transform database format to our format
       const transformedCart: CartItem[] = (dbCartItems || []).map((item: any) => ({
@@ -296,16 +289,11 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       );
 
       // Fetch donation draft
-      const { data: dbDraft, error: draftError } = await supabase
+      const { data: dbDraft } = await supabase
         .from("donation_drafts")
         .select("*")
         .eq("user_id", uid)
         .single();
-
-      if (draftError && draftError.code !== "PGRST116") {
-        console.error("[CartFavorites] donation_drafts query error:", draftError);
-      }
-      console.log("[CartFavorites] fetchFromDatabase: all queries complete");
 
       const transformedDraft: DonationDraft | null = dbDraft
         ? {
@@ -489,7 +477,6 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         // Use getSession instead of getUser - it's faster and doesn't make a network request
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user ?? null;
-        console.log("[CartFavorites] Session check:", user ? "logged in" : "not logged in");
 
         // If no user, just set empty state (don't load from localStorage)
         // The data will persist in the database for when they log back in
@@ -522,8 +509,6 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           : [];
 
         // Fetch from database with timeout
-        console.log("[CartFavorites] Starting database fetch...");
-        const startTime = Date.now();
         const dbDataPromise = fetchFromDatabase(user.id);
         const timeoutPromise = new Promise<{ cart: CartItem[]; favorites: FavoriteItem[]; draft: DonationDraft | null }>((resolve) =>
           setTimeout(() => {
@@ -532,7 +517,6 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           }, 10000)
         );
         const dbData = await Promise.race([dbDataPromise, timeoutPromise]);
-        console.log(`[CartFavorites] Database fetch complete in ${Date.now() - startTime}ms, cart: ${dbData.cart.length}, favorites: ${dbData.favorites.length}`);
 
         // Merge: database items take precedence, add any local-only items
         const mergedCart = [...dbData.cart];
@@ -588,8 +572,6 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           setDonationDraft(dbData.draft);
           saveToLocalStorage(mergedCart, mergedFavorites);
         }
-
-        console.log("[CartFavorites] Data loaded, setting up realtime subscriptions...");
 
         // Set up real-time subscriptions in the background (don't block loading)
         // This allows the page to render immediately while subscriptions connect
@@ -702,8 +684,6 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
               }
             );
             channels.push(draftsChannel);
-
-            console.log("[CartFavorites] Realtime subscriptions set up");
           } catch (e) {
             console.error("[CartFavorites] Error setting up realtime subscriptions:", e);
           }
