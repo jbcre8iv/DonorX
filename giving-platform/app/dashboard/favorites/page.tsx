@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   Heart,
@@ -55,13 +55,8 @@ export default function FavoritesPage() {
   const [selectedNonprofit, setSelectedNonprofit] = useState<Nonprofit | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  // View mode - default based on screen size
-  const [defaultViewMode, setDefaultViewMode] = useState<"grid" | "table">("grid");
-
-  useEffect(() => {
-    const isDesktop = window.innerWidth >= 640;
-    setDefaultViewMode(isDesktop ? "grid" : "table");
-  }, []);
+  // View mode - default based on screen size (computed once on mount)
+  const defaultViewMode = typeof window !== "undefined" && window.innerWidth < 640 ? "table" : "grid";
 
   const viewMode = preferences.favorites_view_mode || defaultViewMode;
   const setViewMode = (mode: "grid" | "table") => {
