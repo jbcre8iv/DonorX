@@ -472,11 +472,11 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     const channels: ReturnType<typeof supabase.channel>[] = [];
 
     // Safety timeout to ensure loading never gets stuck
-    // This just forces isLoading to false - data is preserved from localStorage
+    // This is a last resort - should rarely fire since we wait for database when needed
     const loadingTimeout = setTimeout(() => {
-      console.warn("[CartFavorites] Initialization timed out after 15s, forcing loading to false but keeping any loaded data");
+      console.warn("[CartFavorites] Initialization timed out after 30s, forcing loading to false");
       setIsLoading(false);
-    }, 15000);
+    }, 30000);
 
     const initialize = async () => {
       try {
@@ -524,23 +524,34 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           ? JSON.parse(storedFavorites)
           : [];
 
-        // Fetch from database with timeout
-        // On timeout, return null to indicate we should keep local data
-        const dbDataPromise = fetchFromDatabase(user.id);
-        const timeoutPromise = new Promise<{ cart: CartItem[]; favorites: FavoriteItem[]; draft: DonationDraft | null } | null>((resolve) =>
-          setTimeout(() => {
-            console.warn("[CartFavorites] Database fetch timed out after 10s, keeping local data");
-            resolve(null); // null indicates timeout - keep existing data
-          }, 10000)
-        );
-        const dbData = await Promise.race([dbDataPromise, timeoutPromise]);
+        // Fetch from database
+        // If we have local data, use a timeout so we don't block the UI
+        // If no local data, we MUST wait for database (no timeout) to avoid showing empty state
+        let dbData: { cart: CartItem[]; favorites: FavoriteItem[]; draft: DonationDraft | null };
 
-        // If database fetch timed out, just use local data and finish loading
-        if (dbData === null) {
-          // Keep whatever we loaded from localStorage
-          clearTimeout(loadingTimeout);
-          setIsLoading(false);
-          return;
+        if (hasLocalData) {
+          // We have local data showing, so timeout is OK - database will update in background
+          const dbDataPromise = fetchFromDatabase(user.id);
+          const timeoutPromise = new Promise<{ cart: CartItem[]; favorites: FavoriteItem[]; draft: DonationDraft | null } | null>((resolve) =>
+            setTimeout(() => {
+              console.warn("[CartFavorites] Database fetch timed out after 10s, keeping local data");
+              resolve(null);
+            }, 10000)
+          );
+          const result = await Promise.race([dbDataPromise, timeoutPromise]);
+
+          if (result === null) {
+            // Timeout - keep local data, we're done
+            clearTimeout(loadingTimeout);
+            setIsLoading(false);
+            return;
+          }
+          dbData = result;
+        } else {
+          // No local data - we MUST wait for database, no timeout
+          // This is the first load on this device/browser
+          console.log("[CartFavorites] No local data, waiting for database...");
+          dbData = await fetchFromDatabase(user.id);
         }
 
         // Merge: database items take precedence, add any local-only items
