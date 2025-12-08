@@ -17,8 +17,15 @@ function getQuarterDates(quarter: number, year: number): { start: Date; end: Dat
 }
 
 export function DebugDonations({ userId, quarter, year }: DebugDonationsProps) {
-  const [donations, setDonations] = useState<any[]>([]);
-  const [allDonations, setAllDonations] = useState<any[]>([]);
+  interface DonationRow {
+    id: string;
+    amount_cents: number;
+    created_at: string;
+    status: string;
+    user_id: string;
+  }
+  const [donations, setDonations] = useState<DonationRow[]>([]);
+  const [allDonations, setAllDonations] = useState<DonationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
