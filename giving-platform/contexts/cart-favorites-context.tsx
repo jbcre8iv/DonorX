@@ -471,219 +471,219 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         const user = session?.user ?? null;
         console.log("[CartFavorites] Session check:", user ? "logged in" : "not logged in");
 
-      // If no user, just set empty state (don't load from localStorage)
-      // The data will persist in the database for when they log back in
-      if (!user) {
-        setUserId(null);
-        setCartItems([]);
-        setFavorites([]);
-        setDonationDraft(null);
-        // Clear localStorage cache since no user is logged in
-        // This doesn't affect the database - data is preserved there
-        localStorage.removeItem(CART_STORAGE_KEY);
-        localStorage.removeItem(FAVORITES_STORAGE_KEY);
-        localStorage.removeItem(DRAFT_STORAGE_KEY);
-        setIsLoading(false);
-        return;
-      }
+        // If no user, just set empty state (don't load from localStorage)
+        // The data will persist in the database for when they log back in
+        if (!user) {
+          setUserId(null);
+          setCartItems([]);
+          setFavorites([]);
+          setDonationDraft(null);
+          // Clear localStorage cache since no user is logged in
+          // This doesn't affect the database - data is preserved there
+          localStorage.removeItem(CART_STORAGE_KEY);
+          localStorage.removeItem(FAVORITES_STORAGE_KEY);
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+          setIsLoading(false);
+          return;
+        }
 
-      // Load from localStorage for logged-in users
-      loadFromLocalStorage();
+        // Load from localStorage for logged-in users
+        loadFromLocalStorage();
 
-      // User is logged in at this point
-      setUserId(user.id);
+        // User is logged in at this point
+        setUserId(user.id);
 
-      // Get current localStorage data
-      const storedCart = localStorage.getItem(CART_STORAGE_KEY);
-      const storedFavorites = localStorage.getItem(FAVORITES_STORAGE_KEY);
-      const localCart: CartItem[] = storedCart ? JSON.parse(storedCart) : [];
-      const localFavorites: FavoriteItem[] = storedFavorites
-        ? JSON.parse(storedFavorites)
-        : [];
+        // Get current localStorage data
+        const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+        const storedFavorites = localStorage.getItem(FAVORITES_STORAGE_KEY);
+        const localCart: CartItem[] = storedCart ? JSON.parse(storedCart) : [];
+        const localFavorites: FavoriteItem[] = storedFavorites
+          ? JSON.parse(storedFavorites)
+          : [];
 
-      // Fetch from database with timeout
-      console.log("[CartFavorites] Fetching from database...");
-      const dbDataPromise = fetchFromDatabase(user.id);
-      const timeoutPromise = new Promise<{ cart: CartItem[]; favorites: FavoriteItem[]; draft: DonationDraft | null }>((resolve) =>
-        setTimeout(() => {
-          console.warn("[CartFavorites] Database fetch timed out after 10s");
-          resolve({ cart: [], favorites: [], draft: null });
-        }, 10000)
-      );
-      const dbData = await Promise.race([dbDataPromise, timeoutPromise]);
-      console.log("[CartFavorites] Database fetch complete");
-
-      // Merge: database items take precedence, add any local-only items
-      const mergedCart = [...dbData.cart];
-      const mergedFavorites = [...dbData.favorites];
-
-      // Add local items that don't exist in database
-      for (const localItem of localCart) {
-        const exists = mergedCart.some(
-          (dbItem) =>
-            (localItem.nonprofitId &&
-              dbItem.nonprofitId === localItem.nonprofitId) ||
-            (localItem.categoryId &&
-              dbItem.categoryId === localItem.categoryId)
+        // Fetch from database with timeout
+        console.log("[CartFavorites] Fetching from database...");
+        const dbDataPromise = fetchFromDatabase(user.id);
+        const timeoutPromise = new Promise<{ cart: CartItem[]; favorites: FavoriteItem[]; draft: DonationDraft | null }>((resolve) =>
+          setTimeout(() => {
+            console.warn("[CartFavorites] Database fetch timed out after 10s");
+            resolve({ cart: [], favorites: [], draft: null });
+          }, 10000)
         );
-        if (!exists && mergedCart.length < MAX_CART_ITEMS) {
-          mergedCart.push(localItem);
-        }
-      }
+        const dbData = await Promise.race([dbDataPromise, timeoutPromise]);
+        console.log("[CartFavorites] Database fetch complete");
 
-      for (const localItem of localFavorites) {
-        const exists = mergedFavorites.some(
-          (dbItem) =>
-            (localItem.nonprofitId &&
-              dbItem.nonprofitId === localItem.nonprofitId) ||
-            (localItem.categoryId &&
-              dbItem.categoryId === localItem.categoryId)
-        );
-        if (!exists) {
-          mergedFavorites.push(localItem);
-        }
-      }
+        // Merge: database items take precedence, add any local-only items
+        const mergedCart = [...dbData.cart];
+        const mergedFavorites = [...dbData.favorites];
 
-      // Sync any local-only items to database
-      const hasLocalOnlyItems =
-        mergedCart.some((item) => item.id.startsWith("temp_")) ||
-        mergedFavorites.some((item) => item.id.startsWith("temp_"));
-
-      if (hasLocalOnlyItems) {
-        const syncedData = await syncToDatabase(
-          user.id,
-          mergedCart,
-          mergedFavorites
-        );
-        if (syncedData) {
-          setCartItems(syncedData.cart);
-          setFavorites(syncedData.favorites);
-          setDonationDraft(syncedData.draft);
-          saveToLocalStorage(syncedData.cart, syncedData.favorites);
-        }
-      } else {
-        setCartItems(mergedCart);
-        setFavorites(mergedFavorites);
-        setDonationDraft(dbData.draft);
-        saveToLocalStorage(mergedCart, mergedFavorites);
-      }
-
-      // Helper to create subscription with auto-reconnect
-      const createChannelWithReconnect = (
-        channelName: string,
-        table: string,
-        onPayload: (payload: any) => Promise<void>,
-        onReconnect: () => Promise<void>
-      ) => {
-        let reconnectTimeout: NodeJS.Timeout | null = null;
-
-        const channel = supabase
-          .channel(channelName)
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table,
-              filter: `user_id=eq.${user.id}`,
-            },
-            onPayload
-          )
-          .subscribe((status, err) => {
-            console.log(`[Realtime] ${table} subscription status:`, status);
-
-            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-              console.log(`[Realtime] ${table} channel error/timeout, scheduling reconnect...`);
-              // Clear any existing reconnect timeout
-              if (reconnectTimeout) clearTimeout(reconnectTimeout);
-
-              // Try to reconnect after a short delay
-              reconnectTimeout = setTimeout(async () => {
-                console.log(`[Realtime] Attempting to reconnect ${table}...`);
-                try {
-                  await channel.unsubscribe();
-                  await channel.subscribe();
-                  // Fetch fresh data after reconnect
-                  await onReconnect();
-                } catch (e) {
-                  console.error(`[Realtime] Reconnect failed for ${table}:`, e);
-                }
-              }, 2000);
-            }
-
-            if (status === 'SUBSCRIBED') {
-              // Clear reconnect timeout on successful subscription
-              if (reconnectTimeout) {
-                clearTimeout(reconnectTimeout);
-                reconnectTimeout = null;
-              }
-            }
-          });
-
-        return channel;
-      };
-
-      // Set up real-time subscriptions for cross-device sync with auto-reconnect
-      const cartChannel = createChannelWithReconnect(
-        `cart_sync_${user.id}_${Date.now()}`,
-        'cart_items',
-        async (payload) => {
-          console.log('[Realtime] Cart change detected:', payload.eventType);
-          const freshData = await fetchFromDatabase(user.id);
-          setCartItems(freshData.cart);
-          saveToLocalStorage(freshData.cart, freshData.favorites);
-        },
-        async () => {
-          const freshData = await fetchFromDatabase(user.id);
-          setCartItems(freshData.cart);
-          saveToLocalStorage(freshData.cart, freshData.favorites);
-        }
-      );
-      channels.push(cartChannel);
-
-      const favoritesChannel = createChannelWithReconnect(
-        `favorites_sync_${user.id}_${Date.now()}`,
-        'user_favorites',
-        async (payload) => {
-          console.log('[Realtime] Favorites change detected:', payload.eventType);
-          const freshData = await fetchFromDatabase(user.id);
-          setFavorites(freshData.favorites);
-          saveToLocalStorage(freshData.cart, freshData.favorites);
-        },
-        async () => {
-          const freshData = await fetchFromDatabase(user.id);
-          setFavorites(freshData.favorites);
-          saveToLocalStorage(freshData.cart, freshData.favorites);
-        }
-      );
-      channels.push(favoritesChannel);
-
-      // Real-time subscription for donation drafts (cross-device sync)
-      const draftsChannel = createChannelWithReconnect(
-        `drafts_sync_${user.id}_${Date.now()}`,
-        'donation_drafts',
-        async (payload) => {
-          // Ignore realtime updates triggered by our own local operations
-          if (isLocalDraftOperation.current) {
-            console.log('[Realtime] Ignoring own draft change');
-            return;
+        // Add local items that don't exist in database
+        for (const localItem of localCart) {
+          const exists = mergedCart.some(
+            (dbItem) =>
+              (localItem.nonprofitId &&
+                dbItem.nonprofitId === localItem.nonprofitId) ||
+              (localItem.categoryId &&
+                dbItem.categoryId === localItem.categoryId)
+          );
+          if (!exists && mergedCart.length < MAX_CART_ITEMS) {
+            mergedCart.push(localItem);
           }
-          console.log('[Realtime] Draft change detected from another device:', payload.eventType);
-          if (payload.eventType === 'DELETE') {
-            setDonationDraft(null);
-          } else {
+        }
+
+        for (const localItem of localFavorites) {
+          const exists = mergedFavorites.some(
+            (dbItem) =>
+              (localItem.nonprofitId &&
+                dbItem.nonprofitId === localItem.nonprofitId) ||
+              (localItem.categoryId &&
+                dbItem.categoryId === localItem.categoryId)
+          );
+          if (!exists) {
+            mergedFavorites.push(localItem);
+          }
+        }
+
+        // Sync any local-only items to database
+        const hasLocalOnlyItems =
+          mergedCart.some((item) => item.id.startsWith("temp_")) ||
+          mergedFavorites.some((item) => item.id.startsWith("temp_"));
+
+        if (hasLocalOnlyItems) {
+          const syncedData = await syncToDatabase(
+            user.id,
+            mergedCart,
+            mergedFavorites
+          );
+          if (syncedData) {
+            setCartItems(syncedData.cart);
+            setFavorites(syncedData.favorites);
+            setDonationDraft(syncedData.draft);
+            saveToLocalStorage(syncedData.cart, syncedData.favorites);
+          }
+        } else {
+          setCartItems(mergedCart);
+          setFavorites(mergedFavorites);
+          setDonationDraft(dbData.draft);
+          saveToLocalStorage(mergedCart, mergedFavorites);
+        }
+
+        // Helper to create subscription with auto-reconnect
+        const createChannelWithReconnect = (
+          channelName: string,
+          table: string,
+          onPayload: (payload: any) => Promise<void>,
+          onReconnect: () => Promise<void>
+        ) => {
+          let reconnectTimeout: NodeJS.Timeout | null = null;
+
+          const channel = supabase
+            .channel(channelName)
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table,
+                filter: `user_id=eq.${user.id}`,
+              },
+              onPayload
+            )
+            .subscribe((status, err) => {
+              console.log(`[Realtime] ${table} subscription status:`, status);
+
+              if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                console.log(`[Realtime] ${table} channel error/timeout, scheduling reconnect...`);
+                // Clear any existing reconnect timeout
+                if (reconnectTimeout) clearTimeout(reconnectTimeout);
+
+                // Try to reconnect after a short delay
+                reconnectTimeout = setTimeout(async () => {
+                  console.log(`[Realtime] Attempting to reconnect ${table}...`);
+                  try {
+                    await channel.unsubscribe();
+                    await channel.subscribe();
+                    // Fetch fresh data after reconnect
+                    await onReconnect();
+                  } catch (e) {
+                    console.error(`[Realtime] Reconnect failed for ${table}:`, e);
+                  }
+                }, 2000);
+              }
+
+              if (status === 'SUBSCRIBED') {
+                // Clear reconnect timeout on successful subscription
+                if (reconnectTimeout) {
+                  clearTimeout(reconnectTimeout);
+                  reconnectTimeout = null;
+                }
+              }
+            });
+
+          return channel;
+        };
+
+        // Set up real-time subscriptions for cross-device sync with auto-reconnect
+        const cartChannel = createChannelWithReconnect(
+          `cart_sync_${user.id}_${Date.now()}`,
+          'cart_items',
+          async (payload) => {
+            console.log('[Realtime] Cart change detected:', payload.eventType);
+            const freshData = await fetchFromDatabase(user.id);
+            setCartItems(freshData.cart);
+            saveToLocalStorage(freshData.cart, freshData.favorites);
+          },
+          async () => {
+            const freshData = await fetchFromDatabase(user.id);
+            setCartItems(freshData.cart);
+            saveToLocalStorage(freshData.cart, freshData.favorites);
+          }
+        );
+        channels.push(cartChannel);
+
+        const favoritesChannel = createChannelWithReconnect(
+          `favorites_sync_${user.id}_${Date.now()}`,
+          'user_favorites',
+          async (payload) => {
+            console.log('[Realtime] Favorites change detected:', payload.eventType);
+            const freshData = await fetchFromDatabase(user.id);
+            setFavorites(freshData.favorites);
+            saveToLocalStorage(freshData.cart, freshData.favorites);
+          },
+          async () => {
+            const freshData = await fetchFromDatabase(user.id);
+            setFavorites(freshData.favorites);
+            saveToLocalStorage(freshData.cart, freshData.favorites);
+          }
+        );
+        channels.push(favoritesChannel);
+
+        // Real-time subscription for donation drafts (cross-device sync)
+        const draftsChannel = createChannelWithReconnect(
+          `drafts_sync_${user.id}_${Date.now()}`,
+          'donation_drafts',
+          async (payload) => {
+            // Ignore realtime updates triggered by our own local operations
+            if (isLocalDraftOperation.current) {
+              console.log('[Realtime] Ignoring own draft change');
+              return;
+            }
+            console.log('[Realtime] Draft change detected from another device:', payload.eventType);
+            if (payload.eventType === 'DELETE') {
+              setDonationDraft(null);
+            } else {
+              const freshData = await fetchFromDatabase(user.id);
+              setDonationDraft(freshData.draft);
+            }
+          },
+          async () => {
             const freshData = await fetchFromDatabase(user.id);
             setDonationDraft(freshData.draft);
           }
-        },
-        async () => {
-          const freshData = await fetchFromDatabase(user.id);
-          setDonationDraft(freshData.draft);
-        }
-      );
-      channels.push(draftsChannel);
+        );
+        channels.push(draftsChannel);
 
-      setIsLoading(false);
+        setIsLoading(false);
       } catch (error) {
         console.error("Error initializing cart/favorites:", error);
         setIsLoading(false);
