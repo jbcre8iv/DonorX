@@ -91,7 +91,7 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <form className="flex flex-col gap-4 sm:flex-row">
+          <form action="/dashboard/history" method="get" className="flex flex-col gap-4 sm:flex-row">
             <div className="flex gap-4">
               <select
                 name="status"
