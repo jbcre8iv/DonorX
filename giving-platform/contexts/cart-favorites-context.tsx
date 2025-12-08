@@ -41,6 +41,7 @@ export interface FavoriteItem {
     name: string;
     logoUrl?: string;
     mission?: string;
+    website?: string;
   };
   category?: {
     id: string;
@@ -233,7 +234,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           nonprofit_id,
           category_id,
           created_at,
-          nonprofits:nonprofit_id (id, name, logo_url, mission),
+          nonprofits:nonprofit_id (id, name, logo_url, mission, website),
           categories:category_id (id, name, icon)
         `)
         .eq("user_id", uid);
@@ -274,6 +275,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
                 name: item.nonprofits.name,
                 logoUrl: item.nonprofits.logo_url,
                 mission: item.nonprofits.mission,
+                website: item.nonprofits.website,
               }
             : undefined,
           category: item.categories

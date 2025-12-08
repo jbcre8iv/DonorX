@@ -9,6 +9,7 @@ const PREFERENCES_STORAGE_KEY = "donorx_preferences";
 // Type for user preferences
 export interface UserPreferences {
   directory_view_mode?: "grid" | "table";
+  favorites_view_mode?: "grid" | "table";
 }
 
 // Default preferences
