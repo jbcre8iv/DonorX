@@ -464,6 +464,12 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const channels: ReturnType<typeof supabase.channel>[] = [];
 
+    // Safety timeout to ensure loading never gets stuck
+    const loadingTimeout = setTimeout(() => {
+      console.warn("[CartFavorites] Initialization timed out after 15s, forcing loading to false");
+      setIsLoading(false);
+    }, 15000);
+
     const initialize = async () => {
       setIsLoading(true);
 
@@ -685,9 +691,11 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         );
         channels.push(draftsChannel);
 
+        clearTimeout(loadingTimeout);
         setIsLoading(false);
       } catch (error) {
         console.error("Error initializing cart/favorites:", error);
+        clearTimeout(loadingTimeout);
         setIsLoading(false);
       }
     };
@@ -728,6 +736,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     });
 
     return () => {
+      clearTimeout(loadingTimeout);
       subscription.unsubscribe();
       channels.forEach(channel => supabase.removeChannel(channel));
     };
