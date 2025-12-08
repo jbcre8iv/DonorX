@@ -463,17 +463,12 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     const channels: ReturnType<typeof supabase.channel>[] = [];
 
     const initialize = async () => {
-      console.log("[CartFavorites] Starting initialization...");
       setIsLoading(true);
 
       try {
-        // Check if user is logged in FIRST before loading localStorage
-        console.log("[CartFavorites] Checking auth via getSession...");
-
         // Use getSession instead of getUser - it's faster and doesn't make a network request
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user ?? null;
-        console.log("[CartFavorites] Auth check complete, user:", user?.id ? "logged in" : "not logged in");
 
       // If no user, just set empty state (don't load from localStorage)
       // The data will persist in the database for when they log back in
@@ -678,10 +673,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       );
       channels.push(draftsChannel);
 
-      console.log("[CartFavorites] Initialization complete, setting isLoading to false");
       setIsLoading(false);
       } catch (error) {
-        console.error("[CartFavorites] Error initializing:", error);
+        console.error("Error initializing cart/favorites:", error);
         setIsLoading(false);
       }
     };
