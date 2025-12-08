@@ -552,8 +552,10 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        // User is logged in - load from localStorage FIRST for immediate display
-        // This prevents showing empty state while fetching from database
+        // User is logged in at this point
+        setUserId(user.id);
+
+        // Load from localStorage for immediate display
         const storedFavorites = localStorage.getItem(FAVORITES_STORAGE_KEY);
         const storedCart = localStorage.getItem(CART_STORAGE_KEY);
         const hasLocalData = (storedFavorites && JSON.parse(storedFavorites).length > 0) ||
@@ -561,29 +563,18 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
         if (hasLocalData) {
           loadFromLocalStorage();
-          // Set loading to false so user sees data immediately
-          // Database fetch will update in the background
-          setIsLoading(false);
         }
 
-        // User is logged in at this point
-        setUserId(user.id);
-
-        // Parse localStorage data for merging with database
+        // Parse localStorage data for merging
         const localCart: CartItem[] = storedCart ? JSON.parse(storedCart) : [];
         const localFavorites: FavoriteItem[] = storedFavorites
           ? JSON.parse(storedFavorites)
           : [];
 
-        // Fetch from database
-        // If we have local data, use a timeout so we don't block the UI
-        // If no local data, we MUST wait for database (no timeout) to avoid showing empty state
+        // Try to fetch from database with a short timeout (3s)
+        // If it fails, realtime subscriptions will fetch when they connect
         let dbData: { cart: CartItem[]; favorites: FavoriteItem[]; draft: DonationDraft | null };
-
-        // Fetch from database - fetchFromDatabase has built-in 8s timeout
-        // If we have local data, it's already showing (loading=false), so this updates in background
-        // If no local data, user sees loading state until this completes or times out
-        dbData = await fetchFromDatabase(user.id);
+        dbData = await fetchFromDatabase(user.id, 3000);
 
         // Merge: database items take precedence, add any local-only items
         const mergedCart = [...dbData.cart];
@@ -689,6 +680,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
                       clearTimeout(reconnectTimeout);
                       reconnectTimeout = null;
                     }
+                    // Fetch data immediately when subscription connects
+                    // This is more reliable than the initial REST query
+                    onReconnect();
                   }
                 });
 
