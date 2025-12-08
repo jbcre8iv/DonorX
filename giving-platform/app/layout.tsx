@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import { config } from "@/lib/config";
 import { HeaderWrapper } from "@/components/layout/header-wrapper";
 import { Footer } from "@/components/layout/footer";
@@ -71,6 +72,7 @@ export default function RootLayout({
           </div>
           <GivingConcierge />
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
