@@ -211,7 +211,6 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
   // Fetch from database for logged-in users with built-in timeout
   const fetchFromDatabase = useCallback(async (uid: string, timeoutMs = 8000) => {
-    console.log("[CartFavorites] fetchFromDatabase starting for user:", uid);
     const startTime = Date.now();
 
     // Helper to wrap a promise with a timeout
@@ -269,9 +268,6 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
       const dbCartItems = (cartResult as any).data;
       const dbFavorites = (favoritesResult as any).data;
-
-      console.log("[CartFavorites] Queries completed in", Date.now() - startTime, "ms");
-      console.log("[CartFavorites] Cart items:", dbCartItems?.length ?? 0, "Favorites:", dbFavorites?.length ?? 0);
 
       if ((cartResult as any).error) console.error("[CartFavorites] Cart query error:", (cartResult as any).error);
       if ((favoritesResult as any).error) console.error("[CartFavorites] Favorites query error:", (favoritesResult as any).error);
@@ -573,10 +569,9 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         // If no local data, we MUST wait for database (no timeout) to avoid showing empty state
         let dbData: { cart: CartItem[]; favorites: FavoriteItem[]; draft: DonationDraft | null };
 
-        // Fetch from database - fetchFromDatabase has built-in 10s timeout with AbortController
+        // Fetch from database - fetchFromDatabase has built-in 8s timeout
         // If we have local data, it's already showing (loading=false), so this updates in background
         // If no local data, user sees loading state until this completes or times out
-        console.log("[CartFavorites] Fetching from database, hasLocalData:", hasLocalData);
         dbData = await fetchFromDatabase(user.id);
 
         // Merge: database items take precedence, add any local-only items
