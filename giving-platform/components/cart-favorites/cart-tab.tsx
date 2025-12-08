@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Trash2, Tag, ArrowRight, HandHeart, Eye, X, Globe, Minus, Plus, Sparkles, Lock, Unlock } from "lucide-react";
@@ -338,132 +338,179 @@ export function CartTab() {
             </span>
           </div>
           <div className="space-y-3">
-            {donationDraft.allocations.map((allocation) => (
-              <div
-                key={allocation.targetId}
-                className="rounded-lg border border-slate-200 bg-white p-3"
-              >
-                {/* Top row: Logo, Name, Remove button */}
-                <div className="flex items-center gap-3 mb-2">
-                  {/* Logo/Icon */}
-                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 overflow-hidden">
-                    {allocation.type === "category" ? (
-                      allocation.icon ? (
-                        <span className="text-lg">{allocation.icon}</span>
+            {donationDraft.allocations.map((allocation) => {
+              const isBeingRemoved = pendingRemoval?.targetId === allocation.targetId;
+              return (
+              <React.Fragment key={allocation.targetId}>
+                <div
+                  className={`rounded-lg border bg-white p-3 ${
+                    isBeingRemoved ? "border-red-300 bg-red-50/50" : "border-slate-200"
+                  }`}
+                >
+                  {/* Top row: Logo, Name, Remove button */}
+                  <div className="flex items-center gap-3 mb-2">
+                    {/* Logo/Icon */}
+                    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 overflow-hidden">
+                      {allocation.type === "category" ? (
+                        allocation.icon ? (
+                          <span className="text-lg">{allocation.icon}</span>
+                        ) : (
+                          <Tag className="h-4 w-4 text-slate-400" />
+                        )
+                      ) : allocation.logoUrl ? (
+                        <img
+                          src={allocation.logoUrl}
+                          alt={allocation.targetName}
+                          className="h-9 w-9 rounded-lg object-contain"
+                        />
                       ) : (
-                        <Tag className="h-4 w-4 text-slate-400" />
-                      )
-                    ) : allocation.logoUrl ? (
-                      <img
-                        src={allocation.logoUrl}
-                        alt={allocation.targetName}
-                        className="h-9 w-9 rounded-lg object-contain"
+                        <span className="text-sm font-semibold text-slate-600">
+                          {allocation.targetName.charAt(0)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Name and type */}
+                    <div className="min-w-0 flex-1">
+                      <h4 className="truncate text-sm font-medium text-slate-900">
+                        {allocation.targetName}
+                      </h4>
+                      <p className="text-xs text-slate-500 capitalize">
+                        {allocation.type}
+                      </p>
+                    </div>
+
+                    {/* Remove button */}
+                    <button
+                      onClick={() => handleRemoveClick(allocation.targetId, allocation.targetName)}
+                      className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                      title="Remove from giving list"
+                      disabled={!!pendingRemoval}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Bottom row: Percentage controls */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handlePercentageStep(allocation.targetId, allocation.percentage, -1)}
+                      disabled={allocation.percentage <= 0 || isLocked(allocation.targetId)}
+                      className="h-7 w-7 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Minus className="h-3 w-3" />
+                    </button>
+                    <div className="relative w-14 flex-shrink-0">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={getPercentageInputValue(allocation.targetId, allocation.percentage)}
+                        onChange={(e) => handlePercentageInputChange(allocation.targetId, e.target.value)}
+                        onBlur={() => handlePercentageInputBlur(allocation.targetId)}
+                        disabled={isLocked(allocation.targetId)}
+                        className={`w-full h-7 rounded border pl-1 pr-5 text-center text-base font-medium ${
+                          isLocked(allocation.targetId)
+                            ? "border-amber-300 bg-amber-50"
+                            : "border-slate-200"
+                        }`}
                       />
-                    ) : (
-                      <span className="text-sm font-semibold text-slate-600">
-                        {allocation.targetName.charAt(0)}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Name and type */}
-                  <div className="min-w-0 flex-1">
-                    <h4 className="truncate text-sm font-medium text-slate-900">
-                      {allocation.targetName}
-                    </h4>
-                    <p className="text-xs text-slate-500 capitalize">
-                      {allocation.type}
-                    </p>
-                  </div>
-
-                  {/* Remove button */}
-                  <button
-                    onClick={() => handleRemoveClick(allocation.targetId, allocation.targetName)}
-                    className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors"
-                    title="Remove from giving list"
-                    disabled={!!pendingRemoval}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-
-                {/* Bottom row: Percentage controls */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handlePercentageStep(allocation.targetId, allocation.percentage, -1)}
-                    disabled={allocation.percentage <= 0 || isLocked(allocation.targetId)}
-                    className="h-7 w-7 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Minus className="h-3 w-3" />
-                  </button>
-                  <div className="relative w-14 flex-shrink-0">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      value={getPercentageInputValue(allocation.targetId, allocation.percentage)}
-                      onChange={(e) => handlePercentageInputChange(allocation.targetId, e.target.value)}
-                      onBlur={() => handlePercentageInputBlur(allocation.targetId)}
-                      disabled={isLocked(allocation.targetId)}
-                      className={`w-full h-7 rounded border pl-1 pr-5 text-center text-base font-medium ${
+                      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">%</span>
+                    </div>
+                    <button
+                      onClick={() => handlePercentageStep(allocation.targetId, allocation.percentage, 1)}
+                      disabled={allocation.percentage >= 100 || isLocked(allocation.targetId)}
+                      className="h-7 w-7 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </button>
+                    {/* Lock button */}
+                    <button
+                      onMouseDown={(e) => {
+                        // Use onMouseDown to capture value BEFORE blur clears focus
+                        e.preventDefault(); // Prevent focus change
+                        // Get the current input value (which may not be saved yet)
+                        const inputValue = percentageInputs[allocation.targetId];
+                        const currentPct = inputValue !== undefined && inputValue !== ""
+                          ? parseInt(inputValue, 10)
+                          : allocation.percentage;
+                        toggleLockAllocation(allocation.targetId, currentPct);
+                      }}
+                      disabled={!canLock(allocation.targetId)}
+                      className={`h-7 w-7 rounded border flex items-center justify-center transition-colors ${
                         isLocked(allocation.targetId)
-                          ? "border-amber-300 bg-amber-50"
-                          : "border-slate-200"
+                          ? "border-amber-300 bg-amber-50 text-amber-600 hover:bg-amber-100"
+                          : canLock(allocation.targetId)
+                          ? "border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                          : "border-slate-100 text-slate-300 cursor-not-allowed"
                       }`}
-                    />
-                    <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">%</span>
-                  </div>
-                  <button
-                    onClick={() => handlePercentageStep(allocation.targetId, allocation.percentage, 1)}
-                    disabled={allocation.percentage >= 100 || isLocked(allocation.targetId)}
-                    className="h-7 w-7 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Plus className="h-3 w-3" />
-                  </button>
-                  {/* Lock button */}
-                  <button
-                    onMouseDown={(e) => {
-                      // Use onMouseDown to capture value BEFORE blur clears focus
-                      e.preventDefault(); // Prevent focus change
-                      // Get the current input value (which may not be saved yet)
-                      const inputValue = percentageInputs[allocation.targetId];
-                      const currentPct = inputValue !== undefined && inputValue !== ""
-                        ? parseInt(inputValue, 10)
-                        : allocation.percentage;
-                      toggleLockAllocation(allocation.targetId, currentPct);
-                    }}
-                    disabled={!canLock(allocation.targetId)}
-                    className={`h-7 w-7 rounded border flex items-center justify-center transition-colors ${
-                      isLocked(allocation.targetId)
-                        ? "border-amber-300 bg-amber-50 text-amber-600 hover:bg-amber-100"
-                        : canLock(allocation.targetId)
-                        ? "border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-                        : "border-slate-100 text-slate-300 cursor-not-allowed"
-                    }`}
-                    title={
-                      isLocked(allocation.targetId)
-                        ? "Unlock"
-                        : canLock(allocation.targetId)
-                        ? "Lock"
-                        : "Cannot lock all items"
-                    }
-                  >
-                    {isLocked(allocation.targetId) ? (
-                      <Lock className="h-3 w-3" />
-                    ) : (
-                      <Unlock className="h-3 w-3" />
-                    )}
-                  </button>
-                  {/* Mini progress bar */}
-                  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-emerald-500 transition-all"
-                      style={{ width: `${Math.min(allocation.percentage, 100)}%` }}
-                    />
+                      title={
+                        isLocked(allocation.targetId)
+                          ? "Unlock"
+                          : canLock(allocation.targetId)
+                          ? "Lock"
+                          : "Cannot lock all items"
+                      }
+                    >
+                      {isLocked(allocation.targetId) ? (
+                        <Lock className="h-3 w-3" />
+                      ) : (
+                        <Unlock className="h-3 w-3" />
+                      )}
+                    </button>
+                    {/* Mini progress bar */}
+                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500 transition-all"
+                        style={{ width: `${Math.min(allocation.percentage, 100)}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+
+                {/* Inline Remove Confirmation - appears directly below the item */}
+                {isBeingRemoved && !unlockWarning && (
+                  <div className="p-3 rounded-lg border border-red-200 bg-red-50 space-y-3 -mt-1">
+                    <div className="flex items-start gap-2">
+                      <div className="p-1.5 rounded-lg bg-red-100 flex-shrink-0">
+                        <Trash2 className="h-3.5 w-3.5 text-red-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-red-900 text-sm">
+                          Remove {pendingRemoval.targetName}?
+                        </h4>
+                        <p className="text-xs text-red-700 mt-0.5">
+                          This will remove it from your giving list. You can use Auto-balance afterward to redistribute percentages.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Confirm/Cancel buttons */}
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleConfirmRemoval}
+                        size="sm"
+                        variant="destructive"
+                        className="flex-1 h-8 text-xs"
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Remove
+                      </Button>
+                      <Button
+                        onClick={handleCancelRemoval}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 h-8 text-xs"
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </React.Fragment>
+              );
+            })}
           </div>
 
           {/* Allocation Progress Bar */}
@@ -552,47 +599,6 @@ export function CartTab() {
                   size="sm"
                   className="flex-1 h-8 text-xs"
                 >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Remove Confirmation Dialog */}
-          {pendingRemoval && !unlockWarning && (
-            <div className="mt-3 p-3 rounded-lg border border-red-200 bg-red-50 space-y-3">
-              <div className="flex items-start gap-2">
-                <div className="p-1.5 rounded-lg bg-red-100 flex-shrink-0">
-                  <Trash2 className="h-3.5 w-3.5 text-red-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-red-900 text-sm">
-                    Remove {pendingRemoval.targetName}?
-                  </h4>
-                  <p className="text-xs text-red-700 mt-0.5">
-                    This will remove it from your giving list. You can use Auto-balance afterward to redistribute percentages.
-                  </p>
-                </div>
-              </div>
-
-              {/* Confirm/Cancel buttons */}
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleConfirmRemoval}
-                  size="sm"
-                  variant="destructive"
-                  className="flex-1 h-8 text-xs"
-                >
-                  <Trash2 className="h-3 w-3 mr-1" />
-                  Remove
-                </Button>
-                <Button
-                  onClick={handleCancelRemoval}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 h-8 text-xs"
-                >
-                  <X className="h-3 w-3 mr-1" />
                   Cancel
                 </Button>
               </div>

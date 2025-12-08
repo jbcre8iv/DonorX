@@ -438,139 +438,182 @@ export function AllocationBuilder({
                 const details = getItemDetails(item);
                 const nonprofit = item.type === "nonprofit" ? details as Nonprofit | undefined : undefined;
                 const category = item.type === "category" ? details as Category | undefined : undefined;
+                const isBeingRemoved = pendingRemoval?.id === item.id;
                 return (
-                <div
-                  key={item.id}
-                  className="rounded-lg border border-slate-200 p-4 space-y-3"
-                >
-                  {/* Top row: Name and info/delete */}
-                  <div className="flex items-start gap-3">
-                    {nonprofit?.logo_url ? (
-                      <img
-                        src={nonprofit.logo_url}
-                        alt={`${item.targetName} logo`}
-                        className="h-10 w-10 rounded-lg object-contain flex-shrink-0"
-                      />
-                    ) : category?.icon ? (
-                      <div className={`h-10 w-10 rounded-lg ${colors.bg} flex items-center justify-center flex-shrink-0 text-xl`}>
-                        {category.icon}
+                <React.Fragment key={item.id}>
+                  <div
+                    className={`rounded-lg border p-4 space-y-3 ${
+                      isBeingRemoved ? "border-red-300 bg-red-50/50" : "border-slate-200"
+                    }`}
+                  >
+                    {/* Top row: Name and info/delete */}
+                    <div className="flex items-start gap-3">
+                      {nonprofit?.logo_url ? (
+                        <img
+                          src={nonprofit.logo_url}
+                          alt={`${item.targetName} logo`}
+                          className="h-10 w-10 rounded-lg object-contain flex-shrink-0"
+                        />
+                      ) : category?.icon ? (
+                        <div className={`h-10 w-10 rounded-lg ${colors.bg} flex items-center justify-center flex-shrink-0 text-xl`}>
+                          {category.icon}
+                        </div>
+                      ) : (
+                        <div className={`h-10 w-10 rounded-lg ${colors.bg} flex items-center justify-center flex-shrink-0`}>
+                          <HandHeart className={`h-5 w-5 ${colors.icon}`} />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-900 leading-tight">
+                          {item.targetName}
+                        </p>
+                        <p className="text-sm text-slate-500 mt-0.5">
+                          {formatCurrency(
+                            Math.round((totalAmountCents * item.percentage) / 100)
+                          )}
+                        </p>
                       </div>
-                    ) : (
-                      <div className={`h-10 w-10 rounded-lg ${colors.bg} flex items-center justify-center flex-shrink-0`}>
-                        <HandHeart className={`h-5 w-5 ${colors.icon}`} />
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDetailsItem(item)}
+                          className="h-9 w-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 border border-blue-200"
+                          title="View details"
+                        >
+                          <Info className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveClick(item)}
+                          className="h-9 w-9 text-slate-400 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-900 leading-tight">
-                        {item.targetName}
-                      </p>
-                      <p className="text-sm text-slate-500 mt-0.5">
-                        {formatCurrency(
-                          Math.round((totalAmountCents * item.percentage) / 100)
-                        )}
-                      </p>
                     </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDetailsItem(item)}
-                        className="h-9 w-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 border border-blue-200"
-                        title="View details"
-                      >
-                        <Info className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveClick(item)}
-                        className="h-9 w-9 text-slate-400 hover:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+
+                    {/* Bottom row: Percentage controls */}
+                    <div className="flex items-center gap-3 pl-13">
+                      <div className="flex items-center gap-2 flex-1">
+                        <button
+                          onClick={() => handlePercentageChange(item.id, item.percentage - 1)}
+                          className="h-10 w-10 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={item.percentage <= 0 || lockedIds.includes(item.targetId)}
+                        >
+                          −
+                        </button>
+                        <div className="relative w-20 flex-shrink-0">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={getPercentageInputValue(item.id, item.percentage)}
+                            onChange={(e) => handlePercentageInputChange(item.id, e.target.value)}
+                            onBlur={() => handlePercentageInputBlur(item.id)}
+                            className={`w-full h-10 rounded-lg border pl-2 pr-7 text-center text-base font-medium ${
+                              lockedIds.includes(item.targetId)
+                                ? "border-amber-300 bg-amber-50"
+                                : "border-slate-200"
+                            }`}
+                            disabled={lockedIds.includes(item.targetId)}
+                          />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">%</span>
+                        </div>
+                        <button
+                          onClick={() => handlePercentageChange(item.id, item.percentage + 1)}
+                          className="h-10 w-10 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={item.percentage >= 100 || lockedIds.includes(item.targetId)}
+                        >
+                          +
+                        </button>
+                        {/* Lock button */}
+                        {onToggleLock && (
+                          <button
+                            onClick={() => {
+                              // Get the current input value (which may not be saved yet)
+                              const inputValue = percentageInputs[item.id];
+                              const currentPct = inputValue !== undefined && inputValue !== ""
+                                ? parseInt(inputValue, 10)
+                                : item.percentage;
+                              onToggleLock(item.targetId, currentPct);
+                            }}
+                            disabled={!canLock?.(item.targetId)}
+                            className={`h-10 w-10 rounded-lg border flex items-center justify-center transition-colors ${
+                              lockedIds.includes(item.targetId)
+                                ? "border-amber-300 bg-amber-50 text-amber-600 hover:bg-amber-100"
+                                : canLock?.(item.targetId)
+                                ? "border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                                : "border-slate-100 text-slate-300 cursor-not-allowed"
+                            }`}
+                            title={
+                              lockedIds.includes(item.targetId)
+                                ? "Unlock (allow auto-balance)"
+                                : canLock?.(item.targetId)
+                                ? "Lock (exclude from auto-balance)"
+                                : "Cannot lock - at least one item must remain unlocked"
+                            }
+                          >
+                            {lockedIds.includes(item.targetId) ? (
+                              <Lock className="h-4 w-4" />
+                            ) : (
+                              <Unlock className="h-4 w-4" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                      {/* Mini progress indicator */}
+                      <div className="hidden sm:flex items-center gap-2 flex-1">
+                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-emerald-500 transition-all"
+                            style={{ width: `${Math.min(item.percentage, 100)}%` }}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Bottom row: Percentage controls */}
-                  <div className="flex items-center gap-3 pl-13">
-                    <div className="flex items-center gap-2 flex-1">
-                      <button
-                        onClick={() => handlePercentageChange(item.id, item.percentage - 1)}
-                        className="h-10 w-10 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={item.percentage <= 0 || lockedIds.includes(item.targetId)}
-                      >
-                        −
-                      </button>
-                      <div className="relative w-20 flex-shrink-0">
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          value={getPercentageInputValue(item.id, item.percentage)}
-                          onChange={(e) => handlePercentageInputChange(item.id, e.target.value)}
-                          onBlur={() => handlePercentageInputBlur(item.id)}
-                          className={`w-full h-10 rounded-lg border pl-2 pr-7 text-center text-base font-medium ${
-                            lockedIds.includes(item.targetId)
-                              ? "border-amber-300 bg-amber-50"
-                              : "border-slate-200"
-                          }`}
-                          disabled={lockedIds.includes(item.targetId)}
-                        />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">%</span>
+                  {/* Inline Remove Confirmation - appears directly below the item */}
+                  {isBeingRemoved && (
+                    <div className="p-4 rounded-lg border border-red-200 bg-red-50 space-y-3 -mt-1">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-red-100 flex-shrink-0">
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-red-900">Remove {pendingRemoval.targetName}?</h4>
+                          <p className="text-sm text-red-700 mt-1">
+                            This will remove it from your allocation. You can use Auto-balance afterward to redistribute percentages.
+                          </p>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => handlePercentageChange(item.id, item.percentage + 1)}
-                        className="h-10 w-10 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={item.percentage >= 100 || lockedIds.includes(item.targetId)}
-                      >
-                        +
-                      </button>
-                      {/* Lock button */}
-                      {onToggleLock && (
-                        <button
-                          onClick={() => {
-                            // Get the current input value (which may not be saved yet)
-                            const inputValue = percentageInputs[item.id];
-                            const currentPct = inputValue !== undefined && inputValue !== ""
-                              ? parseInt(inputValue, 10)
-                              : item.percentage;
-                            onToggleLock(item.targetId, currentPct);
-                          }}
-                          disabled={!canLock?.(item.targetId)}
-                          className={`h-10 w-10 rounded-lg border flex items-center justify-center transition-colors ${
-                            lockedIds.includes(item.targetId)
-                              ? "border-amber-300 bg-amber-50 text-amber-600 hover:bg-amber-100"
-                              : canLock?.(item.targetId)
-                              ? "border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-                              : "border-slate-100 text-slate-300 cursor-not-allowed"
-                          }`}
-                          title={
-                            lockedIds.includes(item.targetId)
-                              ? "Unlock (allow auto-balance)"
-                              : canLock?.(item.targetId)
-                              ? "Lock (exclude from auto-balance)"
-                              : "Cannot lock - at least one item must remain unlocked"
-                          }
+
+                      {/* Confirm/Cancel buttons */}
+                      <div className="flex gap-3 sm:pl-11">
+                        <Button
+                          onClick={handleConfirmRemoval}
+                          size="sm"
+                          variant="destructive"
+                          className="flex-1"
                         >
-                          {lockedIds.includes(item.targetId) ? (
-                            <Lock className="h-4 w-4" />
-                          ) : (
-                            <Unlock className="h-4 w-4" />
-                          )}
-                        </button>
-                      )}
-                    </div>
-                    {/* Mini progress indicator */}
-                    <div className="hidden sm:flex items-center gap-2 flex-1">
-                      <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-emerald-500 transition-all"
-                          style={{ width: `${Math.min(item.percentage, 100)}%` }}
-                        />
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Remove
+                        </Button>
+                        <Button
+                          onClick={handleCancelRemoval}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Cancel
+                        </Button>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  )}
+                </React.Fragment>
               );
               })}
             </div>
@@ -617,45 +660,6 @@ export function AllocationBuilder({
               )}
             </div>
           </div>
-
-          {/* Remove Confirmation Dialog */}
-          {pendingRemoval && (
-            <div className="p-4 rounded-lg border border-red-200 bg-red-50 space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-red-100 flex-shrink-0">
-                  <Trash2 className="h-4 w-4 text-red-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-red-900">Remove {pendingRemoval.targetName}?</h4>
-                  <p className="text-sm text-red-700 mt-1">
-                    This will remove it from your allocation. You can use Auto-balance afterward to redistribute percentages.
-                  </p>
-                </div>
-              </div>
-
-              {/* Confirm/Cancel buttons */}
-              <div className="flex gap-3 sm:pl-11">
-                <Button
-                  onClick={handleConfirmRemoval}
-                  size="sm"
-                  variant="destructive"
-                  className="flex-1"
-                >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Remove
-                </Button>
-                <Button
-                  onClick={handleCancelRemoval}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
 
           {/* Add Button */}
           {allocations.length < config.features.maxAllocationItems && !pendingRemoval && (
