@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
 
 export interface QuarterlyReportData {
@@ -47,7 +47,7 @@ export async function generateQuarterlyReport(
   quarter: number,
   year: number
 ): Promise<QuarterlyReportData | null> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { start, end } = getQuarterDates(quarter, year);
 
   console.log(`[QuarterlyReport] Generating report for Q${quarter} ${year}`);
