@@ -381,15 +381,22 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       lastSyncTime = now;
 
       try {
-        console.log(`[Sync] Fetching fresh data (source: ${source})`);
-        const freshData = await fetchFromDatabase(userId);
+        // Add timeout to prevent sync from hanging indefinitely
+        const fetchPromise = fetchFromDatabase(userId);
+        const timeoutPromise = new Promise<{ cart: typeof cartItems; favorites: typeof favorites; draft: typeof donationDraft }>((_, reject) =>
+          setTimeout(() => reject(new Error('Sync timeout')), 8000)
+        );
+
+        const freshData = await Promise.race([fetchPromise, timeoutPromise]);
         setCartItems(freshData.cart);
         setFavorites(freshData.favorites);
         setDonationDraft(freshData.draft);
         saveToLocalStorage(freshData.cart, freshData.favorites);
-        console.log(`[Sync] Data refreshed successfully (source: ${source})`);
       } catch (err) {
-        console.error('[Sync] Error fetching data:', err);
+        // Silently ignore sync errors - they're not critical
+        if (err instanceof Error && err.message !== 'Sync timeout') {
+          console.error('[Sync] Error:', err);
+        }
       } finally {
         isSyncing = false;
       }
@@ -465,14 +472,13 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     const channels: ReturnType<typeof supabase.channel>[] = [];
 
     // Safety timeout to ensure loading never gets stuck
+    // This just forces isLoading to false - data is preserved from localStorage
     const loadingTimeout = setTimeout(() => {
-      console.warn("[CartFavorites] Initialization timed out after 15s, forcing loading to false");
+      console.warn("[CartFavorites] Initialization timed out after 15s, forcing loading to false but keeping any loaded data");
       setIsLoading(false);
     }, 15000);
 
     const initialize = async () => {
-      setIsLoading(true);
-
       try {
         // Use getSession instead of getUser - it's faster and doesn't make a network request
         const { data: { session } } = await supabase.auth.getSession();
@@ -490,33 +496,52 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem(CART_STORAGE_KEY);
           localStorage.removeItem(FAVORITES_STORAGE_KEY);
           localStorage.removeItem(DRAFT_STORAGE_KEY);
+          clearTimeout(loadingTimeout);
           setIsLoading(false);
           return;
         }
 
-        // Load from localStorage for logged-in users
-        loadFromLocalStorage();
+        // User is logged in - load from localStorage FIRST for immediate display
+        // This prevents showing empty state while fetching from database
+        const storedFavorites = localStorage.getItem(FAVORITES_STORAGE_KEY);
+        const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+        const hasLocalData = (storedFavorites && JSON.parse(storedFavorites).length > 0) ||
+                             (storedCart && JSON.parse(storedCart).length > 0);
+
+        if (hasLocalData) {
+          loadFromLocalStorage();
+          // Set loading to false so user sees data immediately
+          // Database fetch will update in the background
+          setIsLoading(false);
+        }
 
         // User is logged in at this point
         setUserId(user.id);
 
-        // Get current localStorage data
-        const storedCart = localStorage.getItem(CART_STORAGE_KEY);
-        const storedFavorites = localStorage.getItem(FAVORITES_STORAGE_KEY);
+        // Parse localStorage data for merging with database
         const localCart: CartItem[] = storedCart ? JSON.parse(storedCart) : [];
         const localFavorites: FavoriteItem[] = storedFavorites
           ? JSON.parse(storedFavorites)
           : [];
 
         // Fetch from database with timeout
+        // On timeout, return null to indicate we should keep local data
         const dbDataPromise = fetchFromDatabase(user.id);
-        const timeoutPromise = new Promise<{ cart: CartItem[]; favorites: FavoriteItem[]; draft: DonationDraft | null }>((resolve) =>
+        const timeoutPromise = new Promise<{ cart: CartItem[]; favorites: FavoriteItem[]; draft: DonationDraft | null } | null>((resolve) =>
           setTimeout(() => {
-            console.warn("[CartFavorites] Database fetch timed out after 10s");
-            resolve({ cart: [], favorites: [], draft: null });
+            console.warn("[CartFavorites] Database fetch timed out after 10s, keeping local data");
+            resolve(null); // null indicates timeout - keep existing data
           }, 10000)
         );
         const dbData = await Promise.race([dbDataPromise, timeoutPromise]);
+
+        // If database fetch timed out, just use local data and finish loading
+        if (dbData === null) {
+          // Keep whatever we loaded from localStorage
+          clearTimeout(loadingTimeout);
+          setIsLoading(false);
+          return;
+        }
 
         // Merge: database items take precedence, add any local-only items
         const mergedCart = [...dbData.cart];
