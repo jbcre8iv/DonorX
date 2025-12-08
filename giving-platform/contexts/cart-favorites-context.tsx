@@ -465,10 +465,11 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     const initialize = async () => {
       setIsLoading(true);
 
-      // Check if user is logged in FIRST before loading localStorage
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        // Check if user is logged in FIRST before loading localStorage
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
       // If no user, just set empty state (don't load from localStorage)
       // The data will persist in the database for when they log back in
@@ -674,6 +675,10 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       channels.push(draftsChannel);
 
       setIsLoading(false);
+      } catch (error) {
+        console.error("Error initializing cart/favorites:", error);
+        setIsLoading(false);
+      }
     };
 
     initialize();
