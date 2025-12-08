@@ -50,6 +50,10 @@ export async function generateQuarterlyReport(
   const supabase = await createClient();
   const { start, end } = getQuarterDates(quarter, year);
 
+  console.log(`[QuarterlyReport] Generating report for Q${quarter} ${year}`);
+  console.log(`[QuarterlyReport] Date range: ${start.toISOString()} to ${end.toISOString()}`);
+  console.log(`[QuarterlyReport] User ID: ${userId}`);
+
   // Get user's donations for this quarter
   const { data: donations, error: donationsError } = await supabase
     .from("donations")
@@ -57,6 +61,7 @@ export async function generateQuarterlyReport(
       id,
       amount_cents,
       created_at,
+      status,
       allocations (
         id,
         amount_cents,
@@ -73,6 +78,12 @@ export async function generateQuarterlyReport(
     .gte("created_at", start.toISOString())
     .lte("created_at", end.toISOString())
     .order("created_at", { ascending: false });
+
+  console.log(`[QuarterlyReport] Query error:`, donationsError);
+  console.log(`[QuarterlyReport] Donations found:`, donations?.length ?? 0);
+  if (donations && donations.length > 0) {
+    console.log(`[QuarterlyReport] First donation:`, donations[0]);
+  }
 
   if (donationsError || !donations || donations.length === 0) {
     return null;
