@@ -61,7 +61,14 @@ export default async function QuarterlyReportsPage({
   }
 
   // Generate report for selected quarter
-  const report = await generateQuarterlyReport(user.id, selectedQuarter, selectedYear);
+  let report = null;
+  let reportError: string | null = null;
+  try {
+    report = await generateQuarterlyReport(user.id, selectedQuarter, selectedYear);
+  } catch (err) {
+    reportError = err instanceof Error ? err.message : String(err);
+    console.error("[Reports Page] Error generating report:", err);
+  }
 
   return (
     <div className="space-y-6">
@@ -109,6 +116,7 @@ export default async function QuarterlyReportsPage({
           <p>Selected: Q{selectedQuarter} {selectedYear}</p>
           <p>User ID: {user.id}</p>
           <p>Report found: {report ? "Yes" : "No"}</p>
+          {reportError && <p className="text-red-600">Error: {reportError}</p>}
           {report && (
             <>
               <p>Donations: {report.donationCount}</p>
