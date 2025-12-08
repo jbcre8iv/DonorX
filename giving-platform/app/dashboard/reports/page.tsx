@@ -101,6 +101,22 @@ export default async function QuarterlyReportsPage({
         </CardContent>
       </Card>
 
+      {/* Debug Info - remove after fixing */}
+      <Card className="bg-amber-50 border-amber-200">
+        <CardContent className="p-4 text-sm font-mono">
+          <p className="font-bold text-amber-800 mb-2">Debug Info:</p>
+          <p>Selected: Q{selectedQuarter} {selectedYear}</p>
+          <p>User ID: {user.id}</p>
+          <p>Report found: {report ? "Yes" : "No"}</p>
+          {report && (
+            <>
+              <p>Donations: {report.donationCount}</p>
+              <p>Total: ${(report.totalDonated / 100).toFixed(2)}</p>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Report Content */}
       {report ? (
         <>
