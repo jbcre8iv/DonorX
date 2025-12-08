@@ -71,15 +71,21 @@ const styles = StyleSheet.create({
   allocationItem: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 8,
     paddingHorizontal: 12,
     backgroundColor: "#f8fafc",
     marginBottom: 4,
     borderRadius: 4,
   },
-  allocationName: {
+  allocationLeft: {
     flex: 1,
+    paddingRight: 10,
+  },
+  allocationName: {
     color: "#334155",
+    fontSize: 11,
+    marginBottom: 2,
   },
   allocationCategory: {
     fontSize: 9,
@@ -88,12 +94,13 @@ const styles = StyleSheet.create({
   allocationAmount: {
     fontWeight: "bold",
     color: "#0f172a",
-    width: 80,
+    width: 100,
     textAlign: "right",
+    fontSize: 11,
   },
   allocationPercent: {
     color: "#64748b",
-    width: 50,
+    width: 40,
     textAlign: "right",
     fontSize: 10,
   },
@@ -278,7 +285,7 @@ export function QuarterlyReportPDF({ data }: { data: QuarterlyReportData }) {
           {data.allocations.slice(0, 8).map((allocation, index) => (
             <View key={index}>
               <View style={styles.allocationItem}>
-                <View style={{ flex: 1 }}>
+                <View style={styles.allocationLeft}>
                   <Text style={styles.allocationName}>{allocation.nonprofitName}</Text>
                   <Text style={styles.allocationCategory}>{allocation.category}</Text>
                 </View>
