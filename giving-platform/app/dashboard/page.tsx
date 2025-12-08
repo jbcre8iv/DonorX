@@ -243,7 +243,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const thisYearDonations = filteredDonations.filter(
     (d) => new Date(d.created_at).getFullYear() === currentYear
   );
-  // Last year donations - apply same category/nonprofit filters for consistent comparison
+  // Last year donations - apply same filters for consistent comparison
   let lastYearDonations = completedDonations.filter(
     (d) => new Date(d.created_at).getFullYear() === currentYear - 1
   );
@@ -259,6 +259,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     lastYearDonations = lastYearDonations.filter((d) =>
       d.allocations?.some((a) => a.nonprofit_id && nonprofitFilter.includes(a.nonprofit_id))
     );
+  }
+  // Amount filter for last year
+  if (minAmountFilter !== null || maxAmountFilter !== null) {
+    lastYearDonations = lastYearDonations.filter((d) => {
+      const amountDollars = d.amount_cents / 100;
+      if (minAmountFilter !== null && amountDollars < minAmountFilter) return false;
+      if (maxAmountFilter !== null && amountDollars > maxAmountFilter) return false;
+      return true;
+    });
   }
 
   // Stats values for animated grid
