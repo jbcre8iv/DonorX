@@ -92,7 +92,9 @@ export async function generateQuarterlyReport(
         nonprofit:nonprofits (
           id,
           name,
-          category
+          category:categories (
+            name
+          )
         )
       )
     `)
@@ -134,7 +136,7 @@ export async function generateQuarterlyReport(
       id: string;
       amount_cents: number;
       nonprofit_id: string;
-      nonprofit: { id: string; name: string; category: string } | { id: string; name: string; category: string }[];
+      nonprofit: { id: string; name: string; category: { name: string } | { name: string }[] | null } | { id: string; name: string; category: { name: string } | { name: string }[] | null }[];
     }>;
 
     for (const allocation of allocations || []) {
@@ -144,6 +146,12 @@ export async function generateQuarterlyReport(
 
       if (!nonprofit) continue;
 
+      // Handle category which is a nested relation
+      const categoryData = nonprofit.category;
+      const categoryName = categoryData
+        ? (Array.isArray(categoryData) ? categoryData[0]?.name : categoryData.name) || "Uncategorized"
+        : "Uncategorized";
+
       const existing = allocationMap.get(nonprofit.id);
       if (existing) {
         existing.totalAmount += allocation.amount_cents;
@@ -152,7 +160,7 @@ export async function generateQuarterlyReport(
         allocationMap.set(nonprofit.id, {
           nonprofitId: nonprofit.id,
           nonprofitName: nonprofit.name,
-          category: nonprofit.category,
+          category: categoryName,
           totalAmount: allocation.amount_cents,
           donationCount: 1,
           percentage: 0,
