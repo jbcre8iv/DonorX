@@ -469,9 +469,17 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       try {
         // Check if user is logged in FIRST before loading localStorage
         console.log("[CartFavorites] Checking auth...");
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+
+        // Add timeout to auth check to prevent hanging
+        const authPromise = supabase.auth.getUser();
+        const timeoutPromise = new Promise<{ data: { user: null } }>((resolve) =>
+          setTimeout(() => {
+            console.warn("[CartFavorites] Auth check timed out after 5s");
+            resolve({ data: { user: null } });
+          }, 5000)
+        );
+
+        const { data: { user } } = await Promise.race([authPromise, timeoutPromise]);
         console.log("[CartFavorites] Auth check complete, user:", user?.id ? "logged in" : "not logged in");
 
       // If no user, just set empty state (don't load from localStorage)
