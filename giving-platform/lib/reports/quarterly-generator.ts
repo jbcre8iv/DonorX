@@ -60,23 +60,6 @@ export async function generateQuarterlyReport(
   const supabase = createAdminClient();
   const { start, end } = getQuarterDates(quarter, year);
 
-  console.log(`[QuarterlyReport] Generating report for Q${quarter} ${year}`);
-  console.log(`[QuarterlyReport] Date range: ${start.toISOString()} to ${end.toISOString()}`);
-  console.log(`[QuarterlyReport] User ID: ${userId}`);
-
-  // First, let's check if we can see ANY donations for this user (no filters)
-  const { data: allUserDonations, error: checkError } = await supabase
-    .from("donations")
-    .select("id, status, created_at, amount_cents")
-    .eq("user_id", userId)
-    .limit(5);
-
-  console.log(`[QuarterlyReport] Check query - all user donations:`, allUserDonations?.length ?? 0);
-  console.log(`[QuarterlyReport] Check query error:`, checkError);
-  if (allUserDonations && allUserDonations.length > 0) {
-    console.log(`[QuarterlyReport] Sample donations:`, allUserDonations);
-  }
-
   // Get user's donations for this quarter
   const { data: donations, error: donationsError } = await supabase
     .from("donations")
@@ -104,22 +87,14 @@ export async function generateQuarterlyReport(
     .lte("created_at", end.toISOString())
     .order("created_at", { ascending: false });
 
-  console.log(`[QuarterlyReport] Query error:`, donationsError);
-  console.log(`[QuarterlyReport] Donations found:`, donations?.length ?? 0);
-  if (donations && donations.length > 0) {
-    console.log(`[QuarterlyReport] First donation:`, donations[0]);
-  }
-
   if (donationsError || !donations || donations.length === 0) {
-    // Return debug info as part of error to see on frontend
-    console.log(`[QuarterlyReport] Returning null - error: ${donationsError?.message}, count: ${donations?.length}`);
     return {
       report: null,
       debug: {
-        allUserDonationsCount: allUserDonations?.length ?? 0,
+        allUserDonationsCount: 0,
         filteredDonationsCount: donations?.length ?? 0,
         queryError: donationsError?.message ?? null,
-        checkError: checkError?.message ?? null,
+        checkError: null,
       },
     };
   }
@@ -229,10 +204,10 @@ export async function generateQuarterlyReport(
       impactHighlights,
     },
     debug: {
-      allUserDonationsCount: allUserDonations?.length ?? 0,
+      allUserDonationsCount: 0,
       filteredDonationsCount: donations?.length ?? 0,
       queryError: null,
-      checkError: checkError?.message ?? null,
+      checkError: null,
     },
   };
 }

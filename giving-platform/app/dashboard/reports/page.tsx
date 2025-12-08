@@ -8,10 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   generateQuarterlyReport,
   getAvailableQuarters,
-  formatQuarterlyReportAsText,
 } from "@/lib/reports/quarterly-generator";
 import { formatCurrency } from "@/lib/utils";
-import { DebugDonations } from "./debug-donations";
 
 export const metadata = {
   title: "Quarterly Reports",
@@ -61,17 +59,7 @@ export default async function QuarterlyReportsPage({
   }
 
   // Generate report for selected quarter
-  let report = null;
-  let reportError: string | null = null;
-  let serverDebug: { allUserDonationsCount: number; filteredDonationsCount: number; queryError: string | null; checkError: string | null } | null = null;
-  try {
-    const result = await generateQuarterlyReport(user.id, selectedQuarter, selectedYear);
-    report = result.report;
-    serverDebug = result.debug;
-  } catch (err) {
-    reportError = err instanceof Error ? err.message : String(err);
-    console.error("[Reports Page] Error generating report:", err);
-  }
+  const { report } = await generateQuarterlyReport(user.id, selectedQuarter, selectedYear);
 
   return (
     <div className="space-y-6">
@@ -109,33 +97,6 @@ export default async function QuarterlyReportsPage({
               );
             })}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Debug Info - remove after fixing */}
-      <Card className="bg-amber-50 border-amber-200">
-        <CardContent className="p-4 text-sm font-mono">
-          <p className="font-bold text-amber-800 mb-2">Debug Info:</p>
-          <p>Selected: Q{selectedQuarter} {selectedYear}</p>
-          <p>User ID: {user.id}</p>
-          <p>Report found: {report ? "Yes" : "No"}</p>
-          {reportError && <p className="text-red-600">Error: {reportError}</p>}
-          {serverDebug && (
-            <div className="mt-2 pt-2 border-t border-amber-300">
-              <p className="font-bold">Server Query Debug:</p>
-              <p>All user donations (admin client): {serverDebug.allUserDonationsCount}</p>
-              <p>Filtered Q{selectedQuarter} donations: {serverDebug.filteredDonationsCount}</p>
-              {serverDebug.checkError && <p className="text-red-600">Check error: {serverDebug.checkError}</p>}
-              {serverDebug.queryError && <p className="text-red-600">Query error: {serverDebug.queryError}</p>}
-            </div>
-          )}
-          {report && (
-            <>
-              <p>Donations: {report.donationCount}</p>
-              <p>Total: ${(report.totalDonated / 100).toFixed(2)}</p>
-            </>
-          )}
-          <DebugDonations userId={user.id} quarter={selectedQuarter} year={selectedYear} />
         </CardContent>
       </Card>
 
