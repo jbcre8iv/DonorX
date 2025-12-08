@@ -469,6 +469,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         // Use getSession instead of getUser - it's faster and doesn't make a network request
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user ?? null;
+        console.log("[CartFavorites] Session check:", user ? "logged in" : "not logged in");
 
       // If no user, just set empty state (don't load from localStorage)
       // The data will persist in the database for when they log back in
@@ -500,8 +501,17 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
         ? JSON.parse(storedFavorites)
         : [];
 
-      // Fetch from database
-      const dbData = await fetchFromDatabase(user.id);
+      // Fetch from database with timeout
+      console.log("[CartFavorites] Fetching from database...");
+      const dbDataPromise = fetchFromDatabase(user.id);
+      const timeoutPromise = new Promise<{ cart: CartItem[]; favorites: FavoriteItem[]; draft: DonationDraft | null }>((resolve) =>
+        setTimeout(() => {
+          console.warn("[CartFavorites] Database fetch timed out after 10s");
+          resolve({ cart: [], favorites: [], draft: null });
+        }, 10000)
+      );
+      const dbData = await Promise.race([dbDataPromise, timeoutPromise]);
+      console.log("[CartFavorites] Database fetch complete");
 
       // Merge: database items take precedence, add any local-only items
       const mergedCart = [...dbData.cart];
