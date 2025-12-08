@@ -101,14 +101,6 @@ export default async function DonationDetailPage({ params }: DonationDetailPageP
             {formatDate(donation.created_at)}
           </p>
         </div>
-        {donation.status === "completed" && (
-          <Button asChild>
-            <Link href={`/dashboard/receipts?donation=${donation.id}`}>
-              <Download className="mr-2 h-4 w-4" />
-              Download Receipt
-            </Link>
-          </Button>
-        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
