@@ -38,7 +38,7 @@ export default async function QuarterlyReportPreviewPage({
   const year = params.year ? parseInt(params.year, 10) : new Date().getFullYear();
 
   // Generate the report
-  const report = await generateQuarterlyReport(user.id, quarter, year);
+  const { report } = await generateQuarterlyReport(user.id, quarter, year);
 
   if (!report) {
     notFound();

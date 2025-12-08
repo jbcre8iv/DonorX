@@ -63,8 +63,11 @@ export default async function QuarterlyReportsPage({
   // Generate report for selected quarter
   let report = null;
   let reportError: string | null = null;
+  let serverDebug: { allUserDonationsCount: number; filteredDonationsCount: number; queryError: string | null; checkError: string | null } | null = null;
   try {
-    report = await generateQuarterlyReport(user.id, selectedQuarter, selectedYear);
+    const result = await generateQuarterlyReport(user.id, selectedQuarter, selectedYear);
+    report = result.report;
+    serverDebug = result.debug;
   } catch (err) {
     reportError = err instanceof Error ? err.message : String(err);
     console.error("[Reports Page] Error generating report:", err);
@@ -117,6 +120,15 @@ export default async function QuarterlyReportsPage({
           <p>User ID: {user.id}</p>
           <p>Report found: {report ? "Yes" : "No"}</p>
           {reportError && <p className="text-red-600">Error: {reportError}</p>}
+          {serverDebug && (
+            <div className="mt-2 pt-2 border-t border-amber-300">
+              <p className="font-bold">Server Query Debug:</p>
+              <p>All user donations (admin client): {serverDebug.allUserDonationsCount}</p>
+              <p>Filtered Q{selectedQuarter} donations: {serverDebug.filteredDonationsCount}</p>
+              {serverDebug.checkError && <p className="text-red-600">Check error: {serverDebug.checkError}</p>}
+              {serverDebug.queryError && <p className="text-red-600">Query error: {serverDebug.queryError}</p>}
+            </div>
+          )}
           {report && (
             <>
               <p>Donations: {report.donationCount}</p>

@@ -13,6 +13,16 @@ export interface QuarterlyReportData {
   impactHighlights: ImpactHighlight[];
 }
 
+export interface QuarterlyReportResult {
+  report: QuarterlyReportData | null;
+  debug: {
+    allUserDonationsCount: number;
+    filteredDonationsCount: number;
+    queryError: string | null;
+    checkError: string | null;
+  };
+}
+
 interface AllocationSummary {
   nonprofitId: string;
   nonprofitName: string;
@@ -46,13 +56,26 @@ export async function generateQuarterlyReport(
   userId: string,
   quarter: number,
   year: number
-): Promise<QuarterlyReportData | null> {
+): Promise<QuarterlyReportResult> {
   const supabase = createAdminClient();
   const { start, end } = getQuarterDates(quarter, year);
 
   console.log(`[QuarterlyReport] Generating report for Q${quarter} ${year}`);
   console.log(`[QuarterlyReport] Date range: ${start.toISOString()} to ${end.toISOString()}`);
   console.log(`[QuarterlyReport] User ID: ${userId}`);
+
+  // First, let's check if we can see ANY donations for this user (no filters)
+  const { data: allUserDonations, error: checkError } = await supabase
+    .from("donations")
+    .select("id, status, created_at, amount_cents")
+    .eq("user_id", userId)
+    .limit(5);
+
+  console.log(`[QuarterlyReport] Check query - all user donations:`, allUserDonations?.length ?? 0);
+  console.log(`[QuarterlyReport] Check query error:`, checkError);
+  if (allUserDonations && allUserDonations.length > 0) {
+    console.log(`[QuarterlyReport] Sample donations:`, allUserDonations);
+  }
 
   // Get user's donations for this quarter
   const { data: donations, error: donationsError } = await supabase
@@ -86,7 +109,17 @@ export async function generateQuarterlyReport(
   }
 
   if (donationsError || !donations || donations.length === 0) {
-    return null;
+    // Return debug info as part of error to see on frontend
+    console.log(`[QuarterlyReport] Returning null - error: ${donationsError?.message}, count: ${donations?.length}`);
+    return {
+      report: null,
+      debug: {
+        allUserDonationsCount: allUserDonations?.length ?? 0,
+        filteredDonationsCount: donations?.length ?? 0,
+        queryError: donationsError?.message ?? null,
+        checkError: checkError?.message ?? null,
+      },
+    };
   }
 
   // Calculate totals
@@ -176,15 +209,23 @@ export async function generateQuarterlyReport(
   });
 
   return {
-    quarter: getQuarterLabel(quarter),
-    year,
-    startDate: start,
-    endDate: end,
-    totalDonated,
-    donationCount,
-    nonprofitsSupported,
-    allocations,
-    impactHighlights,
+    report: {
+      quarter: getQuarterLabel(quarter),
+      year,
+      startDate: start,
+      endDate: end,
+      totalDonated,
+      donationCount,
+      nonprofitsSupported,
+      allocations,
+      impactHighlights,
+    },
+    debug: {
+      allUserDonationsCount: allUserDonations?.length ?? 0,
+      filteredDonationsCount: donations?.length ?? 0,
+      queryError: null,
+      checkError: checkError?.message ?? null,
+    },
   };
 }
 
