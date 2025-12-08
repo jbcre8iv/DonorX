@@ -5,7 +5,6 @@ import {
   Heart,
   Tag,
   Building2,
-  Globe,
   HandHeart,
   ArrowRight,
   Check,
@@ -14,6 +13,8 @@ import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { NonprofitCard } from "@/components/directory/nonprofit-card";
+import type { Nonprofit } from "@/types/database";
 
 export default function FavoritesPage() {
   const {
@@ -52,6 +53,22 @@ export default function FavoritesPage() {
 
   const nonprofitFavorites = favorites.filter((f) => f.nonprofitId);
   const categoryFavorites = favorites.filter((f) => f.categoryId);
+
+  // Transform favorites to Nonprofit type for NonprofitCard
+  const transformToNonprofit = (item: (typeof favorites)[0]): Nonprofit => ({
+    id: item.nonprofitId || "",
+    name: item.nonprofit?.name || "Unknown",
+    ein: null,
+    mission: item.nonprofit?.mission || null,
+    description: null,
+    logo_url: item.nonprofit?.logoUrl || null,
+    website: null,
+    category_id: null,
+    status: "approved" as const,
+    featured: false,
+    created_at: item.createdAt || new Date().toISOString(),
+    approved_at: null,
+  });
 
   if (isLoading) {
     return (
@@ -138,69 +155,12 @@ export default function FavoritesPage() {
             Nonprofits ({nonprofitFavorites.length})
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {nonprofitFavorites.map((item) => {
-              const inDraft = isInDraft(item.nonprofitId);
-              return (
-                <Card key={item.id} className="flex flex-col h-full group hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <Link href={`/directory/${item.nonprofitId}`} className="flex items-center gap-3 flex-1 min-w-0">
-                        {item.nonprofit?.logoUrl ? (
-                          <img
-                            src={item.nonprofit.logoUrl}
-                            alt={`${item.nonprofit.name} logo`}
-                            className="h-12 w-12 rounded-lg object-contain flex-shrink-0"
-                          />
-                        ) : (
-                          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100 text-slate-600 font-semibold text-lg flex-shrink-0">
-                            {item.nonprofit?.name?.charAt(0) || "?"}
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <h3 className="font-semibold text-slate-900 line-clamp-1 group-hover:text-blue-700 transition-colors">
-                            {item.nonprofit?.name}
-                          </h3>
-                        </div>
-                      </Link>
-                      <button
-                        onClick={() => removeFromFavorites(item.id)}
-                        className="h-9 w-9 flex items-center justify-center rounded-xl border text-pink-500 bg-pink-50 border-pink-200 hover:bg-pink-100 hover:shadow-md transition-all cursor-pointer flex-shrink-0"
-                        title="Remove from favorites"
-                      >
-                        <Heart className="h-4 w-4 fill-current" />
-                      </button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-1 flex flex-col">
-                    <p className="text-sm text-slate-600 line-clamp-3 flex-1">
-                      {item.nonprofit?.mission || "No description available."}
-                    </p>
-
-                    <div className="mt-4 flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        className={`flex-1 ${inDraft ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
-                        onClick={() => handleToggleDonate(item)}
-                      >
-                        {inDraft ? (
-                          <>
-                            <Check className="h-3.5 w-3.5 mr-1.5" />
-                            Added
-                          </>
-                        ) : (
-                          "Donate"
-                        )}
-                      </Button>
-                      <Button variant="outline" size="sm" className="h-9 w-9 p-0 rounded-xl" asChild>
-                        <Link href={`/directory/${item.nonprofitId}`}>
-                          <Globe className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {nonprofitFavorites.map((item) => (
+              <NonprofitCard
+                key={item.id}
+                nonprofit={transformToNonprofit(item)}
+              />
+            ))}
           </div>
         </div>
       )}
