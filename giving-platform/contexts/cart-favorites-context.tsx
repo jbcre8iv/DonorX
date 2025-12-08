@@ -210,53 +210,71 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
   );
 
   // Fetch from database for logged-in users with built-in timeout
-  const fetchFromDatabase = useCallback(async (uid: string, timeoutMs = 10000) => {
+  const fetchFromDatabase = useCallback(async (uid: string, timeoutMs = 8000) => {
     console.log("[CartFavorites] fetchFromDatabase starting for user:", uid);
     const startTime = Date.now();
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    // Helper to wrap a promise with a timeout
+    const withTimeout = <T,>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
+      return Promise.race([
+        promise,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+        ),
+      ]);
+    };
 
     try {
-      // Fetch cart items and favorites in parallel
-      const cartPromise = supabase
-        .from("cart_items")
-        .select(`
-          id,
-          nonprofit_id,
-          category_id,
-          percentage,
-          created_at,
-          nonprofits:nonprofit_id (id, name, logo_url, mission),
-          categories:category_id (id, name, icon)
-        `)
-        .eq("user_id", uid)
-        .abortSignal(controller.signal);
+      // Fetch cart items and favorites in parallel with individual timeouts
+      // Wrap with Promise.resolve() to convert Supabase PromiseLike to proper Promise
+      const cartPromise = withTimeout(
+        Promise.resolve(
+          supabase
+            .from("cart_items")
+            .select(`
+              id,
+              nonprofit_id,
+              category_id,
+              percentage,
+              created_at,
+              nonprofits:nonprofit_id (id, name, logo_url, mission),
+              categories:category_id (id, name, icon)
+            `)
+            .eq("user_id", uid)
+        ),
+        timeoutMs,
+        "Cart query"
+      );
 
-      const favoritesPromise = supabase
-        .from("user_favorites")
-        .select(`
-          id,
-          nonprofit_id,
-          category_id,
-          created_at,
-          nonprofits:nonprofit_id (id, name, logo_url, mission, website),
-          categories:category_id (id, name, icon)
-        `)
-        .eq("user_id", uid)
-        .abortSignal(controller.signal);
+      const favoritesPromise = withTimeout(
+        Promise.resolve(
+          supabase
+            .from("user_favorites")
+            .select(`
+              id,
+              nonprofit_id,
+              category_id,
+              created_at,
+              nonprofits:nonprofit_id (id, name, logo_url, mission, website),
+              categories:category_id (id, name, icon)
+            `)
+            .eq("user_id", uid)
+        ),
+        timeoutMs,
+        "Favorites query"
+      );
 
       // Run cart and favorites queries in parallel
       const [cartResult, favoritesResult] = await Promise.all([cartPromise, favoritesPromise]);
-      clearTimeout(timeoutId);
 
-      const dbCartItems = cartResult.data;
-      const dbFavorites = favoritesResult.data;
+      const dbCartItems = (cartResult as any).data;
+      const dbFavorites = (favoritesResult as any).data;
 
       console.log("[CartFavorites] Queries completed in", Date.now() - startTime, "ms");
       console.log("[CartFavorites] Cart items:", dbCartItems?.length ?? 0, "Favorites:", dbFavorites?.length ?? 0);
 
-      if (cartResult.error) console.error("[CartFavorites] Cart query error:", cartResult.error);
-      if (favoritesResult.error) console.error("[CartFavorites] Favorites query error:", favoritesResult.error);
+      if ((cartResult as any).error) console.error("[CartFavorites] Cart query error:", (cartResult as any).error);
+      if ((favoritesResult as any).error) console.error("[CartFavorites] Favorites query error:", (favoritesResult as any).error);
 
       // Transform database format to our format
       const transformedCart: CartItem[] = (dbCartItems || []).map((item: any) => ({
@@ -308,12 +326,18 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
       );
 
       // Fetch donation draft
-      const { data: dbDraft } = await supabase
-        .from("donation_drafts")
-        .select("*")
-        .eq("user_id", uid)
-        .abortSignal(controller.signal)
-        .single();
+      const draftResult = await withTimeout(
+        Promise.resolve(
+          supabase
+            .from("donation_drafts")
+            .select("*")
+            .eq("user_id", uid)
+            .single()
+        ),
+        timeoutMs,
+        "Draft query"
+      );
+      const dbDraft = (draftResult as any).data;
 
       const transformedDraft: DonationDraft | null = dbDraft
         ? {
@@ -334,12 +358,7 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
 
       return { cart: transformedCart, favorites: transformedFavorites, draft: transformedDraft };
     } catch (error: any) {
-      clearTimeout(timeoutId);
-      if (error?.name === 'AbortError') {
-        console.error("[CartFavorites] Database fetch aborted (timeout)");
-      } else {
-        console.error("[CartFavorites] Error fetching from database:", error);
-      }
+      console.error("[CartFavorites] Error fetching from database:", error?.message || error);
       return { cart: [], favorites: [], draft: null };
     }
   }, [supabase]);
