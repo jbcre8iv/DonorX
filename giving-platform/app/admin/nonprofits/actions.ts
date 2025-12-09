@@ -76,8 +76,9 @@ export async function deleteNonprofit(nonprofitId: string) {
 
   if (allocations && allocations.length > 0) {
     // Check if any allocations are from real (non-simulated) donations
+    // Supabase returns single relations as objects, but TypeScript thinks it's an array
     const hasRealDonations = allocations.some((alloc) => {
-      const donation = alloc.donation as { id: string; is_simulated: boolean } | null;
+      const donation = alloc.donation as unknown as { id: string; is_simulated: boolean } | null;
       return donation && !donation.is_simulated;
     });
 
@@ -90,7 +91,7 @@ export async function deleteNonprofit(nonprofitId: string) {
     const simulatedDonationIds = [...new Set(
       allocations
         .filter((alloc) => {
-          const donation = alloc.donation as { id: string; is_simulated: boolean } | null;
+          const donation = alloc.donation as unknown as { id: string; is_simulated: boolean } | null;
           return donation?.is_simulated;
         })
         .map((alloc) => alloc.donation_id)
