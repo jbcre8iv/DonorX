@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Download, FileText, Calendar, CreditCard, TestTube, Eye } from "lucide-react";
+import { Download, FileText, Calendar, CreditCard, Eye } from "lucide-react";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { config } from "@/lib/config";
+import { ReceiptsFilters } from "./receipts-filters";
 
 export const metadata = {
   title: "Tax Receipts",
@@ -26,7 +27,17 @@ async function isSimulationMode(): Promise<boolean> {
   }
 }
 
-export default async function ReceiptsPage() {
+interface ReceiptsPageProps {
+  searchParams: Promise<{
+    year?: string;
+    nonprofit?: string;
+    sort?: string;
+    q?: string;
+  }>;
+}
+
+export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) {
+  const params = await searchParams;
   const supabase = await createClient();
   const simulationMode = await isSimulationMode();
 
@@ -54,17 +65,89 @@ export default async function ReceiptsPage() {
     .eq("status", "completed")
     .order("completed_at", { ascending: false });
 
-  const completedDonations = donations || [];
+  let completedDonations = donations || [];
 
-  // Calculate annual stats
+  // Get all unique nonprofit names for filter dropdown
+  const allNonprofitNames = new Set<string>();
+  completedDonations.forEach((d) => {
+    d.allocations?.forEach((a: { nonprofit?: { name: string } | null }) => {
+      if (a.nonprofit?.name) {
+        allNonprofitNames.add(a.nonprofit.name);
+      }
+    });
+  });
+  const nonprofitsList = Array.from(allNonprofitNames).sort();
+
+  // Get all years for filter dropdown (before filtering)
+  const allYears = [...new Set(completedDonations.map((d) =>
+    new Date(d.completed_at || d.created_at).getFullYear()
+  ))].sort((a, b) => b - a);
+
+  // Apply year filter
+  if (params.year && params.year !== "all") {
+    const filterYear = parseInt(params.year);
+    completedDonations = completedDonations.filter(
+      (d) => new Date(d.completed_at || d.created_at).getFullYear() === filterYear
+    );
+  }
+
+  // Apply nonprofit filter
+  if (params.nonprofit && params.nonprofit !== "all") {
+    completedDonations = completedDonations.filter((d) =>
+      d.allocations?.some(
+        (a: { nonprofit?: { name: string } | null }) =>
+          a.nonprofit?.name === params.nonprofit
+      )
+    );
+  }
+
+  // Apply search filter
+  if (params.q) {
+    const searchLower = params.q.toLowerCase();
+    completedDonations = completedDonations.filter((d) => {
+      // Search in nonprofit names
+      const matchesNonprofit = d.allocations?.some(
+        (a: { nonprofit?: { name: string } | null; category?: { name: string } | null }) =>
+          a.nonprofit?.name?.toLowerCase().includes(searchLower) ||
+          a.category?.name?.toLowerCase().includes(searchLower)
+      );
+      // Search in amount (formatted)
+      const amountStr = formatCurrency(d.amount_cents).toLowerCase();
+      const matchesAmount = amountStr.includes(searchLower);
+      // Search in raw amount number
+      const matchesRawAmount = d.amount_cents.toString().includes(params.q!);
+      return matchesNonprofit || matchesAmount || matchesRawAmount;
+    });
+  }
+
+  // Apply sorting
+  const sortOrder = params.sort || "newest";
+  completedDonations = [...completedDonations].sort((a, b) => {
+    switch (sortOrder) {
+      case "oldest":
+        return new Date(a.completed_at || a.created_at).getTime() -
+               new Date(b.completed_at || b.created_at).getTime();
+      case "amount-high":
+        return b.amount_cents - a.amount_cents;
+      case "amount-low":
+        return a.amount_cents - b.amount_cents;
+      case "newest":
+      default:
+        return new Date(b.completed_at || b.created_at).getTime() -
+               new Date(a.completed_at || a.created_at).getTime();
+    }
+  });
+
+  // Calculate annual stats (use all donations, not filtered)
   const currentYear = new Date().getFullYear();
-  const thisYearDonations = completedDonations.filter(
+  const allDonations = donations || [];
+  const thisYearDonations = allDonations.filter(
     (d) => new Date(d.completed_at || d.created_at).getFullYear() === currentYear
   );
   const totalThisYear = thisYearDonations.reduce((sum, d) => sum + d.amount_cents, 0);
 
-  // Group by year for annual summary
-  const donationsByYear = completedDonations.reduce((acc, d) => {
+  // Group by year for annual summary (use all donations)
+  const donationsByYear = allDonations.reduce((acc, d) => {
     const year = new Date(d.completed_at || d.created_at).getFullYear();
     if (!acc[year]) {
       acc[year] = { donations: [], total: 0 };
@@ -72,11 +155,14 @@ export default async function ReceiptsPage() {
     acc[year].donations.push(d);
     acc[year].total += d.amount_cents;
     return acc;
-  }, {} as Record<number, { donations: typeof completedDonations; total: number }>);
+  }, {} as Record<number, { donations: typeof allDonations; total: number }>);
 
   const years = Object.keys(donationsByYear)
     .map(Number)
     .sort((a, b) => b - a);
+
+  // Check if any filters are active
+  const hasActiveFilters = params.year || params.nonprofit || params.q || (params.sort && params.sort !== "newest");
 
   return (
     <div className="space-y-6">
@@ -124,16 +210,49 @@ export default async function ReceiptsPage() {
 
       {/* Individual Receipts */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-4">
           <CardTitle>Individual Donation Receipts</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Filters */}
+          <ReceiptsFilters years={allYears} nonprofits={nonprofitsList} />
+
+          {/* Results count */}
+          <div className="flex items-center justify-between text-sm text-slate-500 border-t border-slate-100 pt-4">
+            <span>
+              {completedDonations.length} receipt{completedDonations.length !== 1 ? "s" : ""}
+              {hasActiveFilters && " found"}
+            </span>
+            {hasActiveFilters && (
+              <Link
+                href="/dashboard/receipts"
+                className="text-blue-600 hover:text-blue-700"
+              >
+                Clear filters
+              </Link>
+            )}
+          </div>
+
           {completedDonations.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-slate-500">No completed donations yet.</p>
-              <p className="text-sm text-slate-400 mt-1">
-                Receipts will appear here after your donations are processed.
-              </p>
+              {hasActiveFilters ? (
+                <>
+                  <p className="text-slate-500">No receipts match your filters.</p>
+                  <Link
+                    href="/dashboard/receipts"
+                    className="text-sm text-blue-600 hover:text-blue-700 mt-2 inline-block"
+                  >
+                    Clear filters to see all receipts
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <p className="text-slate-500">No completed donations yet.</p>
+                  <p className="text-sm text-slate-400 mt-1">
+                    Receipts will appear here after your donations are processed.
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
