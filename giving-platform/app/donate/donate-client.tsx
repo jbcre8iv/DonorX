@@ -168,11 +168,22 @@ export function DonateClient({
     lockedIdsRef.current = donationDraft?.lockedIds;
   }, [donationDraft?.lockedIds]);
 
+  // Track if we've ever had a draft loaded to distinguish "cleared" vs "never existed"
+  const hadDraftRef = React.useRef(false);
+
+  // Update hadDraftRef when we load from draft
+  React.useEffect(() => {
+    if (loadedFromDraft && donationDraft) {
+      hadDraftRef.current = true;
+    }
+  }, [loadedFromDraft, donationDraft]);
+
   // Redirect when draft is cleared externally (e.g., from "Clear & Start Over" on another device)
-  // Only redirect if the allocations were originally loaded from a draft
+  // Only redirect if the allocations were originally loaded from a draft AND we've confirmed a draft existed
   // Don't redirect if user is proceeding to payment (they cleared draft intentionally)
   React.useEffect(() => {
-    if (draftLoaded && loadedFromDraft && donationDraft === null && allocations.length > 0 && !proceedingToPaymentRef.current) {
+    // Must have previously loaded from draft AND confirmed draft existed
+    if (draftLoaded && loadedFromDraft && hadDraftRef.current && donationDraft === null && allocations.length > 0 && !proceedingToPaymentRef.current) {
       // Draft was cleared externally - redirect to directory
       console.log('[Donate] Draft cleared on another device, redirecting to directory');
       router.push('/directory');
@@ -321,7 +332,8 @@ export function DonateClient({
     if (!draftLoaded) return;
 
     // If all allocations were removed, clear draft and redirect to directory
-    if (allocations.length === 0 && loadedFromDraft && !proceedingToPaymentRef.current) {
+    // Only redirect if we confirmed a draft actually existed (not just initial empty state)
+    if (allocations.length === 0 && loadedFromDraft && hadDraftRef.current && !proceedingToPaymentRef.current) {
       clearDonationDraft();
       router.push('/directory');
       return;
