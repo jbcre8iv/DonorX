@@ -64,17 +64,64 @@ export async function deleteNonprofit(nonprofitId: string) {
   // Use admin client to bypass RLS for admin operations
   const adminSupabase = createAdminClient();
 
-  // First check if there are any allocations to this nonprofit
+  // Check for allocations to this nonprofit and whether they're from simulated donations
   const { data: allocations } = await adminSupabase
     .from("allocations")
-    .select("id")
-    .eq("nonprofit_id", nonprofitId)
-    .limit(1);
+    .select(`
+      id,
+      donation_id,
+      donation:donations(id, is_simulated)
+    `)
+    .eq("nonprofit_id", nonprofitId);
 
   if (allocations && allocations.length > 0) {
-    return { error: "Cannot delete nonprofit with existing donations" };
+    // Check if any allocations are from real (non-simulated) donations
+    const hasRealDonations = allocations.some((alloc) => {
+      const donation = alloc.donation as { id: string; is_simulated: boolean } | null;
+      return donation && !donation.is_simulated;
+    });
+
+    if (hasRealDonations) {
+      return { error: "Cannot delete nonprofit with real donations. Only nonprofits with simulated donations can be deleted." };
+    }
+
+    // All donations are simulated - delete them
+    // First, get unique donation IDs
+    const simulatedDonationIds = [...new Set(
+      allocations
+        .filter((alloc) => {
+          const donation = alloc.donation as { id: string; is_simulated: boolean } | null;
+          return donation?.is_simulated;
+        })
+        .map((alloc) => alloc.donation_id)
+    )];
+
+    if (simulatedDonationIds.length > 0) {
+      // Delete allocations for these donations first (due to foreign key)
+      const { error: allocDeleteError } = await adminSupabase
+        .from("allocations")
+        .delete()
+        .in("donation_id", simulatedDonationIds);
+
+      if (allocDeleteError) {
+        console.error("Delete allocations error:", allocDeleteError);
+        return { error: `Failed to delete simulated allocations: ${allocDeleteError.message}` };
+      }
+
+      // Delete the simulated donations
+      const { error: donationDeleteError } = await adminSupabase
+        .from("donations")
+        .delete()
+        .in("id", simulatedDonationIds);
+
+      if (donationDeleteError) {
+        console.error("Delete donations error:", donationDeleteError);
+        return { error: `Failed to delete simulated donations: ${donationDeleteError.message}` };
+      }
+    }
   }
 
+  // Now delete the nonprofit
   const { error } = await adminSupabase
     .from("nonprofits")
     .delete()
@@ -88,6 +135,8 @@ export async function deleteNonprofit(nonprofitId: string) {
   revalidatePath("/admin/nonprofits");
   revalidatePath("/admin");
   revalidatePath("/directory");
+  revalidatePath("/dashboard/history");
+  revalidatePath("/dashboard/receipts");
   return { success: true };
 }
 
