@@ -186,7 +186,7 @@ export function Header({ initialUser = null }: HeaderProps) {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
           {navLinks.map((link) => {
             const isActive =
               link.href === "/"
@@ -197,7 +197,7 @@ export function Header({ initialUser = null }: HeaderProps) {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "text-sm font-medium transition-colors",
+                  "text-sm font-medium transition-colors whitespace-nowrap",
                   isActive
                     ? "text-blue-700"
                     : "text-slate-600 hover:text-slate-900"
@@ -210,7 +210,7 @@ export function Header({ initialUser = null }: HeaderProps) {
         </nav>
 
         {/* Desktop Auth Buttons / User Menu */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden lg:flex items-center gap-3 xl:gap-4">
           <GivingListButton />
           {user ? (
             <>
@@ -298,8 +298,8 @@ export function Header({ initialUser = null }: HeaderProps) {
           )}
         </div>
 
-        {/* Mobile: Giving List + Hamburger Menu Button */}
-        <div className="md:hidden flex items-center gap-1">
+        {/* Mobile/Tablet: Giving List + Hamburger Menu Button */}
+        <div className="lg:hidden flex items-center gap-1">
           <GivingListButton />
           <button
             type="button"
@@ -318,17 +318,17 @@ export function Header({ initialUser = null }: HeaderProps) {
 
     </header>
 
-      {/* Mobile Menu Overlay - outside header so it covers page content */}
+      {/* Mobile/Tablet Menu Overlay - outside header so it covers page content */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 top-16 z-40 bg-black/50 md:hidden"
+          className="fixed inset-0 top-16 z-40 bg-black/50 lg:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
 
-      {/* Mobile Menu - fixed position below header */}
+      {/* Mobile/Tablet Menu - fixed position below header */}
       {mobileMenuOpen && (
-        <div className="fixed top-16 left-0 right-0 z-50 md:hidden border-t border-slate-200 bg-white shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto">
+        <div className="fixed top-16 left-0 right-0 z-50 lg:hidden border-t border-slate-200 bg-white shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto">
           <div className="px-4 py-4">
             {/* User section at top */}
             <div className="pb-4 border-b border-slate-200">
