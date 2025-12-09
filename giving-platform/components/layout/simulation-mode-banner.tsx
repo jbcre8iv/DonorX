@@ -62,8 +62,8 @@ export function SimulationModeBanner({ enabled, isAdmin }: SimulationModeBannerP
   if (collapsed) {
     return (
       <>
-        {/* Fixed position dot - next to logo on desktop, next to giving list on mobile/tablet */}
-        <div className="fixed top-[1.125rem] right-[6.5rem] lg:right-auto lg:left-[120px] z-[100] no-print" ref={dropdownRef}>
+        {/* Fixed position dot - next to logo on desktop, left of giving list on mobile/tablet */}
+        <div className="fixed top-[1.125rem] right-[7.5rem] lg:right-auto lg:left-[120px] z-[100] no-print" ref={dropdownRef}>
           <button
             onClick={() => setShowDropdown(!showDropdown)}
             className="relative flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 hover:bg-amber-600 shadow-lg transition-all hover:scale-110"
