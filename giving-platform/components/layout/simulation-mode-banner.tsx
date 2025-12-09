@@ -62,8 +62,8 @@ export function SimulationModeBanner({ enabled, isAdmin }: SimulationModeBannerP
   if (collapsed) {
     return (
       <>
-        {/* Fixed position dot - positioned to appear next to logo in header */}
-        <div className="fixed top-[1.125rem] left-[120px] z-[100] no-print" ref={dropdownRef}>
+        {/* Fixed position dot - next to logo on desktop, next to giving list on mobile/tablet */}
+        <div className="fixed top-[1.125rem] right-[6.5rem] lg:right-auto lg:left-[120px] z-[100] no-print" ref={dropdownRef}>
           <button
             onClick={() => setShowDropdown(!showDropdown)}
             className="relative flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 hover:bg-amber-600 shadow-lg transition-all hover:scale-110"
@@ -74,9 +74,9 @@ export function SimulationModeBanner({ enabled, isAdmin }: SimulationModeBannerP
             <span className="absolute inset-0 rounded-full bg-amber-400 animate-ping opacity-40" />
           </button>
 
-          {/* Dropdown menu */}
+          {/* Dropdown menu - opens left on mobile, right on desktop */}
           {showDropdown && (
-            <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden">
+            <div className="absolute top-full right-0 lg:right-auto lg:left-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden">
               <div className="p-3 bg-amber-50 border-b border-amber-100">
                 <div className="flex items-center gap-2 text-amber-700">
                   <TestTube className="h-4 w-4" />
