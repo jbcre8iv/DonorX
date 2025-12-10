@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, Lock, AlertCircle, RefreshCw, Save, FolderOpen, Trash2, X, LogIn, Pencil, Check, Layers, Building2, Tag, DollarSign, Heart, ChevronDown } from "lucide-react";
+import { ArrowLeft, Lock, AlertCircle, RefreshCw, Save, FolderOpen, Trash2, X, LogIn, Pencil, Check, Layers, Building2, Tag, DollarSign, Heart, ChevronDown, Info } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -829,6 +829,25 @@ export function DonateClient({
                             </span>
                           </div>
                         ))}
+                      </div>
+
+                      {/* Fee Info Callout */}
+                      <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-100">
+                        <div className="flex gap-2">
+                          <Info className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                          <div className="text-xs text-blue-800">
+                            <p>
+                              DonorX will process your donation and issue a tax receipt for the full amount.
+                              Funds are disbursed to selected nonprofits net of payment processing fees.
+                            </p>
+                            <Link
+                              href="/faq#processing-fees"
+                              className="inline-flex items-center mt-1.5 text-blue-600 hover:text-blue-700 font-medium hover:underline"
+                            >
+                              View fee breakdown
+                            </Link>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
