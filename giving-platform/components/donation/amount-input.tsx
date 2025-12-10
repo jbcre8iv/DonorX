@@ -5,20 +5,6 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { AlertCircle } from "lucide-react";
 
-// Preset amounts for the $1,000 - $20,000 range
-const PRESET_AMOUNTS = [1000, 2500, 5000, 10000, 15000, 20000];
-
-// Slider tick positions (0-6 for 7 ticks) with corresponding amounts
-const SLIDER_TICKS = [
-  { position: 0, amount: 1000 },
-  { position: 1, amount: 4167 },
-  { position: 2, amount: 7333 },
-  { position: 3, amount: 10500 },
-  { position: 4, amount: 13667 },
-  { position: 5, amount: 16833 },
-  { position: 6, amount: 20000 },
-];
-
 // Map slider position (0-6) to amount
 function getAmountForPosition(position: number, minAmount: number, maxAmount: number): number {
   const range = maxAmount - minAmount;
@@ -31,6 +17,40 @@ function getPositionForAmount(amount: number, minAmount: number, maxAmount: numb
   const range = maxAmount - minAmount;
   const position = ((amount - minAmount) / range) * 6;
   return Math.max(0, Math.min(6, position));
+}
+
+// Generate 4 increment amounts for a given slider position
+function getIncrementsForPosition(position: number, minAmount: number, maxAmount: number): number[] {
+  const baseAmount = getAmountForPosition(position, minAmount, maxAmount);
+  const range = maxAmount - minAmount;
+  const stepSize = range / 6; // Amount per slider tick
+  const incrementStep = Math.round(stepSize / 4 / 100) * 100; // Divide each tick into 4 parts, round to 100
+
+  // Generate 4 increments around the base amount
+  const increments: number[] = [];
+
+  // Start from the base amount and create 4 evenly spaced amounts within this tick range
+  for (let i = 0; i < 4; i++) {
+    const amount = Math.round((baseAmount + (i * incrementStep)) / 100) * 100;
+    // Ensure we don't exceed max or go below min
+    const clampedAmount = Math.max(minAmount, Math.min(maxAmount, amount));
+    if (!increments.includes(clampedAmount)) {
+      increments.push(clampedAmount);
+    }
+  }
+
+  // Ensure we have exactly 4 unique values
+  while (increments.length < 4) {
+    const lastAmount = increments[increments.length - 1];
+    const nextAmount = Math.min(maxAmount, lastAmount + incrementStep);
+    if (!increments.includes(nextAmount)) {
+      increments.push(nextAmount);
+    } else {
+      break;
+    }
+  }
+
+  return increments.slice(0, 4);
 }
 
 // Format amount with appropriate suffix (K)
@@ -58,23 +78,27 @@ export function AmountInput({
   creditCardMax = 10000,
 }: AmountInputProps) {
   const [customAmount, setCustomAmount] = React.useState("");
-  const [isCustom, setIsCustom] = React.useState(false);
+  const [isCustomFocused, setIsCustomFocused] = React.useState(false);
 
-  // Check if value matches a preset
+  // Calculate slider position based on current value
+  const sliderPosition = Math.round(getPositionForAmount(value, minAmount, maxAmount));
+
+  // Get dynamic increment amounts for current slider position
+  const incrementAmounts = React.useMemo(
+    () => getIncrementsForPosition(sliderPosition, minAmount, maxAmount),
+    [sliderPosition, minAmount, maxAmount]
+  );
+
+  // Update custom amount display when value changes (and not manually editing)
   React.useEffect(() => {
-    if (PRESET_AMOUNTS.includes(value)) {
-      setIsCustom(false);
-      setCustomAmount("");
-    } else if (value > 0 && !PRESET_AMOUNTS.includes(value)) {
-      setIsCustom(true);
-      setCustomAmount(value.toLocaleString());
+    if (!isCustomFocused) {
+      setCustomAmount(value > 0 ? value.toLocaleString() : "");
     }
-  }, [value]);
+  }, [value, isCustomFocused]);
 
   const handlePresetClick = (amount: number) => {
-    setIsCustom(false);
-    setCustomAmount("");
     onChange(amount);
+    setCustomAmount(amount.toLocaleString());
   };
 
   const handleCustomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,26 +115,16 @@ export function AmountInput({
     } else {
       setCustomAmount("");
     }
-    setIsCustom(true);
   };
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const position = parseInt(e.target.value, 10);
     const newValue = getAmountForPosition(position, minAmount, maxAmount);
     onChange(newValue);
-    // Check if it matches a preset
-    if (!PRESET_AMOUNTS.includes(newValue)) {
-      setIsCustom(true);
-      setCustomAmount(newValue.toLocaleString());
-    } else {
-      setIsCustom(false);
-      setCustomAmount("");
-    }
+    setCustomAmount(newValue.toLocaleString());
   };
 
-  const requiresAchOrCheck = value > 10000;
-  // Calculate nearest tick position for the slider
-  const sliderPosition = Math.round(getPositionForAmount(value, minAmount, maxAmount));
+  const requiresAchOrCheck = value > creditCardMax;
 
   return (
     <div className="space-y-6">
@@ -159,20 +173,20 @@ export function AmountInput({
         </div>
       </div>
 
-      {/* Preset Amounts */}
+      {/* Dynamic Increment Amounts */}
       <div className="space-y-3">
         <label className="block text-sm font-medium text-slate-900">
           Quick Select
         </label>
-        <div className="grid grid-cols-3 gap-3">
-          {PRESET_AMOUNTS.map((amount) => (
+        <div className="grid grid-cols-2 gap-3">
+          {incrementAmounts.map((amount) => (
             <button
               key={amount}
               type="button"
               onClick={() => handlePresetClick(amount)}
               className={cn(
                 "rounded-lg border-2 py-3 text-sm font-medium transition-all duration-200",
-                value === amount && !isCustom
+                value === amount
                   ? "border-blue-700 bg-blue-50 text-blue-700 shadow-sm"
                   : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50/50"
               )}
@@ -191,7 +205,7 @@ export function AmountInput({
         <div className="relative">
           <span className={cn(
             "absolute left-3 top-1/2 -translate-y-1/2 font-medium pointer-events-none",
-            isCustom && customAmount ? "text-slate-700" : "text-slate-400"
+            customAmount ? "text-slate-700" : "text-slate-400"
           )}>
             $
           </span>
@@ -199,11 +213,12 @@ export function AmountInput({
             type="text"
             value={customAmount}
             onChange={handleCustomChange}
-            onFocus={() => setIsCustom(true)}
+            onFocus={() => setIsCustomFocused(true)}
+            onBlur={() => setIsCustomFocused(false)}
             placeholder="Enter custom amount"
             className={cn(
               "pl-7",
-              isCustom && customAmount && "ring-2 ring-blue-700"
+              isCustomFocused && "ring-2 ring-blue-700"
             )}
           />
         </div>
