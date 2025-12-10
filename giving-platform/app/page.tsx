@@ -355,7 +355,7 @@ export default async function HomePage() {
                   "Saved allocation templates",
                   "Team member management",
                   "Recurring giving options",
-                ].map((feature, index) => (
+                ].map((feature) => (
                   <li key={feature} className="flex items-center gap-3">
                     <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100">
                       <CheckCircle className="h-4 w-4 flex-shrink-0 text-emerald-600" />

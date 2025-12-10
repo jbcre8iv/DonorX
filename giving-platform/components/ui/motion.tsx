@@ -268,7 +268,7 @@ export function HoverLift({
 export function Parallax({
   children,
   className,
-  speed = 0.5,
+  speed: _speed = 0.5,
   ...props
 }: Omit<AnimatedProps, "delay" | "duration" | "once"> & { speed?: number }) {
   return (

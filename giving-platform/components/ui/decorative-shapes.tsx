@@ -131,6 +131,14 @@ export function CornerBlob({
 }
 
 /**
+ * Seeded random number generator for deterministic "random" values
+ */
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed * 9999) * 10000;
+  return x - Math.floor(x);
+}
+
+/**
  * Floating circles/dots pattern
  */
 export function FloatingDots({
@@ -142,16 +150,15 @@ export function FloatingDots({
   count?: number;
   color?: string;
 }) {
-  const dots = React.useMemo(() => {
-    return Array.from({ length: count }).map((_, i) => ({
-      id: i,
-      size: Math.random() * 24 + 8,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      delay: Math.random() * 2,
-      duration: 3 + Math.random() * 2,
-    }));
-  }, [count]);
+  // Use deterministic values based on index to avoid Math.random during render
+  const dots = Array.from({ length: count }).map((_, i) => ({
+    id: i,
+    size: seededRandom(i * 4 + 1) * 24 + 8,
+    x: seededRandom(i * 4 + 2) * 100,
+    y: seededRandom(i * 4 + 3) * 100,
+    delay: seededRandom(i * 4 + 4) * 2,
+    duration: 3 + seededRandom(i * 4 + 5) * 2,
+  }));
 
   return (
     <div className={cn("absolute inset-0 overflow-hidden pointer-events-none", className)}>
