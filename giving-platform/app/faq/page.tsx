@@ -29,19 +29,19 @@ interface FAQSection {
 
 const faqSections: FAQSection[] = [
   {
-    id: "processing-fees",
+    id: "disbursement-fees",
     icon: CreditCard,
-    title: "Processing Fees",
+    title: "Disbursement Fees",
     items: [
       {
         question: "Does DonorX charge a platform fee?",
-        answer: "No. DonorX does not charge any platform fees. 100% of your donation amount goes toward the nonprofits you select, minus standard payment processing fees charged by our payment processor (Stripe).",
+        answer: "No. DonorX does not charge any platform fees. 100% of your donation goes to the nonprofits or categories you select, minus standard payment and disbursement fees charged by third-party payment processors and disbursement platforms.",
       },
       {
-        question: "What are the payment processing fees?",
+        question: "What are the disbursement fees?",
         answer: (
           <div className="space-y-3">
-            <p>Payment processing fees are charged by Stripe, our payment processor, and vary by payment method:</p>
+            <p>Disbursement fees are charged by Stripe, our payment processor, and vary by payment method:</p>
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
@@ -67,18 +67,18 @@ const faqSections: FAQSection[] = [
               </table>
             </div>
             <p className="text-slate-500 text-sm">
-              For large donations, ACH or wire transfer can significantly reduce processing fees.
+              For large donations, ACH or wire transfer can significantly reduce disbursement fees.
             </p>
           </div>
         ),
       },
       {
         question: "How do fees affect the nonprofits?",
-        answer: "Payment processing fees are deducted from the donation amount before funds are disbursed to nonprofits. For example, if you donate $1,000 via credit card, approximately $970.70 will be distributed to your selected nonprofits after the 2.9% + $0.30 processing fee.",
+        answer: "Fees are deducted from the donation amount before funds are sent to nonprofits. For example, if you donate $1,000 via credit card, approximately $920.70 will be distributed to your selected nonprofits after a Stripe payment processing fee of 2.9% + $0.30, plus a disbursement platform fee of 5% (capped at $500 per donation).",
       },
       {
-        question: "Can I cover the processing fees?",
-        answer: "We're working on adding an option for donors to cover processing fees so that 100% of the intended donation amount reaches nonprofits. This feature will be available soon.",
+        question: "Can I cover the disbursement fees?",
+        answer: "We're working on adding an option for donors to cover disbursement fees so that 100% of the intended donation amount reaches nonprofits. This feature will be available soon.",
       },
     ],
   },
@@ -226,7 +226,7 @@ export default function FAQPage() {
                     <details
                       key={index}
                       className="group rounded-lg border border-slate-200 bg-white"
-                      open={section.id === "processing-fees" && index === 1}
+                      open={section.id === "disbursement-fees" && index === 1}
                     >
                       <summary className="flex cursor-pointer items-center justify-between gap-4 p-5 text-slate-900 font-medium hover:bg-slate-50 transition-colors rounded-lg">
                         <span>{item.question}</span>

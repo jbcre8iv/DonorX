@@ -838,10 +838,10 @@ export function DonateClient({
                           <div className="text-xs text-blue-800">
                             <p>
                               DonorX will process your donation and issue a tax receipt for the full amount.
-                              Funds are disbursed to selected nonprofits net of payment processing fees.
+                              Funds are disbursed to selected nonprofits net of disbursement fees.
                             </p>
                             <Link
-                              href="/faq#processing-fees"
+                              href="/faq#disbursement-fees"
                               className="inline-flex items-center mt-1.5 text-blue-600 hover:text-blue-700 font-medium hover:underline"
                             >
                               View fee breakdown
