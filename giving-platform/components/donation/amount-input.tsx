@@ -5,50 +5,28 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { AlertCircle } from "lucide-react";
 
-// Define the 7 tick positions with their base amounts (rounded to $500)
-const TICK_AMOUNTS = [1000, 4000, 7000, 10500, 13500, 17000, 20000];
+// Define 5 tick positions with clean $500-rounded ranges
+// Each tick covers ~$4,000 range with 4 buttons at $1,000 increments
+const TICK_RANGES = [
+  { start: 1000, buttons: [1000, 2000, 3000, 4000] },
+  { start: 5000, buttons: [5000, 6000, 7000, 8000] },
+  { start: 9000, buttons: [9000, 10000, 11000, 12000] },
+  { start: 13000, buttons: [13000, 14000, 15000, 16000] },
+  { start: 17000, buttons: [17000, 18000, 19000, 20000] },
+];
 
-// Get the range for a given tick position (start and end amounts)
+// Get the range label for a given tick position
 function getRangeForPosition(position: number): { start: number; end: number } {
-  const start = TICK_AMOUNTS[position];
-  const end = position < 6 ? TICK_AMOUNTS[position + 1] : TICK_AMOUNTS[position];
-  return { start, end };
+  const range = TICK_RANGES[position];
+  return {
+    start: range.buttons[0],
+    end: range.buttons[3]
+  };
 }
 
-// Generate 4 button amounts for a given tick position (all rounded to $500)
+// Get 4 button amounts for a given tick position
 function getButtonAmountsForPosition(position: number): number[] {
-  const { start, end } = getRangeForPosition(position);
-
-  if (position === 6) {
-    // Last position - show amounts leading up to max
-    return [18500, 19000, 19500, 20000];
-  }
-
-  const range = end - start;
-  const step = Math.round(range / 4 / 500) * 500; // Round step to nearest $500
-
-  const amounts: number[] = [];
-  for (let i = 0; i < 4; i++) {
-    const amount = start + (i * step);
-    // Round to nearest $500
-    const rounded = Math.round(amount / 500) * 500;
-    if (!amounts.includes(rounded) && rounded >= 1000 && rounded <= 20000) {
-      amounts.push(rounded);
-    }
-  }
-
-  // Ensure we have 4 unique amounts
-  while (amounts.length < 4) {
-    const lastAmount = amounts[amounts.length - 1];
-    const nextAmount = lastAmount + 500;
-    if (nextAmount <= 20000 && !amounts.includes(nextAmount)) {
-      amounts.push(nextAmount);
-    } else {
-      break;
-    }
-  }
-
-  return amounts.slice(0, 4);
+  return TICK_RANGES[position].buttons;
 }
 
 // Format amount with K suffix (no decimals since all amounts are $500 increments)
@@ -82,18 +60,17 @@ export function AmountInput({
 
   // Calculate slider position based on current value
   const sliderPosition = React.useMemo(() => {
-    // Find which tick position is closest to the current value
-    let closestPosition = 0;
-    let closestDiff = Math.abs(value - TICK_AMOUNTS[0]);
-
-    for (let i = 1; i < TICK_AMOUNTS.length; i++) {
-      const diff = Math.abs(value - TICK_AMOUNTS[i]);
-      if (diff < closestDiff) {
-        closestDiff = diff;
-        closestPosition = i;
+    // Find which tick range contains the current value
+    for (let i = 0; i < TICK_RANGES.length; i++) {
+      const range = TICK_RANGES[i];
+      if (value >= range.buttons[0] && value <= range.buttons[3]) {
+        return i;
       }
     }
-    return closestPosition;
+    // Default to last position if value is at max
+    if (value >= 17000) return 4;
+    // Default to first position
+    return 0;
   }, [value]);
 
   // Get the current range based on slider position
@@ -142,7 +119,8 @@ export function AmountInput({
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const position = parseInt(e.target.value, 10);
-    const newValue = TICK_AMOUNTS[position];
+    // Set to the first button amount of the selected range
+    const newValue = TICK_RANGES[position].buttons[0];
     setIsUsingCustom(false);
     setCustomAmount("");
     onChange(newValue);
@@ -178,19 +156,19 @@ export function AmountInput({
           <input
             type="range"
             min="0"
-            max="6"
+            max="4"
             step="1"
             value={sliderPosition}
             onChange={handleSliderChange}
             className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb"
             style={{
-              background: `linear-gradient(to right, #1d4ed8 0%, #1d4ed8 ${(sliderPosition / 6) * 100}%, #e2e8f0 ${(sliderPosition / 6) * 100}%, #e2e8f0 100%)`,
+              background: `linear-gradient(to right, #1d4ed8 0%, #1d4ed8 ${(sliderPosition / 4) * 100}%, #e2e8f0 ${(sliderPosition / 4) * 100}%, #e2e8f0 100%)`,
             }}
           />
           {/* Tick marks - positioned to align with slider positions */}
           <div className="relative mt-2 h-2 mx-[11px]">
             <div className="absolute inset-0 flex justify-between">
-              {[0, 1, 2, 3, 4, 5, 6].map((tick) => (
+              {[0, 1, 2, 3, 4].map((tick) => (
                 <div
                   key={tick}
                   className={cn(
