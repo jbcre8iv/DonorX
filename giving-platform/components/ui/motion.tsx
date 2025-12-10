@@ -49,7 +49,7 @@ export const staggerContainer: Variants = {
 // Default transition for smooth animations
 const defaultTransition = {
   duration: 0.5,
-  ease: [0.25, 0.1, 0.25, 1],
+  ease: [0.25, 0.1, 0.25, 1] as const,
 };
 
 interface AnimatedProps extends MotionProps {
