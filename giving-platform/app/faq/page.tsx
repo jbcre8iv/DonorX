@@ -9,6 +9,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { config } from "@/lib/config";
+import { FAQNav } from "./faq-nav";
 
 export const metadata = {
   title: "FAQ - Frequently Asked Questions",
@@ -190,22 +191,7 @@ export default function FAQPage() {
       </section>
 
       {/* Quick Links */}
-      <section className="border-b border-slate-200 bg-white sticky top-16 z-10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-1 overflow-x-auto py-3 -mx-4 px-4 sm:mx-0 sm:px-0">
-            {faqSections.map((section) => (
-              <a
-                key={section.id}
-                href={`#${section.id}`}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 whitespace-nowrap transition-colors"
-              >
-                <section.icon className="h-4 w-4" />
-                {section.title}
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
+      <FAQNav />
 
       {/* FAQ Sections */}
       <section className="py-16 sm:py-20">
