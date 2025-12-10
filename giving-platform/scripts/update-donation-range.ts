@@ -188,6 +188,32 @@ amountInputContent = amountInputContent.replace(achMessagePattern, `Donations ov
 const ccLimitPattern = /Credit card payments are limited to \$[\d,]+ or less/g;
 amountInputContent = amountInputContent.replace(ccLimitPattern, `Credit card payments are limited to $${ccMax.toLocaleString()} or less`);
 
+// Generate slider tick amounts for comment reference
+const sliderTickAmounts = [0, 1, 2, 3, 4, 5, 6].map(pos => {
+  const range = maxDonation - minDonation;
+  return Math.round((minDonation + (pos / 6) * range) / 100) * 100;
+});
+console.log(`   Slider tick amounts: ${sliderTickAmounts.map(a => `$${a.toLocaleString()}`).join(', ')}`);
+
+// Update SLIDER_TICKS array with new amounts
+const sliderTicksPattern = /const SLIDER_TICKS = \[[\s\S]*?\];/;
+const newSliderTicks = `const SLIDER_TICKS = [
+  { position: 0, amount: ${sliderTickAmounts[0]} },
+  { position: 1, amount: ${sliderTickAmounts[1]} },
+  { position: 2, amount: ${sliderTickAmounts[2]} },
+  { position: 3, amount: ${sliderTickAmounts[3]} },
+  { position: 4, amount: ${sliderTickAmounts[4]} },
+  { position: 5, amount: ${sliderTickAmounts[5]} },
+  { position: 6, amount: ${sliderTickAmounts[6]} },
+];`;
+
+if (sliderTicksPattern.test(amountInputContent)) {
+  amountInputContent = amountInputContent.replace(sliderTicksPattern, newSliderTicks);
+  console.log('   ✓ Updated SLIDER_TICKS array');
+} else {
+  console.log('   ⚠ Could not find SLIDER_TICKS array');
+}
+
 if (!isDryRun) {
   fs.writeFileSync(amountInputPath, amountInputContent);
 }

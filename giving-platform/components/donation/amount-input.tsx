@@ -8,19 +8,29 @@ import { AlertCircle } from "lucide-react";
 // Preset amounts for the $1,000 - $20,000 range
 const PRESET_AMOUNTS = [1000, 2500, 5000, 10000, 15000, 20000];
 
-// Slider tick positions (0-6 for 7 ticks)
-const SLIDER_TICKS = [0, 1, 2, 3, 4, 5, 6];
+// Slider tick positions (0-6 for 7 ticks) with corresponding amounts
+const SLIDER_TICKS = [
+  { position: 0, amount: 1000 },
+  { position: 1, amount: 4167 },
+  { position: 2, amount: 7333 },
+  { position: 3, amount: 10500 },
+  { position: 4, amount: 13667 },
+  { position: 5, amount: 16833 },
+  { position: 6, amount: 20000 },
+];
 
-// Map slider position to amount
+// Map slider position (0-6) to amount
 function getAmountForPosition(position: number, minAmount: number, maxAmount: number): number {
   const range = maxAmount - minAmount;
-  return Math.round(minAmount + (position / 6) * range);
+  // Round to nearest 100 for cleaner values
+  return Math.round((minAmount + (position / 6) * range) / 100) * 100;
 }
 
-// Map amount to slider position
+// Map amount to slider position (0-6)
 function getPositionForAmount(amount: number, minAmount: number, maxAmount: number): number {
   const range = maxAmount - minAmount;
-  return ((amount - minAmount) / range) * 6;
+  const position = ((amount - minAmount) / range) * 6;
+  return Math.max(0, Math.min(6, position));
 }
 
 // Format amount with appropriate suffix (K)
@@ -85,7 +95,7 @@ export function AmountInput({
   };
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const position = parseFloat(e.target.value);
+    const position = parseInt(e.target.value, 10);
     const newValue = getAmountForPosition(position, minAmount, maxAmount);
     onChange(newValue);
     // Check if it matches a preset
@@ -99,7 +109,8 @@ export function AmountInput({
   };
 
   const requiresAchOrCheck = value > 10000;
-  const sliderPosition = getPositionForAmount(value, minAmount, maxAmount);
+  // Calculate nearest tick position for the slider
+  const sliderPosition = Math.round(getPositionForAmount(value, minAmount, maxAmount));
 
   return (
     <div className="space-y-6">
@@ -118,7 +129,7 @@ export function AmountInput({
             type="range"
             min="0"
             max="6"
-            step="0.01"
+            step="1"
             value={sliderPosition}
             onChange={handleSliderChange}
             className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb"
@@ -126,10 +137,10 @@ export function AmountInput({
               background: `linear-gradient(to right, #1d4ed8 0%, #1d4ed8 ${(sliderPosition / 6) * 100}%, #e2e8f0 ${(sliderPosition / 6) * 100}%, #e2e8f0 100%)`,
             }}
           />
-          {/* Tick marks - positioned to align with thumb center */}
-          <div className="relative mt-2 h-2" style={{ marginLeft: '11px', marginRight: '11px' }}>
+          {/* Tick marks - positioned to align with slider positions */}
+          <div className="relative mt-2 h-2 mx-[11px]">
             <div className="absolute inset-0 flex justify-between">
-              {SLIDER_TICKS.map((tick) => (
+              {[0, 1, 2, 3, 4, 5, 6].map((tick) => (
                 <div
                   key={tick}
                   className={cn(
@@ -140,8 +151,8 @@ export function AmountInput({
               ))}
             </div>
           </div>
-          {/* Min/Max labels - aligned with tick marks */}
-          <div className="flex justify-between mt-1 text-xs text-slate-400" style={{ marginLeft: '11px', marginRight: '11px' }}>
+          {/* Min/Max labels */}
+          <div className="flex justify-between mt-1 text-xs text-slate-400 mx-[11px]">
             <span className="-ml-2">${minAmount.toLocaleString()}</span>
             <span className="-mr-2">${maxAmount.toLocaleString()}</span>
           </div>
