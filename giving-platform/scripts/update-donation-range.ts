@@ -14,6 +14,12 @@
  *   --max      Maximum donation amount in dollars (default: 20000)
  *   --cc-max   Maximum credit card payment in dollars (default: 10000)
  *   --dry-run  Show what would be changed without making changes
+ *
+ * How the slider works:
+ *   - The slider has 5 tick positions (0-4)
+ *   - Each position shows 4 quick select buttons at $1K increments
+ *   - Total range is divided into 5 equal segments
+ *   - No overlapping amounts between positions
  */
 
 import * as fs from 'fs';
@@ -69,6 +75,64 @@ if (minDonation < 1) {
   process.exit(1);
 }
 
+// Generate TICK_RANGES for the new range
+// Divides total range into 5 positions, each with 4 buttons at $1K increments
+// Ensures no overlapping amounts between positions
+function generateTickRanges(min: number, max: number): { start: number; buttons: number[] }[] {
+  const numPositions = 5;
+  const buttonsPerPosition = 4;
+  const buttonIncrement = 1000; // Always $1K increments
+
+  // Total buttons needed = 5 positions * 4 buttons = 20 unique amounts
+  // From min to max, we need 20 unique values at $1K increments
+  // This works perfectly for $1K-$20K range (20 values: 1,2,3,...,20)
+
+  const totalButtons = numPositions * buttonsPerPosition;
+  const totalRange = max - min;
+  const actualIncrement = Math.floor(totalRange / (totalButtons - 1));
+
+  // Round to nearest $1000 for clean numbers
+  const roundedIncrement = Math.max(1000, Math.round(actualIncrement / 1000) * 1000);
+
+  const ranges: { start: number; buttons: number[] }[] = [];
+  let currentAmount = min;
+
+  for (let pos = 0; pos < numPositions; pos++) {
+    const buttons: number[] = [];
+
+    for (let btn = 0; btn < buttonsPerPosition; btn++) {
+      // Round to nearest $1000
+      const amount = Math.round(currentAmount / 1000) * 1000;
+      buttons.push(Math.min(amount, max));
+      currentAmount += roundedIncrement;
+    }
+
+    ranges.push({ start: buttons[0], buttons });
+  }
+
+  // Ensure last button of last range equals max
+  const lastRange = ranges[ranges.length - 1];
+  if (lastRange.buttons[3] !== max) {
+    // Adjust last range to end at max
+    lastRange.buttons[3] = max;
+    // Work backwards to ensure $1K spacing
+    for (let i = 2; i >= 0; i--) {
+      lastRange.buttons[i] = lastRange.buttons[i + 1] - roundedIncrement;
+    }
+    lastRange.start = lastRange.buttons[0];
+  }
+
+  return ranges;
+}
+
+const tickRanges = generateTickRanges(minDonation, maxDonation);
+
+console.log('Generated TICK_RANGES:');
+tickRanges.forEach((range, i) => {
+  console.log(`  Position ${i}: $${range.buttons.map(b => b.toLocaleString()).join(', ')}`);
+});
+console.log('');
+
 // Files to update
 const projectRoot = path.resolve(__dirname, '..');
 
@@ -108,57 +172,23 @@ if (!isDryRun) {
   fs.writeFileSync(configPath, configContent);
 }
 
-// 2. Update amount-input.tsx preset amounts
+// 2. Update amount-input.tsx
 console.log('\n📝 Updating components/donation/amount-input.tsx...');
 const amountInputPath = path.join(projectRoot, 'components/donation/amount-input.tsx');
 let amountInputContent = fs.readFileSync(amountInputPath, 'utf-8');
 
-// Generate smart preset amounts based on range
-function generatePresets(min: number, max: number): number[] {
-  const range = max - min;
-  const presets: number[] = [];
+// Generate the new TICK_RANGES array
+const tickRangesCode = `const TICK_RANGES = [
+${tickRanges.map(range => `  { start: ${range.start}, buttons: [${range.buttons.join(', ')}] },`).join('\n')}
+];`;
 
-  // Always include min and max
-  presets.push(min);
-
-  // Add intermediate values
-  const steps = [0.1, 0.25, 0.5, 0.75];
-  for (const step of steps) {
-    const value = min + Math.round(range * step);
-    // Round to nice numbers
-    const rounded = Math.round(value / 500) * 500;
-    if (rounded > min && rounded < max && !presets.includes(rounded)) {
-      presets.push(rounded);
-    }
-  }
-
-  presets.push(max);
-
-  // Ensure we have exactly 6 presets
-  while (presets.length < 6) {
-    // Add more intermediate values
-    const midPoint = Math.round((presets[presets.length - 2] + presets[presets.length - 1]) / 2 / 500) * 500;
-    if (!presets.includes(midPoint)) {
-      presets.splice(presets.length - 1, 0, midPoint);
-    } else {
-      break;
-    }
-  }
-
-  return presets.slice(0, 6).sort((a, b) => a - b);
-}
-
-const newPresets = generatePresets(minDonation, maxDonation);
-console.log(`   Generated presets: ${newPresets.map(p => `$${p.toLocaleString()}`).join(', ')}`);
-
-const presetPattern = /const PRESET_AMOUNTS = \[[\d,\s]+\];/;
-const presetReplacement = `const PRESET_AMOUNTS = [${newPresets.join(', ')}];`;
-
-if (presetPattern.test(amountInputContent)) {
-  amountInputContent = amountInputContent.replace(presetPattern, presetReplacement);
-  console.log('   ✓ Updated PRESET_AMOUNTS');
+// Update TICK_RANGES
+const tickRangesPattern = /const TICK_RANGES = \[[\s\S]*?\];/;
+if (tickRangesPattern.test(amountInputContent)) {
+  amountInputContent = amountInputContent.replace(tickRangesPattern, tickRangesCode);
+  console.log('   ✓ Updated TICK_RANGES array');
 } else {
-  console.log('   ⚠ Could not find PRESET_AMOUNTS array');
+  console.log('   ⚠ Could not find TICK_RANGES array');
 }
 
 // Update default values in props
@@ -181,38 +211,30 @@ if (defaultCcPattern.test(amountInputContent)) {
   console.log('   ✓ Updated default creditCardMax');
 }
 
-// Update the ACH/check threshold message
-const achMessagePattern = /Donations over \$[\d,]+/g;
-amountInputContent = amountInputContent.replace(achMessagePattern, `Donations over $${ccMax.toLocaleString()}`);
-
-const ccLimitPattern = /Credit card payments are limited to \$[\d,]+ or less/g;
-amountInputContent = amountInputContent.replace(ccLimitPattern, `Credit card payments are limited to $${ccMax.toLocaleString()} or less`);
-
-// Generate slider tick amounts for comment reference
-const sliderTickAmounts = [0, 1, 2, 3, 4, 5, 6].map(pos => {
-  const range = maxDonation - minDonation;
-  return Math.round((minDonation + (pos / 6) * range) / 100) * 100;
-});
-console.log(`   Slider tick amounts: ${sliderTickAmounts.map(a => `$${a.toLocaleString()}`).join(', ')}`);
-
-// Update SLIDER_TICKS array with new amounts
-const sliderTicksPattern = /const SLIDER_TICKS = \[[\s\S]*?\];/;
-const newSliderTicks = `const SLIDER_TICKS = [
-  { position: 0, amount: ${sliderTickAmounts[0]} },
-  { position: 1, amount: ${sliderTickAmounts[1]} },
-  { position: 2, amount: ${sliderTickAmounts[2]} },
-  { position: 3, amount: ${sliderTickAmounts[3]} },
-  { position: 4, amount: ${sliderTickAmounts[4]} },
-  { position: 5, amount: ${sliderTickAmounts[5]} },
-  { position: 6, amount: ${sliderTickAmounts[6]} },
-];`;
-
-if (sliderTicksPattern.test(amountInputContent)) {
-  amountInputContent = amountInputContent.replace(sliderTicksPattern, newSliderTicks);
-  console.log('   ✓ Updated SLIDER_TICKS array');
-} else {
-  console.log('   ⚠ Could not find SLIDER_TICKS array');
+// Update slider max position (should be numPositions - 1)
+const sliderMaxPattern = /max="4"/;
+const newSliderMax = tickRanges.length - 1;
+if (sliderMaxPattern.test(amountInputContent)) {
+  amountInputContent = amountInputContent.replace(/max="\d+"/g, `max="${newSliderMax}"`);
+  console.log(`   ✓ Updated slider max to ${newSliderMax}`);
 }
+
+// Update tick marks array
+const tickMarksPattern = /\[0, 1, 2, 3, 4\]\.map/;
+const newTickMarks = Array.from({ length: tickRanges.length }, (_, i) => i);
+amountInputContent = amountInputContent.replace(tickMarksPattern, `[${newTickMarks.join(', ')}].map`);
+console.log(`   ✓ Updated tick marks array`);
+
+// Update slider position calculations
+const sliderPositionCalcPattern = /sliderPosition \/ 4/g;
+amountInputContent = amountInputContent.replace(sliderPositionCalcPattern, `sliderPosition / ${newSliderMax}`);
+console.log(`   ✓ Updated slider position calculations`);
+
+// Update position bounds check
+const positionBoundsPattern = /if \(value >= 17000\) return 4;/;
+const lastRangeStart = tickRanges[tickRanges.length - 1].buttons[0];
+amountInputContent = amountInputContent.replace(positionBoundsPattern, `if (value >= ${lastRangeStart}) return ${newSliderMax};`);
+console.log(`   ✓ Updated position bounds check`);
 
 if (!isDryRun) {
   fs.writeFileSync(amountInputPath, amountInputContent);
@@ -223,9 +245,10 @@ console.log('\n📝 Updating app/donate/donate-client.tsx...');
 const donateClientPath = path.join(projectRoot, 'app/donate/donate-client.tsx');
 let donateClientContent = fs.readFileSync(donateClientPath, 'utf-8');
 
-// Set default to mid-range
-const defaultAmount = Math.round((minDonation + maxDonation) / 2 / 500) * 500;
-console.log(`   Default amount will be: $${defaultAmount.toLocaleString()} (mid-range)`);
+// Set default to first button of middle range
+const middleRangeIndex = Math.floor(tickRanges.length / 2);
+const defaultAmount = tickRanges[middleRangeIndex].buttons[0];
+console.log(`   Default amount will be: $${defaultAmount.toLocaleString()} (middle range start)`);
 
 const defaultAmountPattern = /const \[amount, setAmount\] = React\.useState\(\d+\)/;
 const defaultAmountReplacement = `const [amount, setAmount] = React.useState(${defaultAmount})`;
@@ -269,7 +292,8 @@ console.log('   - Update example calculations if amounts changed significantly\n
 
 console.log('3. Test the changes:');
 console.log('   - Visit /donate and verify slider range');
-console.log('   - Test preset buttons');
+console.log('   - Test quick select buttons for each slider position');
+console.log('   - Verify no duplicate amounts across positions');
 console.log('   - Test custom amount input (min/max enforcement)');
 console.log('   - Test credit card limit message appears at correct threshold');
 console.log('   - Load an old draft to verify clamping works\n');
