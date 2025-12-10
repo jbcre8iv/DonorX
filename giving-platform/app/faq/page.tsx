@@ -39,7 +39,7 @@ const faqSections: FAQSection[] = [
         answer: "No. DonorX does not charge any platform fees. 100% of your donation goes to the nonprofits or categories you select, minus standard payment and disbursement fees charged by third-party payment processors and disbursement platforms.",
       },
       {
-        question: "What are the disbursement fees?",
+        question: "What are the 3rd party fees?",
         answer: (
           <div className="space-y-3">
             <p>Disbursement fees are charged by Stripe, our payment processor, and vary by payment method:</p>
@@ -75,7 +75,7 @@ const faqSections: FAQSection[] = [
       },
       {
         question: "How do fees affect the nonprofits?",
-        answer: "Fees are deducted from the donation amount before funds are sent to nonprofits. For example, if you donate $1,000 via credit card, approximately $920.70 will be distributed to your selected nonprofits after a Stripe payment processing fee of 2.9% + $0.30, plus a disbursement platform fee of 5% (capped at $500 per donation).",
+        answer: "Fees are deducted from the donation amount before funds are sent to nonprofits. For example, if you donate $1,000 via credit card, approximately $920.70 will be distributed to your selected nonprofits after a Stripe payment processing fee of 2.9% + $0.30, plus a disbursement fee of 5% (capped at $500 per donation).",
       },
       {
         question: "Can I cover the disbursement fees?",
@@ -159,11 +159,11 @@ const faqSections: FAQSection[] = [
       },
       {
         question: "Who can see my donation history?",
-        answer: "Your donation history is private and visible only to you. Nonprofits receive aggregated donation information but do not see individual donor details unless you choose to share them.",
+        answer: "Your donation history is private and visible only to you through your dashboard. Nonprofits receive aggregated donation totals but cannot see individual donor names or contact information.",
       },
       {
         question: "Can I donate anonymously?",
-        answer: "Yes. When making a donation, you can choose to remain anonymous. Anonymous donations will not share your name or contact information with the nonprofits receiving your donation.",
+        answer: "Your donations are private by default. Nonprofits cannot see individual donor names or contact details - they only receive aggregated donation totals. Your personal information is never shared with nonprofits.",
       },
     ],
   },

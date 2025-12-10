@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, Lock, AlertCircle, RefreshCw, Save, FolderOpen, Trash2, X, LogIn, Pencil, Check, Layers, Building2, Tag, DollarSign, Heart, ChevronDown, Info } from "lucide-react";
+import { ArrowLeft, Lock, AlertCircle, RefreshCw, Save, FolderOpen, Trash2, X, LogIn, Pencil, Check, Layers, Building2, Tag, DollarSign, Heart, ChevronDown, Info, Mail, Printer, Copy } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,7 +56,7 @@ export function DonateClient({
   // Track current lockedIds to avoid stale closure in auto-save effect
   const lockedIdsRef = React.useRef<string[] | undefined>(undefined);
 
-  const [amount, setAmount] = React.useState(75000); // Start with $75K (first preset of tier 3)
+  const [amount, setAmount] = React.useState(5000); // Start with $5K (mid-range)
   const [frequency, setFrequency] = React.useState<DonationFrequency>("one-time");
   const [allocations, setAllocations] = React.useState<AllocationItem[]>([]);
 
@@ -265,6 +265,8 @@ export function DonateClient({
   const [editingTemplateName, setEditingTemplateName] = React.useState("");
   const [isRenaming, setIsRenaming] = React.useState(false);
   const [expandedTemplateId, setExpandedTemplateId] = React.useState<string | null>(null);
+  const [showCheckModal, setShowCheckModal] = React.useState(false);
+  const [copiedToClipboard, setCopiedToClipboard] = React.useState(false);
 
   // Color palette for allocation bar
   const allocationColors = [
@@ -535,7 +537,9 @@ export function DonateClient({
   const totalPercentage = allocations.reduce((sum, item) => sum + item.percentage, 0);
   const isValidAllocation = totalPercentage === 100;
   const amountCents = amount * 100;
-  const isValidAmount = amountCents >= config.features.minDonationCents;
+  const isValidAmount = amountCents >= config.features.minDonationCents && amountCents <= config.features.maxDonationCents;
+  const requiresAchOrCheck = amountCents > config.features.creditCardMaxCents;
+  const canUseCreditCard = amountCents <= config.features.creditCardMaxCents;
 
   // Handler for applying AI allocation recommendations
   const handleApplyAiAllocation = (aiAllocations: AIAllocation[]) => {
@@ -735,6 +739,8 @@ export function DonateClient({
                   value={amount}
                   onChange={setAmount}
                   minAmount={config.features.minDonationCents / 100}
+                  maxAmount={config.features.maxDonationCents / 100}
+                  creditCardMax={config.features.creditCardMaxCents / 100}
                 />
               </CardContent>
             </Card>
@@ -852,29 +858,67 @@ export function DonateClient({
                     </div>
                   )}
 
-                  <Button
-                    fullWidth
-                    size="lg"
-                    disabled={!isValidAllocation || !isValidAmount || isLoading}
-                    className="mt-4"
-                    onClick={handleProceedToPayment}
-                    loading={isLoading}
-                  >
-                    {!isAuthenticated ? (
-                      <LogIn className="mr-2 h-4 w-4" />
-                    ) : isRecurring ? (
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                    ) : (
-                      <Lock className="mr-2 h-4 w-4" />
-                    )}
-                    {isLoading
-                      ? "Processing..."
-                      : !isAuthenticated
-                        ? "Sign in to Donate"
-                        : isRecurring
-                          ? "Set Up Recurring Donation"
-                          : "Proceed to Payment"}
-                  </Button>
+                  {/* Payment Options - changes based on amount */}
+                  {requiresAchOrCheck ? (
+                    // Large donation - ACH/Check only
+                    <div className="mt-4 space-y-3">
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <p className="text-sm text-amber-800 text-center">
+                          Donations over $10,000 require ACH or check payment
+                        </p>
+                      </div>
+                      <Button
+                        fullWidth
+                        size="lg"
+                        disabled={!isValidAllocation || !isValidAmount}
+                        onClick={() => setShowCheckModal(true)}
+                      >
+                        <Mail className="mr-2 h-4 w-4" />
+                        Donate by Check
+                      </Button>
+                      <p className="text-xs text-slate-500 text-center">
+                        ACH bank transfer coming soon. For immediate assistance, contact us.
+                      </p>
+                    </div>
+                  ) : (
+                    // Standard donation - Credit card available
+                    <>
+                      <Button
+                        fullWidth
+                        size="lg"
+                        disabled={!isValidAllocation || !isValidAmount || isLoading}
+                        className="mt-4"
+                        onClick={handleProceedToPayment}
+                        loading={isLoading}
+                      >
+                        {!isAuthenticated ? (
+                          <LogIn className="mr-2 h-4 w-4" />
+                        ) : isRecurring ? (
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                        ) : (
+                          <Lock className="mr-2 h-4 w-4" />
+                        )}
+                        {isLoading
+                          ? "Processing..."
+                          : !isAuthenticated
+                            ? "Sign in to Donate"
+                            : isRecurring
+                              ? "Set Up Recurring Donation"
+                              : "Proceed to Payment"}
+                      </Button>
+
+                      {/* Donate by Check - only show for one-time donations */}
+                      {!isRecurring && isValidAllocation && isValidAmount && (
+                        <button
+                          onClick={() => setShowCheckModal(true)}
+                          className="mt-2 w-full text-sm text-slate-500 hover:text-slate-700 flex items-center justify-center gap-1.5 py-2 transition-colors"
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                          Prefer to donate by check?
+                        </button>
+                      )}
+                    </>
+                  )}
 
                   {!isValidAllocation && allocations.length > 0 && (
                     <p className="text-sm text-red-600 text-center">
@@ -890,7 +934,7 @@ export function DonateClient({
 
                   {!isValidAmount && (
                     <p className="text-sm text-red-600 text-center">
-                      Minimum donation is ${config.features.minDonationCents / 100}
+                      Donation must be between ${(config.features.minDonationCents / 100).toLocaleString()} and ${(config.features.maxDonationCents / 100).toLocaleString()}
                     </p>
                   )}
 
@@ -1295,6 +1339,140 @@ export function DonateClient({
                 onClick={() => setShowTemplatesModal(false)}
               >
                 Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Donate by Check Modal */}
+      {showCheckModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowCheckModal(false)}
+          />
+          <div className="relative w-full max-w-lg rounded-xl bg-white shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                  <Mail className="h-5 w-5 text-blue-700" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Donate by Check
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowCheckModal(false)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-5">
+              {/* Donation Summary */}
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <p className="text-sm font-medium text-slate-900 mb-2">Your Donation</p>
+                <p className="text-2xl font-semibold text-slate-900">{formatCurrency(amountCents)}</p>
+                <div className="mt-3 space-y-1">
+                  {allocations.map((item) => (
+                    <div key={item.id} className="flex justify-between text-sm">
+                      <span className="text-slate-600">{item.targetName}</span>
+                      <span className="text-slate-900">{item.percentage}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mailing Instructions */}
+              <div>
+                <p className="text-sm font-medium text-slate-900 mb-2">Make check payable to:</p>
+                <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                  <p className="font-medium text-slate-900">{config.legal.entityName}</p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-slate-900 mb-2">Mail to:</p>
+                <div className="p-3 bg-slate-100 rounded-lg relative">
+                  <p className="text-slate-700 text-sm pr-8">
+                    {config.legal.entityName}<br />
+                    Attn: Donations<br />
+                    {config.contact.address.street}<br />
+                    {config.contact.address.city}, {config.contact.address.state} {config.contact.address.zip}
+                  </p>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        `${config.legal.entityName}\nAttn: Donations\n${config.contact.address.street}\n${config.contact.address.city}, ${config.contact.address.state} ${config.contact.address.zip}`
+                      );
+                      setCopiedToClipboard(true);
+                      setTimeout(() => setCopiedToClipboard(false), 2000);
+                    }}
+                    className="absolute top-2 right-2 p-1.5 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors"
+                    title="Copy address"
+                  >
+                    {copiedToClipboard ? (
+                      <Check className="h-4 w-4 text-emerald-600" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-slate-900 mb-2">In the memo line, write:</p>
+                <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                  <p className="text-amber-800 text-sm font-medium">
+                    &quot;Donation - [Your Name/Organization]&quot;
+                  </p>
+                </div>
+              </div>
+
+              {/* Important Notes */}
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-sm font-medium text-slate-900 mb-2">Important Notes:</p>
+                <ul className="text-sm text-slate-600 space-y-2">
+                  <li className="flex gap-2">
+                    <span className="text-slate-400">•</span>
+                    <span>Please include your contact information with your check so we can send your tax receipt.</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-slate-400">•</span>
+                    <span>Your donation will be recorded once the check is received and processed.</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-slate-400">•</span>
+                    <span>If you have specific allocation instructions, include a note with the percentages shown above.</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Contact */}
+              <p className="text-xs text-slate-500 text-center">
+                Questions? Contact us at{" "}
+                <a href={`mailto:${config.contact.email}`} className="text-blue-600 hover:underline">
+                  {config.contact.email}
+                </a>
+              </p>
+            </div>
+
+            <div className="p-4 border-t border-slate-200 flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowCheckModal(false)}
+              >
+                Close
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => window.print()}
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                Print Instructions
               </Button>
             </div>
           </div>

@@ -3,61 +3,14 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { AlertCircle } from "lucide-react";
 
-const MAX_AMOUNT = 50_000_000; // $50 million
+// Preset amounts for the $1,000 - $20,000 range
+const PRESET_AMOUNTS = [1000, 2500, 5000, 10000, 15000, 20000];
 
-// Get the tier index that best contains a given amount
-function getTierForAmount(amount: number): number {
-  if (amount <= 500) return 0;
-  if (amount <= 5000) return 1;
-  if (amount <= 50000) return 2;
-  if (amount <= 250000) return 3;
-  if (amount <= 1000000) return 4;
-  if (amount <= 10000000) return 5;
-  return 6;
-}
-
-// Map tier index to preset amounts - no overlaps between tiers
-function getPresetsForTier(tierIndex: number): number[] {
-  switch (tierIndex) {
-    case 0: // $0 - $500
-      return [25, 50, 100, 150, 250, 500];
-    case 1: // $500 - $5,000
-      return [750, 1000, 1500, 2500, 3500, 5000];
-    case 2: // $5,000 - $50,000
-      return [7500, 10000, 15000, 25000, 35000, 50000];
-    case 3: // $50,000 - $250,000
-      return [75000, 100000, 125000, 150000, 200000, 250000];
-    case 4: // $250,000 - $1M
-      return [350000, 500000, 650000, 750000, 850000, 1000000];
-    case 5: // $1M - $10M
-      return [1500000, 2500000, 4000000, 5000000, 7500000, 10000000];
-    case 6: // $10M - $50M
-    default:
-      return [15000000, 20000000, 25000000, 30000000, 40000000, 50000000];
-  }
-}
-
-// Get the range label based on tier index
-function getRangeLabelForTier(tierIndex: number): string {
-  switch (tierIndex) {
-    case 0: return "$0 - $500";
-    case 1: return "$500 - $5,000";
-    case 2: return "$5,000 - $50,000";
-    case 3: return "$50,000 - $250,000";
-    case 4: return "$250,000 - $1M";
-    case 5: return "$1M - $10M";
-    case 6:
-    default: return "$10M - $50M";
-  }
-}
-
-// Format amount with appropriate suffix (K, M)
+// Format amount with appropriate suffix (K)
 function formatAmount(amount: number): string {
-  if (amount >= 1000000) {
-    const millions = amount / 1000000;
-    return millions % 1 === 0 ? `$${millions}M` : `$${millions.toFixed(1)}M`;
-  } else if (amount >= 1000) {
+  if (amount >= 1000) {
     const thousands = amount / 1000;
     return thousands % 1 === 0 ? `$${thousands}K` : `$${thousands.toFixed(1)}K`;
   }
@@ -68,36 +21,30 @@ interface AmountInputProps {
   value: number;
   onChange: (value: number) => void;
   minAmount?: number;
+  maxAmount?: number;
+  creditCardMax?: number;
 }
 
 export function AmountInput({
   value,
   onChange,
-  minAmount = 10,
+  minAmount = 1000,
+  maxAmount = 50000,
+  creditCardMax = 9999,
 }: AmountInputProps) {
   const [customAmount, setCustomAmount] = React.useState("");
   const [isCustom, setIsCustom] = React.useState(false);
-  const [tierIndex, setTierIndex] = React.useState(() => getTierForAmount(value));
 
-  // Sync tier when value changes externally (e.g., loading a template)
+  // Check if value matches a preset
   React.useEffect(() => {
-    const appropriateTier = getTierForAmount(value);
-    if (appropriateTier !== tierIndex) {
-      setTierIndex(appropriateTier);
-    }
-    // Also check if value matches a preset - if so, clear custom mode
-    const presets = getPresetsForTier(appropriateTier);
-    if (presets.includes(value)) {
+    if (PRESET_AMOUNTS.includes(value)) {
       setIsCustom(false);
       setCustomAmount("");
-    } else if (value > 0) {
-      // If it's a custom value, show it in the custom field with formatting
+    } else if (value > 0 && !PRESET_AMOUNTS.includes(value)) {
       setIsCustom(true);
       setCustomAmount(value.toLocaleString());
     }
-  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const presetAmounts = getPresetsForTier(tierIndex);
+  }, [value]);
 
   const handlePresetClick = (amount: number) => {
     setIsCustom(false);
@@ -112,7 +59,7 @@ export function AmountInput({
     if (rawValue) {
       const parsedAmount = parseInt(rawValue, 10);
       // Cap at max amount
-      const cappedAmount = Math.min(parsedAmount, MAX_AMOUNT);
+      const cappedAmount = Math.min(parsedAmount, maxAmount);
       // Format with commas for display
       setCustomAmount(cappedAmount.toLocaleString());
       onChange(cappedAmount);
@@ -122,25 +69,21 @@ export function AmountInput({
     setIsCustom(true);
   };
 
-  const handleRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTierIndex = parseInt(e.target.value, 10);
-    // Only update if tier actually changed
-    if (newTierIndex !== tierIndex) {
-      handleTierChange(newTierIndex);
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = parseInt(e.target.value, 10);
+    onChange(newValue);
+    // Check if it matches a preset
+    if (!PRESET_AMOUNTS.includes(newValue)) {
+      setIsCustom(true);
+      setCustomAmount(newValue.toLocaleString());
+    } else {
+      setIsCustom(false);
+      setCustomAmount("");
     }
   };
 
-  // Handle tier change from slider or label click
-  const handleTierChange = (newTierIndex: number) => {
-    if (newTierIndex === tierIndex) return; // No change needed
-
-    setTierIndex(newTierIndex);
-    // Select the first (smallest) preset of the new tier
-    const newPresets = getPresetsForTier(newTierIndex);
-    setIsCustom(false);
-    setCustomAmount("");
-    onChange(newPresets[0]);
-  };
+  const requiresAchOrCheck = value > 10000;
+  const sliderPercent = ((value - minAmount) / (maxAmount - minAmount)) * 100;
 
   return (
     <div className="space-y-6">
@@ -148,43 +91,29 @@ export function AmountInput({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <label className="block text-sm font-medium text-slate-900">
-            Donation Range
+            Donation Amount
           </label>
           <span className="text-sm font-medium text-blue-700">
-            {getRangeLabelForTier(tierIndex)}
+            ${minAmount.toLocaleString()} - ${maxAmount.toLocaleString()}
           </span>
         </div>
         <div className="relative">
           <input
             type="range"
-            min="0"
-            max="6"
-            step="1"
-            value={tierIndex}
-            onChange={handleRangeChange}
+            min={minAmount}
+            max={maxAmount}
+            step="100"
+            value={value}
+            onChange={handleSliderChange}
             className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb"
             style={{
-              background: `linear-gradient(to right, #1d4ed8 0%, #1d4ed8 ${(tierIndex / 6) * 100}%, #e2e8f0 ${(tierIndex / 6) * 100}%, #e2e8f0 100%)`,
+              background: `linear-gradient(to right, #1d4ed8 0%, #1d4ed8 ${sliderPercent}%, #e2e8f0 ${sliderPercent}%, #e2e8f0 100%)`,
             }}
           />
-          {/* Subtle tick marks - positioned to align with thumb center (11px = half of 22px thumb) */}
-          <div className="relative mt-2 h-2" style={{ marginLeft: '11px', marginRight: '11px' }}>
-            <div className="absolute inset-0 flex justify-between">
-              {[0, 1, 2, 3, 4, 5, 6].map((tick) => (
-                <div
-                  key={tick}
-                  className={cn(
-                    "w-px h-2 rounded-full",
-                    tick <= tierIndex ? "bg-blue-300" : "bg-slate-300"
-                  )}
-                />
-              ))}
-            </div>
-          </div>
-          {/* Min/Max labels only - aligned with tick marks */}
-          <div className="flex justify-between mt-1 text-xs text-slate-400" style={{ marginLeft: '11px', marginRight: '11px' }}>
-            <span className="-ml-2">$0</span>
-            <span className="-mr-2">$50M</span>
+          {/* Min/Max labels */}
+          <div className="flex justify-between mt-2 text-xs text-slate-400">
+            <span>${minAmount.toLocaleString()}</span>
+            <span>${maxAmount.toLocaleString()}</span>
           </div>
         </div>
       </div>
@@ -195,7 +124,7 @@ export function AmountInput({
           Quick Select
         </label>
         <div className="grid grid-cols-3 gap-3">
-          {presetAmounts.map((amount) => (
+          {PRESET_AMOUNTS.map((amount) => (
             <button
               key={amount}
               type="button"
@@ -238,7 +167,7 @@ export function AmountInput({
           />
         </div>
         <p className="text-xs text-slate-500">
-          Minimum: ${minAmount.toLocaleString()} | Maximum: ${MAX_AMOUNT.toLocaleString()}
+          Minimum: ${minAmount.toLocaleString()} | Maximum: ${maxAmount.toLocaleString()}
         </p>
       </div>
 
@@ -250,6 +179,24 @@ export function AmountInput({
             <span className="text-lg font-bold text-blue-700">
               ${value.toLocaleString()}
             </span>
+          </div>
+        </div>
+      )}
+
+      {/* ACH/Check Required Notice */}
+      {requiresAchOrCheck && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
+          <div className="flex gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-800">
+                Large donation payment options
+              </p>
+              <p className="text-sm text-amber-700 mt-1">
+                Donations over $10,000 require ACH bank transfer or check payment.
+                Credit card payments are limited to $10,000 or less.
+              </p>
+            </div>
           </div>
         </div>
       )}

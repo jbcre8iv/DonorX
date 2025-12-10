@@ -16,6 +16,12 @@ export const config = {
   contact: {
     email: "hello@donorx.org",
     support: "support@donorx.org",
+    address: {
+      street: "[Street Address]",
+      city: "[City]",
+      state: "[State]",
+      zip: "[ZIP]",
+    },
   },
 
   legal: {
@@ -25,7 +31,9 @@ export const config = {
 
   features: {
     maxAllocationItems: 10,
-    minDonationCents: 1000, // $10 minimum
+    minDonationCents: 100000, // $1,000 minimum
+    maxDonationCents: 2000000, // $20,000 maximum
+    creditCardMaxCents: 1000000, // $10,000 max for credit cards (over 10K requires ACH/check)
     platformFeePercent: 0, // No platform fee
     adminFeeReservePercent: 10, // Up to 10% for admin expenses
   },
