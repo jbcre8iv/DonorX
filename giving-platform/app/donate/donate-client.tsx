@@ -338,14 +338,27 @@ export function DonateClient({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
+  // Track if we've rendered with allocations at least once (to distinguish "just loaded" from "user removed all")
+  const hasHadAllocationsRef = React.useRef(false);
+
+  // Update ref when allocations are present
+  React.useEffect(() => {
+    if (allocations.length > 0) {
+      hasHadAllocationsRef.current = true;
+    }
+  }, [allocations.length]);
+
   // Auto-save draft when donation state changes
   React.useEffect(() => {
     // Don't save until initial load is complete
     if (!draftLoaded) return;
 
     // If all allocations were removed, clear draft and redirect to directory
-    // Only redirect if we confirmed a draft actually existed (not just initial empty state)
-    if (allocations.length === 0 && loadedFromDraft && hadDraftRef.current && !proceedingToPaymentRef.current) {
+    // Only redirect if:
+    // 1. We confirmed a draft actually existed (not just initial empty state)
+    // 2. We've previously had allocations (user removed them, vs initial load race)
+    // 3. Not proceeding to payment
+    if (allocations.length === 0 && loadedFromDraft && hadDraftRef.current && hasHadAllocationsRef.current && !proceedingToPaymentRef.current) {
       clearDonationDraft();
       router.push('/directory');
       return;
