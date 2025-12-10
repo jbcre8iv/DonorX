@@ -64,6 +64,7 @@ export interface DraftAllocation {
 export interface DonationDraft {
   id?: string;
   amountCents: number;
+  amountExplicitlySet?: boolean; // True if user explicitly changed the amount (vs default)
   frequency: "one-time" | "monthly" | "quarterly" | "annually";
   allocations: DraftAllocation[];
   lockedIds?: string[]; // Target IDs that are locked from auto-balance

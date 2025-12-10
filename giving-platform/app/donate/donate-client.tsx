@@ -57,8 +57,15 @@ export function DonateClient({
   const lockedIdsRef = React.useRef<string[] | undefined>(undefined);
 
   const [amount, setAmount] = React.useState(5000); // Start with $5K (mid-range)
+  const [amountExplicitlySet, setAmountExplicitlySet] = React.useState(false); // Track if user changed amount
   const [frequency, setFrequency] = React.useState<DonationFrequency>("one-time");
   const [allocations, setAllocations] = React.useState<AllocationItem[]>([]);
+
+  // Wrapper to track explicit amount changes from user interaction
+  const handleAmountChange = React.useCallback((newAmount: number) => {
+    setAmount(newAmount);
+    setAmountExplicitlySet(true);
+  }, []);
 
   // Initialize allocations from template, cart, preselected nonprofit, or draft
   React.useEffect(() => {
@@ -146,12 +153,17 @@ export function DonateClient({
 
     // Otherwise, restore from draft if available (lowest priority)
     if (donationDraft && donationDraft.allocations.length > 0) {
-      // Clamp the loaded amount to valid range
-      const loadedAmount = donationDraft.amountCents / 100;
-      const minAmount = config.features.minDonationCents / 100;
-      const maxAmount = config.features.maxDonationCents / 100;
-      const clampedAmount = Math.max(minAmount, Math.min(maxAmount, loadedAmount));
-      setAmount(clampedAmount);
+      // Only restore amount if user explicitly set it (not just the default)
+      if (donationDraft.amountExplicitlySet) {
+        // Clamp the loaded amount to valid range
+        const loadedAmount = donationDraft.amountCents / 100;
+        const minAmount = config.features.minDonationCents / 100;
+        const maxAmount = config.features.maxDonationCents / 100;
+        const clampedAmount = Math.max(minAmount, Math.min(maxAmount, loadedAmount));
+        setAmount(clampedAmount);
+        setAmountExplicitlySet(true); // Preserve the explicit flag
+      }
+      // Always restore frequency (it's a deliberate choice)
       setFrequency(donationDraft.frequency);
       setAllocations(
         donationDraft.allocations.map((a) => ({
@@ -216,12 +228,15 @@ export function DonateClient({
 
     // This is a change from another device - sync it
     console.log('[Donate] Syncing draft from another device');
-    // Clamp the loaded amount to valid range
-    const loadedAmount = donationDraft.amountCents / 100;
-    const minAmount = config.features.minDonationCents / 100;
-    const maxAmount = config.features.maxDonationCents / 100;
-    const clampedAmount = Math.max(minAmount, Math.min(maxAmount, loadedAmount));
-    setAmount(clampedAmount);
+    // Only sync amount if user explicitly set it on the other device
+    if (donationDraft.amountExplicitlySet) {
+      const loadedAmount = donationDraft.amountCents / 100;
+      const minAmount = config.features.minDonationCents / 100;
+      const maxAmount = config.features.maxDonationCents / 100;
+      const clampedAmount = Math.max(minAmount, Math.min(maxAmount, loadedAmount));
+      setAmount(clampedAmount);
+      setAmountExplicitlySet(true);
+    }
     setFrequency(donationDraft.frequency);
     setAllocations(
       donationDraft.allocations.map((a) => ({
@@ -368,6 +383,7 @@ export function DonateClient({
     // This preserves amount/frequency if user navigates away
     const draft: DonationDraft = {
       amountCents: amount * 100,
+      amountExplicitlySet, // Track if user explicitly changed the amount
       frequency,
       allocations: allocations.map((a) => {
         // Look up logo/icon from the nonprofits/categories arrays
@@ -403,7 +419,7 @@ export function DonateClient({
     });
 
     saveDonationDraft(draft);
-  }, [amount, frequency, allocations, draftLoaded, loadedFromDraft, saveDonationDraft, clearDonationDraft, router, nonprofits, categories]);
+  }, [amount, amountExplicitlySet, frequency, allocations, draftLoaded, loadedFromDraft, saveDonationDraft, clearDonationDraft, router, nonprofits, categories]);
 
   const handleSaveTemplate = async () => {
     if (!templateName.trim()) {
@@ -760,7 +776,7 @@ export function DonateClient({
               <CardContent>
                 <AmountInput
                   value={amount}
-                  onChange={setAmount}
+                  onChange={handleAmountChange}
                   minAmount={config.features.minDonationCents / 100}
                   maxAmount={config.features.maxDonationCents / 100}
                   creditCardMax={config.features.creditCardMaxCents / 100}
