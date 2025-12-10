@@ -5,59 +5,58 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { AlertCircle } from "lucide-react";
 
-// Map slider position (0-6) to amount
-function getAmountForPosition(position: number, minAmount: number, maxAmount: number): number {
-  const range = maxAmount - minAmount;
-  // Round to nearest 100 for cleaner values
-  return Math.round((minAmount + (position / 6) * range) / 100) * 100;
+// Define the 7 tick positions with their base amounts (rounded to $500)
+const TICK_AMOUNTS = [1000, 4000, 7000, 10500, 13500, 17000, 20000];
+
+// Get the range for a given tick position (start and end amounts)
+function getRangeForPosition(position: number): { start: number; end: number } {
+  const start = TICK_AMOUNTS[position];
+  const end = position < 6 ? TICK_AMOUNTS[position + 1] : TICK_AMOUNTS[position];
+  return { start, end };
 }
 
-// Map amount to slider position (0-6)
-function getPositionForAmount(amount: number, minAmount: number, maxAmount: number): number {
-  const range = maxAmount - minAmount;
-  const position = ((amount - minAmount) / range) * 6;
-  return Math.max(0, Math.min(6, position));
-}
+// Generate 4 button amounts for a given tick position (all rounded to $500)
+function getButtonAmountsForPosition(position: number): number[] {
+  const { start, end } = getRangeForPosition(position);
 
-// Generate 4 increment amounts for a given slider position
-function getIncrementsForPosition(position: number, minAmount: number, maxAmount: number): number[] {
-  const baseAmount = getAmountForPosition(position, minAmount, maxAmount);
-  const range = maxAmount - minAmount;
-  const stepSize = range / 6; // Amount per slider tick
-  const incrementStep = Math.round(stepSize / 4 / 100) * 100; // Divide each tick into 4 parts, round to 100
+  if (position === 6) {
+    // Last position - show amounts leading up to max
+    return [18500, 19000, 19500, 20000];
+  }
 
-  // Generate 4 increments around the base amount
-  const increments: number[] = [];
+  const range = end - start;
+  const step = Math.round(range / 4 / 500) * 500; // Round step to nearest $500
 
-  // Start from the base amount and create 4 evenly spaced amounts within this tick range
+  const amounts: number[] = [];
   for (let i = 0; i < 4; i++) {
-    const amount = Math.round((baseAmount + (i * incrementStep)) / 100) * 100;
-    // Ensure we don't exceed max or go below min
-    const clampedAmount = Math.max(minAmount, Math.min(maxAmount, amount));
-    if (!increments.includes(clampedAmount)) {
-      increments.push(clampedAmount);
+    const amount = start + (i * step);
+    // Round to nearest $500
+    const rounded = Math.round(amount / 500) * 500;
+    if (!amounts.includes(rounded) && rounded >= 1000 && rounded <= 20000) {
+      amounts.push(rounded);
     }
   }
 
-  // Ensure we have exactly 4 unique values
-  while (increments.length < 4) {
-    const lastAmount = increments[increments.length - 1];
-    const nextAmount = Math.min(maxAmount, lastAmount + incrementStep);
-    if (!increments.includes(nextAmount)) {
-      increments.push(nextAmount);
+  // Ensure we have 4 unique amounts
+  while (amounts.length < 4) {
+    const lastAmount = amounts[amounts.length - 1];
+    const nextAmount = lastAmount + 500;
+    if (nextAmount <= 20000 && !amounts.includes(nextAmount)) {
+      amounts.push(nextAmount);
     } else {
       break;
     }
   }
 
-  return increments.slice(0, 4);
+  return amounts.slice(0, 4);
 }
 
-// Format amount with appropriate suffix (K)
+// Format amount with K suffix (no decimals since all amounts are $500 increments)
 function formatAmount(amount: number): string {
   if (amount >= 1000) {
     const thousands = amount / 1000;
-    return thousands % 1 === 0 ? `$${thousands}K` : `$${thousands.toFixed(1)}K`;
+    // Show .5 for half thousands, otherwise whole number
+    return thousands % 1 === 0 ? `$${thousands}K` : `$${thousands.toFixed(1).replace('.0', '')}K`;
   }
   return `$${amount.toLocaleString()}`;
 }
@@ -79,29 +78,53 @@ export function AmountInput({
 }: AmountInputProps) {
   const [customAmount, setCustomAmount] = React.useState("");
   const [isCustomFocused, setIsCustomFocused] = React.useState(false);
+  const [isUsingCustom, setIsUsingCustom] = React.useState(false);
 
   // Calculate slider position based on current value
-  const sliderPosition = Math.round(getPositionForAmount(value, minAmount, maxAmount));
+  const sliderPosition = React.useMemo(() => {
+    // Find which tick position is closest to the current value
+    let closestPosition = 0;
+    let closestDiff = Math.abs(value - TICK_AMOUNTS[0]);
 
-  // Get dynamic increment amounts for current slider position
-  const incrementAmounts = React.useMemo(
-    () => getIncrementsForPosition(sliderPosition, minAmount, maxAmount),
-    [sliderPosition, minAmount, maxAmount]
+    for (let i = 1; i < TICK_AMOUNTS.length; i++) {
+      const diff = Math.abs(value - TICK_AMOUNTS[i]);
+      if (diff < closestDiff) {
+        closestDiff = diff;
+        closestPosition = i;
+      }
+    }
+    return closestPosition;
+  }, [value]);
+
+  // Get the current range based on slider position
+  const currentRange = React.useMemo(() => getRangeForPosition(sliderPosition), [sliderPosition]);
+
+  // Get dynamic button amounts for current slider position
+  const buttonAmounts = React.useMemo(
+    () => getButtonAmountsForPosition(sliderPosition),
+    [sliderPosition]
   );
 
-  // Update custom amount display when value changes (and not manually editing)
+  // Check if current value matches one of the button amounts
+  const isPresetSelected = buttonAmounts.includes(value);
+
+  // Update custom amount display only when using custom input
   React.useEffect(() => {
-    if (!isCustomFocused) {
+    if (isUsingCustom && !isCustomFocused) {
       setCustomAmount(value > 0 ? value.toLocaleString() : "");
+    } else if (!isUsingCustom) {
+      setCustomAmount("");
     }
-  }, [value, isCustomFocused]);
+  }, [value, isCustomFocused, isUsingCustom]);
 
   const handlePresetClick = (amount: number) => {
+    setIsUsingCustom(false);
+    setCustomAmount("");
     onChange(amount);
-    setCustomAmount(amount.toLocaleString());
   };
 
   const handleCustomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsUsingCustom(true);
     // Remove all non-digits
     const rawValue = e.target.value.replace(/[^0-9]/g, "");
 
@@ -119,9 +142,22 @@ export function AmountInput({
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const position = parseInt(e.target.value, 10);
-    const newValue = getAmountForPosition(position, minAmount, maxAmount);
+    const newValue = TICK_AMOUNTS[position];
+    setIsUsingCustom(false);
+    setCustomAmount("");
     onChange(newValue);
-    setCustomAmount(newValue.toLocaleString());
+  };
+
+  const handleCustomFocus = () => {
+    setIsCustomFocused(true);
+    setIsUsingCustom(true);
+    if (value > 0) {
+      setCustomAmount(value.toLocaleString());
+    }
+  };
+
+  const handleCustomBlur = () => {
+    setIsCustomFocused(false);
   };
 
   const requiresAchOrCheck = value > creditCardMax;
@@ -132,10 +168,10 @@ export function AmountInput({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <label className="block text-sm font-medium text-slate-900">
-            Donation Range
+            Select Range
           </label>
           <span className="text-sm font-medium text-blue-700">
-            ${minAmount.toLocaleString()} - ${maxAmount.toLocaleString()}
+            ${currentRange.start.toLocaleString()} - ${currentRange.end.toLocaleString()}
           </span>
         </div>
         <div className="relative">
@@ -173,20 +209,20 @@ export function AmountInput({
         </div>
       </div>
 
-      {/* Dynamic Increment Amounts */}
+      {/* Dynamic Button Amounts */}
       <div className="space-y-3">
         <label className="block text-sm font-medium text-slate-900">
           Quick Select
         </label>
         <div className="grid grid-cols-2 gap-3">
-          {incrementAmounts.map((amount) => (
+          {buttonAmounts.map((amount) => (
             <button
               key={amount}
               type="button"
               onClick={() => handlePresetClick(amount)}
               className={cn(
                 "rounded-lg border-2 py-3 text-sm font-medium transition-all duration-200",
-                value === amount
+                value === amount && !isUsingCustom
                   ? "border-blue-700 bg-blue-50 text-blue-700 shadow-sm"
                   : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50/50"
               )}
@@ -213,12 +249,12 @@ export function AmountInput({
             type="text"
             value={customAmount}
             onChange={handleCustomChange}
-            onFocus={() => setIsCustomFocused(true)}
-            onBlur={() => setIsCustomFocused(false)}
+            onFocus={handleCustomFocus}
+            onBlur={handleCustomBlur}
             placeholder="Enter custom amount"
             className={cn(
               "pl-7",
-              isCustomFocused && "ring-2 ring-blue-700"
+              isUsingCustom && customAmount && "ring-2 ring-blue-700"
             )}
           />
         </div>
@@ -249,8 +285,8 @@ export function AmountInput({
                 Large donation payment options
               </p>
               <p className="text-sm text-amber-700 mt-1">
-                Donations over $10,000 require ACH bank transfer or check payment.
-                Credit card payments are limited to $10,000 or less.
+                Donations over ${creditCardMax.toLocaleString()} require ACH bank transfer or check payment.
+                Credit card payments are limited to ${creditCardMax.toLocaleString()} or less.
               </p>
             </div>
           </div>
