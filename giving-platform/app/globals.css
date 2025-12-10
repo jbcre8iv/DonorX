@@ -215,6 +215,17 @@ body {
   animation: morphBlob 8s ease-in-out infinite;
 }
 
+/* SVG dash animation for flow lines */
+@keyframes dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.animate-dash {
+  animation: dash 1.5s linear infinite;
+}
+
 /* Gradient text utility */
 .text-gradient {
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);

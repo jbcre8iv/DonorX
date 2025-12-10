@@ -9,6 +9,9 @@ import {
   ArrowRight,
   CheckCircle,
   Sparkles,
+  TrendingUp,
+  Globe,
+  Landmark,
 } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
@@ -17,14 +20,18 @@ import { createClient } from "@/lib/supabase/server";
 import {
   FadeInUp,
   FadeIn,
+  FadeInLeft,
+  FadeInRight,
   StaggerContainer,
   StaggerItem,
   HoverLift,
+  HoverScale,
 } from "@/components/ui/motion";
 import {
   Blob,
   GradientOrb,
   FloatingDots,
+  WaveDivider,
   CornerBlob,
 } from "@/components/ui/decorative-shapes";
 
@@ -95,7 +102,7 @@ export default async function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-white py-20 sm:pt-32 sm:pb-36">
+      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-white pt-16 pb-24 sm:pt-24 sm:pb-32">
         {/* Decorative elements */}
         <Blob
           className="-top-32 -right-32 opacity-20"
@@ -120,34 +127,145 @@ export default async function HomePage() {
         />
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <FadeInUp className="mx-auto max-w-3xl text-center">
-            <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-              One Donation.<br />
-              <span className="whitespace-nowrap text-gradient">Unlimited Impact.</span>
-            </h1>
-            <p className="mt-6 text-lg text-slate-600 sm:text-xl">
-              The giving platform for corporations and family offices. Make one
-              donation, support multiple causes, receive one tax receipt.
-            </p>
-            <div className="mt-10 flex justify-center gap-4">
-              <Button size="lg" asChild className="shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-shadow">
-                <Link href="/directory">
-                  Start Giving
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild className="hover:bg-slate-50">
-                <Link href="/about">
-                  Learn More
-                </Link>
-              </Button>
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+            {/* Left: Text Content */}
+            <FadeInLeft className="text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-sm font-medium text-blue-700 ring-1 ring-blue-100 mb-6">
+                <Landmark className="h-4 w-4" />
+                For Corporations & Family Offices
+              </div>
+              <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
+                One Donation.<br />
+                <span className="whitespace-nowrap text-gradient">Unlimited Impact.</span>
+              </h1>
+              <p className="mt-6 text-lg text-slate-600 sm:text-xl max-w-xl mx-auto lg:mx-0">
+                The giving platform for corporations and family offices. Make one
+                donation, support multiple causes, receive one tax receipt.
+              </p>
+              <div className="mt-10 flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
+                <Button size="lg" asChild className="shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-shadow">
+                  <Link href="/directory">
+                    Start Giving
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild className="hover:bg-slate-50">
+                  <Link href="/about">
+                    Learn More
+                  </Link>
+                </Button>
+              </div>
+            </FadeInLeft>
+
+            {/* Right: Hero Illustration - Connected Giving Flow */}
+            <FadeInRight delay={0.2} className="relative hidden lg:block">
+              <div className="relative aspect-square max-w-lg mx-auto">
+                {/* Background glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-emerald-50 to-purple-100 rounded-full blur-3xl opacity-60" />
+
+                {/* Central hub - represents the donor/platform */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl blur-xl opacity-40 scale-110" />
+                    <div className="relative w-24 h-24 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl shadow-2xl flex items-center justify-center">
+                      <div className="text-white text-center">
+                        <div className="text-2xl font-bold">$</div>
+                        <div className="text-xs opacity-80">One Gift</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Orbiting cause nodes */}
+                {[
+                  { icon: "🏥", label: "Health", position: "top-8 left-1/2 -translate-x-1/2", delay: "0s" },
+                  { icon: "🎓", label: "Education", position: "top-1/4 right-8", delay: "0.5s" },
+                  { icon: "🌍", label: "Environment", position: "bottom-1/4 right-8", delay: "1s" },
+                  { icon: "🏠", label: "Housing", position: "bottom-8 left-1/2 -translate-x-1/2", delay: "1.5s" },
+                  { icon: "🍲", label: "Food", position: "bottom-1/4 left-8", delay: "2s" },
+                  { icon: "🎨", label: "Arts", position: "top-1/4 left-8", delay: "2.5s" },
+                ].map((cause, i) => (
+                  <div
+                    key={i}
+                    className={`absolute ${cause.position} animate-float`}
+                    style={{ animationDelay: cause.delay }}
+                  >
+                    <div className="relative group">
+                      {/* Connection line (implied by positioning) */}
+                      <div className="w-14 h-14 bg-white rounded-xl shadow-lg ring-1 ring-slate-200/50 flex flex-col items-center justify-center transition-all group-hover:scale-110 group-hover:shadow-xl">
+                        <span className="text-xl">{cause.icon}</span>
+                        <span className="text-[10px] text-slate-500 font-medium">{cause.label}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Animated flow lines - SVG */}
+                <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 400 400">
+                  {/* Flow paths from center to each node */}
+                  <defs>
+                    <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.8" />
+                      <stop offset="100%" stopColor="#10b981" stopOpacity="0.4" />
+                    </linearGradient>
+                  </defs>
+                  {/* Paths to each cause - stylized curves */}
+                  <path d="M200,200 Q200,120 200,60" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" />
+                  <path d="M200,200 Q260,160 320,120" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.3s" }} />
+                  <path d="M200,200 Q260,240 320,280" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.6s" }} />
+                  <path d="M200,200 Q200,280 200,340" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.9s" }} />
+                  <path d="M200,200 Q140,240 80,280" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "1.2s" }} />
+                  <path d="M200,200 Q140,160 80,120" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "1.5s" }} />
+                </svg>
+              </div>
+            </FadeInRight>
+          </div>
+        </div>
+
+        {/* Wave divider */}
+        <WaveDivider className="absolute -bottom-1 left-0 right-0" color="#f8fafc" />
+      </section>
+
+      {/* Social Proof / Trust Bar */}
+      <section className="relative bg-slate-50 py-12 border-b border-slate-100">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <FadeInUp>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+              <div className="text-center">
+                <div className="text-3xl sm:text-4xl font-bold text-slate-900">500+</div>
+                <div className="mt-1 text-sm text-slate-500 flex items-center justify-center gap-1.5">
+                  <Building2 className="h-4 w-4" />
+                  Vetted Nonprofits
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl sm:text-4xl font-bold text-slate-900">$2.4M+</div>
+                <div className="mt-1 text-sm text-slate-500 flex items-center justify-center gap-1.5">
+                  <TrendingUp className="h-4 w-4" />
+                  Donations Processed
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl sm:text-4xl font-bold text-slate-900">150+</div>
+                <div className="mt-1 text-sm text-slate-500 flex items-center justify-center gap-1.5">
+                  <Users className="h-4 w-4" />
+                  Corporate Partners
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl sm:text-4xl font-bold text-slate-900">12</div>
+                <div className="mt-1 text-sm text-slate-500 flex items-center justify-center gap-1.5">
+                  <Globe className="h-4 w-4" />
+                  Cause Categories
+                </div>
+              </div>
             </div>
           </FadeInUp>
         </div>
       </section>
 
       {/* How It Works Section */}
-      <section className="relative py-20 sm:py-24 overflow-hidden">
+      <section className="relative py-20 sm:py-24 overflow-hidden bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <FadeInUp className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
@@ -160,26 +278,39 @@ export default async function HomePage() {
           <StaggerContainer className="mt-16 grid gap-8 sm:grid-cols-3">
             {steps.map((step, index) => (
               <StaggerItem key={step.title}>
-                <HoverLift className="text-center">
-                  <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
-                    {/* Gradient ring */}
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 opacity-20 blur-md" />
-                    <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-50 to-emerald-50 ring-1 ring-blue-100">
-                      <step.icon className="h-8 w-8 text-blue-700" />
+                <HoverScale className="h-full">
+                  <Card className="h-full text-center p-8 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-200 group bg-white">
+                    <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
+                      {/* Animated gradient ring on hover */}
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 opacity-0 group-hover:opacity-30 blur-lg transition-opacity duration-300" />
+                      <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-50 to-emerald-50 ring-1 ring-blue-100 group-hover:ring-blue-300 transition-all duration-300 group-hover:scale-110">
+                        <step.icon className="h-8 w-8 text-blue-700" />
+                      </div>
+                      {/* Step number badge */}
+                      <div className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-blue-700 text-sm font-bold text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        {index + 1}
+                      </div>
                     </div>
-                    {/* Step number badge */}
-                    <div className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-blue-700 text-xs font-bold text-white shadow-lg">
-                      {index + 1}
-                    </div>
-                  </div>
-                  <h3 className="mt-6 text-lg font-semibold text-slate-900">
-                    {step.title}
-                  </h3>
-                  <p className="mt-2 text-slate-600">{step.description}</p>
-                </HoverLift>
+                    <h3 className="mt-6 text-lg font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
+                      {step.title}
+                    </h3>
+                    <p className="mt-2 text-slate-600">{step.description}</p>
+                  </Card>
+                </HoverScale>
               </StaggerItem>
             ))}
           </StaggerContainer>
+
+          {/* Connecting lines between steps (desktop only) */}
+          <div className="hidden sm:flex justify-center mt-8">
+            <div className="flex items-center gap-4 text-slate-300">
+              <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-slate-200 to-slate-200" />
+              <ArrowRight className="h-5 w-5" />
+              <div className="w-24 h-0.5 bg-slate-200" />
+              <ArrowRight className="h-5 w-5" />
+              <div className="w-24 h-0.5 bg-gradient-to-r from-slate-200 via-slate-200 to-transparent" />
+            </div>
+          </div>
         </div>
       </section>
 
