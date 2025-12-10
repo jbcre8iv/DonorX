@@ -139,6 +139,58 @@ export function FadeInDown({
 }
 
 /**
+ * Fade in from left animation
+ */
+export function FadeInLeft({
+  children,
+  className,
+  delay = 0,
+  duration = 0.5,
+  once = true,
+  ...props
+}: AnimatedProps) {
+  return (
+    <motion.div
+      className={className}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once, margin: "-50px" }}
+      variants={fadeInLeft}
+      transition={{ ...defaultTransition, duration, delay }}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/**
+ * Fade in from right animation
+ */
+export function FadeInRight({
+  children,
+  className,
+  delay = 0,
+  duration = 0.5,
+  once = true,
+  ...props
+}: AnimatedProps) {
+  return (
+    <motion.div
+      className={className}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once, margin: "-50px" }}
+      variants={fadeInRight}
+      transition={{ ...defaultTransition, duration, delay }}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/**
  * Scale in animation
  */
 export function ScaleIn({
