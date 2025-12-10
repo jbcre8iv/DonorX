@@ -178,12 +178,12 @@ export default async function HomePage() {
 
                 {/* Orbiting cause nodes */}
                 {[
-                  { icon: "🏥", label: "Health", position: "top-8 left-1/2 -translate-x-1/2", delay: "0s" },
-                  { icon: "🎓", label: "Education", position: "top-1/4 right-8", delay: "0.5s" },
-                  { icon: "🌍", label: "Environment", position: "bottom-1/4 right-8", delay: "1s" },
-                  { icon: "🏠", label: "Housing", position: "bottom-8 left-1/2 -translate-x-1/2", delay: "1.5s" },
-                  { icon: "🍲", label: "Food", position: "bottom-1/4 left-8", delay: "2s" },
-                  { icon: "🎨", label: "Arts", position: "top-1/4 left-8", delay: "2.5s" },
+                  { icon: "🏥", label: "Health", position: "top-4 left-1/2 -translate-x-1/2", delay: "0s" },
+                  { icon: "🎓", label: "Education", position: "top-[18%] right-4", delay: "0.5s" },
+                  { icon: "🌍", label: "Environment", position: "bottom-[18%] right-4", delay: "1s" },
+                  { icon: "🏠", label: "Housing", position: "bottom-4 left-1/2 -translate-x-1/2", delay: "1.5s" },
+                  { icon: "🍲", label: "Food", position: "bottom-[18%] left-4", delay: "2s" },
+                  { icon: "🎨", label: "Arts", position: "top-[18%] left-4", delay: "2.5s" },
                 ].map((cause, i) => (
                   <div
                     key={i}
@@ -191,10 +191,9 @@ export default async function HomePage() {
                     style={{ animationDelay: cause.delay }}
                   >
                     <div className="relative group">
-                      {/* Connection line (implied by positioning) */}
-                      <div className="w-14 h-14 bg-white rounded-xl shadow-lg ring-1 ring-slate-200/50 flex flex-col items-center justify-center transition-all group-hover:scale-110 group-hover:shadow-xl">
-                        <span className="text-xl">{cause.icon}</span>
-                        <span className="text-[10px] text-slate-500 font-medium">{cause.label}</span>
+                      <div className="w-[72px] h-[72px] bg-white rounded-xl shadow-lg ring-1 ring-slate-200/50 flex flex-col items-center justify-center gap-0.5 transition-all group-hover:scale-110 group-hover:shadow-xl">
+                        <span className="text-2xl">{cause.icon}</span>
+                        <span className="text-[11px] text-slate-600 font-medium leading-tight">{cause.label}</span>
                       </div>
                     </div>
                   </div>
@@ -205,17 +204,17 @@ export default async function HomePage() {
                   {/* Flow paths from center to each node */}
                   <defs>
                     <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.8" />
-                      <stop offset="100%" stopColor="#10b981" stopOpacity="0.4" />
+                      <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.6" />
+                      <stop offset="100%" stopColor="#10b981" stopOpacity="0.3" />
                     </linearGradient>
                   </defs>
-                  {/* Paths to each cause - stylized curves */}
-                  <path d="M200,200 Q200,120 200,60" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" />
-                  <path d="M200,200 Q260,160 320,120" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.3s" }} />
-                  <path d="M200,200 Q260,240 320,280" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.6s" }} />
-                  <path d="M200,200 Q200,280 200,340" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.9s" }} />
-                  <path d="M200,200 Q140,240 80,280" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "1.2s" }} />
-                  <path d="M200,200 Q140,160 80,120" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "1.5s" }} />
+                  {/* Paths to each cause - adjusted for new positions */}
+                  <path d="M200,200 Q200,130 200,50" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" />
+                  <path d="M200,200 Q280,150 350,100" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.3s" }} />
+                  <path d="M200,200 Q280,250 350,300" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.6s" }} />
+                  <path d="M200,200 Q200,270 200,350" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.9s" }} />
+                  <path d="M200,200 Q120,250 50,300" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "1.2s" }} />
+                  <path d="M200,200 Q120,150 50,100" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "1.5s" }} />
                 </svg>
               </div>
             </FadeInRight>
