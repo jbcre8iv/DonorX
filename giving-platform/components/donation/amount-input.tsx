@@ -8,6 +8,21 @@ import { AlertCircle } from "lucide-react";
 // Preset amounts for the $1,000 - $20,000 range
 const PRESET_AMOUNTS = [1000, 2500, 5000, 10000, 15000, 20000];
 
+// Slider tick positions (0-6 for 7 ticks)
+const SLIDER_TICKS = [0, 1, 2, 3, 4, 5, 6];
+
+// Map slider position to amount
+function getAmountForPosition(position: number, minAmount: number, maxAmount: number): number {
+  const range = maxAmount - minAmount;
+  return Math.round(minAmount + (position / 6) * range);
+}
+
+// Map amount to slider position
+function getPositionForAmount(amount: number, minAmount: number, maxAmount: number): number {
+  const range = maxAmount - minAmount;
+  return ((amount - minAmount) / range) * 6;
+}
+
 // Format amount with appropriate suffix (K)
 function formatAmount(amount: number): string {
   if (amount >= 1000) {
@@ -29,8 +44,8 @@ export function AmountInput({
   value,
   onChange,
   minAmount = 1000,
-  maxAmount = 50000,
-  creditCardMax = 9999,
+  maxAmount = 20000,
+  creditCardMax = 10000,
 }: AmountInputProps) {
   const [customAmount, setCustomAmount] = React.useState("");
   const [isCustom, setIsCustom] = React.useState(false);
@@ -70,7 +85,8 @@ export function AmountInput({
   };
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = parseInt(e.target.value, 10);
+    const position = parseFloat(e.target.value);
+    const newValue = getAmountForPosition(position, minAmount, maxAmount);
     onChange(newValue);
     // Check if it matches a preset
     if (!PRESET_AMOUNTS.includes(newValue)) {
@@ -83,7 +99,7 @@ export function AmountInput({
   };
 
   const requiresAchOrCheck = value > 10000;
-  const sliderPercent = ((value - minAmount) / (maxAmount - minAmount)) * 100;
+  const sliderPosition = getPositionForAmount(value, minAmount, maxAmount);
 
   return (
     <div className="space-y-6">
@@ -91,7 +107,7 @@ export function AmountInput({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <label className="block text-sm font-medium text-slate-900">
-            Donation Amount
+            Donation Range
           </label>
           <span className="text-sm font-medium text-blue-700">
             ${minAmount.toLocaleString()} - ${maxAmount.toLocaleString()}
@@ -100,20 +116,34 @@ export function AmountInput({
         <div className="relative">
           <input
             type="range"
-            min={minAmount}
-            max={maxAmount}
-            step="100"
-            value={value}
+            min="0"
+            max="6"
+            step="0.01"
+            value={sliderPosition}
             onChange={handleSliderChange}
             className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb"
             style={{
-              background: `linear-gradient(to right, #1d4ed8 0%, #1d4ed8 ${sliderPercent}%, #e2e8f0 ${sliderPercent}%, #e2e8f0 100%)`,
+              background: `linear-gradient(to right, #1d4ed8 0%, #1d4ed8 ${(sliderPosition / 6) * 100}%, #e2e8f0 ${(sliderPosition / 6) * 100}%, #e2e8f0 100%)`,
             }}
           />
-          {/* Min/Max labels */}
-          <div className="flex justify-between mt-2 text-xs text-slate-400">
-            <span>${minAmount.toLocaleString()}</span>
-            <span>${maxAmount.toLocaleString()}</span>
+          {/* Tick marks - positioned to align with thumb center */}
+          <div className="relative mt-2 h-2" style={{ marginLeft: '11px', marginRight: '11px' }}>
+            <div className="absolute inset-0 flex justify-between">
+              {SLIDER_TICKS.map((tick) => (
+                <div
+                  key={tick}
+                  className={cn(
+                    "w-px h-2 rounded-full",
+                    tick <= sliderPosition ? "bg-blue-300" : "bg-slate-300"
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+          {/* Min/Max labels - aligned with tick marks */}
+          <div className="flex justify-between mt-1 text-xs text-slate-400" style={{ marginLeft: '11px', marginRight: '11px' }}>
+            <span className="-ml-2">${minAmount.toLocaleString()}</span>
+            <span className="-mr-2">${maxAmount.toLocaleString()}</span>
           </div>
         </div>
       </div>

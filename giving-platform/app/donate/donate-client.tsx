@@ -146,7 +146,12 @@ export function DonateClient({
 
     // Otherwise, restore from draft if available (lowest priority)
     if (donationDraft && donationDraft.allocations.length > 0) {
-      setAmount(donationDraft.amountCents / 100);
+      // Clamp the loaded amount to valid range
+      const loadedAmount = donationDraft.amountCents / 100;
+      const minAmount = config.features.minDonationCents / 100;
+      const maxAmount = config.features.maxDonationCents / 100;
+      const clampedAmount = Math.max(minAmount, Math.min(maxAmount, loadedAmount));
+      setAmount(clampedAmount);
       setFrequency(donationDraft.frequency);
       setAllocations(
         donationDraft.allocations.map((a) => ({
@@ -211,7 +216,12 @@ export function DonateClient({
 
     // This is a change from another device - sync it
     console.log('[Donate] Syncing draft from another device');
-    setAmount(donationDraft.amountCents / 100);
+    // Clamp the loaded amount to valid range
+    const loadedAmount = donationDraft.amountCents / 100;
+    const minAmount = config.features.minDonationCents / 100;
+    const maxAmount = config.features.maxDonationCents / 100;
+    const clampedAmount = Math.max(minAmount, Math.min(maxAmount, loadedAmount));
+    setAmount(clampedAmount);
     setFrequency(donationDraft.frequency);
     setAllocations(
       donationDraft.allocations.map((a) => ({
