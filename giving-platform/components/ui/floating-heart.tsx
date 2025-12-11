@@ -9,9 +9,25 @@ interface FloatingHeartProps {
   onComplete: () => void;
 }
 
-// Easing function for smooth deceleration
-function easeOutCubic(t: number): number {
-  return 1 - Math.pow(1 - t, 3);
+// Easing function - starts slow, accelerates toward the end
+// Combines ease-in with a slight ease-out at the very end for smooth landing
+function easeInOutCustom(t: number): number {
+  // First 30%: very slow start (quadratic ease-in)
+  // Middle 50%: accelerating
+  // Last 20%: slight deceleration for smooth landing
+  if (t < 0.3) {
+    // Slow start - quadratic ease in, scaled to 0-0.15 output
+    const localT = t / 0.3;
+    return 0.15 * (localT * localT);
+  } else if (t < 0.8) {
+    // Accelerating phase - maps 0.3-0.8 input to 0.15-0.85 output
+    const localT = (t - 0.3) / 0.5;
+    return 0.15 + 0.7 * localT;
+  } else {
+    // Smooth landing - ease out for final approach
+    const localT = (t - 0.8) / 0.2;
+    return 0.85 + 0.15 * (1 - Math.pow(1 - localT, 2));
+  }
 }
 
 // Quadratic bezier curve for smooth arc path
@@ -87,8 +103,8 @@ function FloatingHeartAnimation({ startPosition, onComplete }: FloatingHeartProp
       const elapsed = currentTime - startTime;
       const rawProgress = Math.min(elapsed / duration, 1);
 
-      // Apply easing for smooth motion
-      const progress = easeOutCubic(rawProgress);
+      // Apply easing - starts slow so user can focus, then accelerates
+      const progress = easeInOutCustom(rawProgress);
 
       // Calculate position along bezier curve
       const x = quadraticBezier(progress, startX, controlX, endX);
