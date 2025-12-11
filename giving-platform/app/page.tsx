@@ -26,6 +26,7 @@ import {
   HoverLift,
   HoverScale,
 } from "@/components/ui/motion";
+import { HeroIllustration } from "@/components/home/hero-illustration";
 import {
   Blob,
   GradientOrb,
@@ -168,70 +169,7 @@ export default async function HomePage() {
 
             {/* Right: Hero Illustration - Connected Giving Flow */}
             <FadeInRight delay={0.2} className="relative hidden lg:block">
-              <div className="relative aspect-square max-w-lg mx-auto">
-                {/* Background glow */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-emerald-50 to-purple-100 rounded-full blur-3xl opacity-60" />
-
-                {/* Central hub - represents the donor/platform */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl blur-xl opacity-40 scale-110" />
-                    <div className="relative w-24 h-24 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl shadow-2xl flex items-center justify-center">
-                      <div className="text-white text-center">
-                        <div className="text-2xl font-bold">$</div>
-                        <div className="text-xs opacity-80">One Gift</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Animated flow lines - SVG (behind cards) */}
-                {/* Lines shortened to end at icon centers, accounting for float animation range */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 400 400">
-                  {/* Flow paths from center to each node */}
-                  <defs>
-                    <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.6" />
-                      <stop offset="100%" stopColor="#10b981" stopOpacity="0.3" />
-                    </linearGradient>
-                  </defs>
-                  {/* Health - top center (slight curve for visibility) */}
-                  <path d="M200,200 Q215,130 200,56" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" />
-                  {/* Education - top right (shortened endpoint) */}
-                  <path d="M200,200 Q290,150 340,100" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.3s" }} />
-                  {/* Environment - bottom right (shortened endpoint) */}
-                  <path d="M200,200 Q290,250 340,300" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.6s" }} />
-                  {/* Housing - bottom center (slight curve for visibility) */}
-                  <path d="M200,200 Q185,270 200,344" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.9s" }} />
-                  {/* Food - bottom left (shortened endpoint) */}
-                  <path d="M200,200 Q110,250 60,300" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "1.2s" }} />
-                  {/* Arts - top left (shortened endpoint) */}
-                  <path d="M200,200 Q110,150 60,100" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "1.5s" }} />
-                </svg>
-
-                {/* Orbiting cause nodes (above lines) */}
-                {[
-                  { icon: "🏥", label: "Health", position: "top-4 left-1/2 -translate-x-1/2", delay: "0s" },
-                  { icon: "🎓", label: "Education", position: "top-[18%] right-4", delay: "0.5s" },
-                  { icon: "🌍", label: "Environment", position: "bottom-[18%] right-4", delay: "1s" },
-                  { icon: "🏠", label: "Housing", position: "bottom-4 left-1/2 -translate-x-1/2", delay: "1.5s" },
-                  { icon: "🍲", label: "Food", position: "bottom-[18%] left-4", delay: "2s" },
-                  { icon: "🎨", label: "Arts", position: "top-[18%] left-4", delay: "2.5s" },
-                ].map((cause, i) => (
-                  <div
-                    key={i}
-                    className={`absolute ${cause.position} animate-float z-10`}
-                    style={{ animationDelay: cause.delay }}
-                  >
-                    <div className="relative group">
-                      <div className="w-[72px] h-[72px] bg-white rounded-xl shadow-lg ring-1 ring-slate-200/50 flex flex-col items-center justify-center gap-0.5 transition-all group-hover:scale-110 group-hover:shadow-xl">
-                        <span className="text-2xl">{cause.icon}</span>
-                        <span className="text-[11px] text-slate-600 font-medium leading-tight">{cause.label}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <HeroIllustration />
             </FadeInRight>
           </div>
         </div>
