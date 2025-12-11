@@ -104,10 +104,79 @@ export function Header({ initialUser = null, simulationEnabled = false, canAcces
   const [isTogglingSimulation, setIsTogglingSimulation] = React.useState(false);
   const userMenuRef = React.useRef<HTMLDivElement>(null);
 
-  // Sync simulation state
+  // Sync simulation state from props
   React.useEffect(() => {
     setIsSimulationEnabled(simulationEnabled);
   }, [simulationEnabled]);
+
+  // Track simulation access state locally for realtime updates
+  const [hasSimulationAccess, setHasSimulationAccess] = React.useState(canAccessSimulation);
+
+  // Sync simulation access from props
+  React.useEffect(() => {
+    setHasSimulationAccess(canAccessSimulation);
+  }, [canAccessSimulation]);
+
+  // Subscribe to realtime changes for simulation access/enabled
+  React.useEffect(() => {
+    if (!initialUser) return;
+
+    const supabase = createClient();
+
+    // Get the current user's ID to subscribe to their record
+    const setupSubscription = async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) return;
+
+      // Subscribe to changes on the current user's record
+      const channel = supabase
+        .channel(`user-simulation-${authUser.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'users',
+            filter: `id=eq.${authUser.id}`,
+          },
+          (payload) => {
+            const newData = payload.new as {
+              simulation_access?: boolean;
+              simulation_enabled?: boolean;
+              role?: string;
+            };
+
+            // Check if user still has simulation access
+            const isAdminOrOwner = newData.role === 'owner' || newData.role === 'admin';
+            const newHasAccess = isAdminOrOwner || newData.simulation_access === true;
+            const newEnabled = newData.simulation_enabled === true;
+
+            // Update states based on new data
+            setHasSimulationAccess(newHasAccess);
+
+            // If access was revoked, also turn off simulation
+            if (!newHasAccess) {
+              setIsSimulationEnabled(false);
+            } else {
+              setIsSimulationEnabled(newEnabled);
+            }
+
+            // Refresh the page to update server components (like the banner)
+            router.refresh();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
+
+    const cleanup = setupSubscription();
+    return () => {
+      cleanup.then((unsubscribe) => unsubscribe?.());
+    };
+  }, [initialUser, router]);
 
   const handleToggleSimulation = async () => {
     setIsTogglingSimulation(true);
@@ -312,7 +381,7 @@ export function Header({ initialUser = null, simulationEnabled = false, canAcces
                     </Link>
                   )}
                   {/* Simulation Mode Toggle - visible to users with simulation access */}
-                  {canAccessSimulation && (
+                  {hasSimulationAccess && (
                     <div className="border-t border-slate-100 mt-1 pt-1">
                       <button
                         onClick={handleToggleSimulation}
@@ -470,7 +539,7 @@ export function Header({ initialUser = null, simulationEnabled = false, canAcces
                         </Link>
                       )}
                       {/* Simulation Mode Toggle for mobile */}
-                      {canAccessSimulation && (
+                      {hasSimulationAccess && (
                         <div className="pt-2 mt-2 border-t border-slate-200">
                           <button
                             onClick={handleToggleSimulation}
