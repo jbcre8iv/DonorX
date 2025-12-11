@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { X, HandHeart, Heart } from "lucide-react";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { CartTab } from "./cart-tab";
@@ -19,21 +19,14 @@ export function CartFavoritesSidebar() {
 
   const isLoggedIn = !!userId;
 
-  // Track if sidebar should be rendered (for exit animation)
-  const [shouldRender, setShouldRender] = useState(false);
+  // Track previous open state to detect closing
+  const wasOpen = useRef(false);
+  const isClosing = wasOpen.current && !isSidebarOpen;
 
+  // Update ref after render
   useEffect(() => {
-    if (isSidebarOpen) {
-      setShouldRender(true);
-    }
-  }, [isSidebarOpen]);
-
-  // Handle animation end to unmount
-  const handleTransitionEnd = () => {
-    if (!isSidebarOpen) {
-      setShouldRender(false);
-    }
-  };
+    wasOpen.current = isSidebarOpen;
+  });
 
   // Close sidebar on escape key
   useEffect(() => {
@@ -47,8 +40,8 @@ export function CartFavoritesSidebar() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isSidebarOpen, setSidebarOpen]);
 
-  // Don't render at all if not needed
-  if (!shouldRender && !isSidebarOpen) return null;
+  // Don't render if not open and not in closing animation
+  if (!isSidebarOpen && !isClosing) return null;
 
   return (
     <>
@@ -61,14 +54,13 @@ export function CartFavoritesSidebar() {
         aria-hidden="true"
       />
 
-      {/* Sidebar - slides in from right with spring-like easing */}
+      {/* Sidebar - slides in from right */}
       <div
         className={`fixed right-0 top-0 z-50 h-full w-full max-w-md bg-white shadow-2xl border-l border-slate-200 transition-transform duration-300 ${
           isSidebarOpen
             ? "translate-x-0 ease-out"
             : "translate-x-full ease-in"
         }`}
-        onTransitionEnd={handleTransitionEnd}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
