@@ -133,22 +133,22 @@ export default function ContactPage() {
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                          First Name
+                          First Name <span className="text-red-500">*</span>
                         </label>
-                        <Input placeholder="John" className="h-11" />
+                        <Input placeholder="John" className="h-11" required />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                          Last Name
+                          Last Name <span className="text-red-500">*</span>
                         </label>
-                        <Input placeholder="Doe" className="h-11" />
+                        <Input placeholder="Doe" className="h-11" required />
                       </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Work Email
+                        Work Email <span className="text-red-500">*</span>
                       </label>
-                      <Input type="email" placeholder="john@company.com" className="h-11" />
+                      <Input type="email" placeholder="john@company.com" className="h-11" required />
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
