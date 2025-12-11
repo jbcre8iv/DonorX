@@ -3,47 +3,41 @@
 import { revalidatePath } from "next/cache";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 
+/**
+ * Get the current user's simulation mode status
+ * Returns true if the user has simulation enabled for themselves
+ */
 export async function getSimulationMode(): Promise<boolean> {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return false;
+
     const adminClient = createAdminClient();
     const { data, error } = await adminClient
-      .from("system_settings")
-      .select("value")
-      .eq("key", "simulation_mode")
+      .from("users")
+      .select("simulation_enabled")
+      .eq("id", user.id)
       .single();
 
     if (error || !data) {
       return false;
     }
 
-    return data.value?.enabled === true;
+    return data.simulation_enabled === true;
   } catch {
     return false;
   }
 }
 
-async function clearSimulatedData(): Promise<{ deletedCount: number }> {
-  const adminClient = createAdminClient();
-
-  // Delete all simulated donations (allocations will cascade delete)
-  const { data: deletedDonations, error } = await adminClient
-    .from("donations")
-    .delete()
-    .eq("is_simulated", true)
-    .select("id");
-
-  if (error) {
-    console.error("Failed to clear simulated data:", error);
-    return { deletedCount: 0 };
-  }
-
-  return { deletedCount: deletedDonations?.length || 0 };
-}
-
-export async function toggleSimulationMode(): Promise<{ success: boolean; enabled: boolean; error?: string; deletedCount?: number }> {
+/**
+ * Toggle simulation mode for the current user
+ * Each user has their own simulation on/off state
+ */
+export async function toggleSimulationMode(): Promise<{ success: boolean; enabled: boolean; error?: string }> {
   const supabase = await createClient();
 
-  // Check if user is admin/owner
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return { success: false, enabled: false, error: "Not authenticated" };
@@ -51,55 +45,44 @@ export async function toggleSimulationMode(): Promise<{ success: boolean; enable
 
   const adminClient = createAdminClient();
 
+  // Get current user data including simulation access
   const { data: userData } = await adminClient
     .from("users")
-    .select("role")
+    .select("role, simulation_access, simulation_enabled")
     .eq("id", user.id)
     .single();
 
-  if (!userData || !["owner", "admin"].includes(userData.role)) {
-    return { success: false, enabled: false, error: "Unauthorized" };
+  if (!userData) {
+    return { success: false, enabled: false, error: "User not found" };
   }
 
-  // Get current state
-  const { data: currentSetting } = await adminClient
-    .from("system_settings")
-    .select("value")
-    .eq("key", "simulation_mode")
-    .single();
+  // Check if user has simulation access (admin/owner automatically have it, others need explicit access)
+  const isAdminOrOwner = ["owner", "admin"].includes(userData.role);
+  const hasAccess = isAdminOrOwner || userData.simulation_access === true;
 
-  const currentEnabled = currentSetting?.value?.enabled === true;
+  if (!hasAccess) {
+    return { success: false, enabled: false, error: "No simulation access" };
+  }
+
+  // Toggle the user's personal simulation state
+  const currentEnabled = userData.simulation_enabled === true;
   const newEnabled = !currentEnabled;
 
-  // If turning OFF simulation mode, clear all simulated data
-  let deletedCount = 0;
-  if (currentEnabled && !newEnabled) {
-    const result = await clearSimulatedData();
-    deletedCount = result.deletedCount;
-    console.log(`Simulation mode disabled: Cleared ${deletedCount} simulated donation(s)`);
-  }
-
-  // Update or insert the setting
   const { error } = await adminClient
-    .from("system_settings")
-    .upsert({
-      key: "simulation_mode",
-      value: { enabled: newEnabled },
-      updated_at: new Date().toISOString(),
-      updated_by: user.id,
-    });
+    .from("users")
+    .update({ simulation_enabled: newEnabled })
+    .eq("id", user.id);
 
   if (error) {
     console.error("Failed to toggle simulation mode:", error);
     return { success: false, enabled: currentEnabled, error: "Failed to update setting" };
   }
 
+  revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath("/admin/settings");
   revalidatePath("/donate");
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/receipts");
-  revalidatePath("/dashboard/history");
 
-  return { success: true, enabled: newEnabled, deletedCount };
+  return { success: true, enabled: newEnabled };
 }

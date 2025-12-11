@@ -2,25 +2,6 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Header } from "./header";
 import { SimulationModeBanner } from "@/components/layout/simulation-mode-banner";
 
-async function getSimulationMode(): Promise<boolean> {
-  try {
-    const adminClient = createAdminClient();
-    const { data, error } = await adminClient
-      .from("system_settings")
-      .select("value")
-      .eq("key", "simulation_mode")
-      .single();
-
-    if (error || !data) {
-      return false;
-    }
-
-    return data.value?.enabled === true;
-  } catch {
-    return false;
-  }
-}
-
 export async function HeaderWrapper() {
   const supabase = await createClient();
 
@@ -35,6 +16,7 @@ export async function HeaderWrapper() {
     role: string | null;
     avatarUrl: string | null;
     simulationAccess: boolean;
+    simulationEnabled: boolean;
   } | null = null;
 
   if (authUser) {
@@ -44,28 +26,29 @@ export async function HeaderWrapper() {
       role: string | null;
       avatar_url: string | null;
       simulation_access?: boolean | null;
+      simulation_enabled?: boolean | null;
     } | null = null;
 
     // Try admin client first (bypasses RLS), fall back to regular client
     try {
       const adminClient = createAdminClient();
-      // First try with simulation_access column
+      // First try with simulation columns
       const { data, error } = await adminClient
         .from("users")
-        .select("first_name, last_name, role, avatar_url, simulation_access")
+        .select("first_name, last_name, role, avatar_url, simulation_access, simulation_enabled")
         .eq("id", authUser.id)
         .single();
 
       if (error) {
-        // If error mentions simulation_access column, try without it
-        if (error.message.includes("simulation_access")) {
-          console.log("[HeaderWrapper] simulation_access column not found, fetching without it");
+        // If error mentions simulation columns, try without them
+        if (error.message.includes("simulation")) {
+          console.log("[HeaderWrapper] simulation columns not found, fetching without them");
           const { data: fallbackData } = await adminClient
             .from("users")
             .select("first_name, last_name, role, avatar_url")
             .eq("id", authUser.id)
             .single();
-          profile = fallbackData ? { ...fallbackData, simulation_access: null } : null;
+          profile = fallbackData ? { ...fallbackData, simulation_access: null, simulation_enabled: null } : null;
         } else {
           console.error("[HeaderWrapper] Admin client error:", error.message);
         }
@@ -75,17 +58,19 @@ export async function HeaderWrapper() {
     } catch (e) {
       console.log("[HeaderWrapper] Admin client not available, falling back");
       // Admin client not available, try regular client
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("users")
         .select("first_name, last_name, role, avatar_url")
         .eq("id", authUser.id)
         .single();
-      profile = data ? { ...data, simulation_access: null } : null;
+      profile = data ? { ...data, simulation_access: null, simulation_enabled: null } : null;
     }
 
     // Admin and Owner roles automatically have simulation access
     const isAdminOrOwner = profile?.role === "owner" || profile?.role === "admin";
     const hasSimulationAccess = isAdminOrOwner || profile?.simulation_access === true;
+    // User's personal simulation on/off state
+    const simulationEnabled = profile?.simulation_enabled === true;
 
     userData = {
       email: authUser.email!,
@@ -94,20 +79,21 @@ export async function HeaderWrapper() {
       role: profile?.role || null,
       avatarUrl: profile?.avatar_url || null,
       simulationAccess: hasSimulationAccess,
+      simulationEnabled: simulationEnabled,
     };
   }
 
-  // Check simulation mode
-  const simulationEnabled = await getSimulationMode();
+  // User's simulation state
   const isAdmin = userData?.role === "owner" || userData?.role === "admin";
   const canAccessSimulation = userData?.simulationAccess ?? false;
+  const userSimulationEnabled = userData?.simulationEnabled ?? false;
 
   return (
     <>
-      <SimulationModeBanner enabled={simulationEnabled} isAdmin={isAdmin} />
+      <SimulationModeBanner enabled={userSimulationEnabled} isAdmin={isAdmin} />
       <Header
         initialUser={userData}
-        simulationEnabled={simulationEnabled}
+        simulationEnabled={userSimulationEnabled}
         canAccessSimulation={canAccessSimulation}
       />
     </>

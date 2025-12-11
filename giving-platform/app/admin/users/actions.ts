@@ -289,10 +289,19 @@ export async function toggleSimulationAccess(userId: string, enabled: boolean) {
       return { error: "Admins and owners automatically have simulation access" };
     }
 
-    // Update simulation access
+    // Update simulation access and also set simulation_enabled when granting access
+    const updateData: { simulation_access: boolean; simulation_enabled?: boolean } = {
+      simulation_access: enabled,
+    };
+
+    // When granting access, also turn ON simulation for that user by default
+    if (enabled) {
+      updateData.simulation_enabled = true;
+    }
+
     const { error } = await adminClient
       .from("users")
-      .update({ simulation_access: enabled })
+      .update(updateData)
       .eq("id", userId);
 
     if (error) {
@@ -300,31 +309,7 @@ export async function toggleSimulationAccess(userId: string, enabled: boolean) {
       return { error: "Failed to update simulation access" };
     }
 
-    // If enabling simulation access, also enable global simulation mode
-    if (enabled) {
-      const { data: currentSetting } = await adminClient
-        .from("system_settings")
-        .select("value")
-        .eq("key", "simulation_mode")
-        .single();
-
-      const isSimulationOn = currentSetting?.value?.enabled === true;
-
-      // Only turn on if not already on
-      if (!isSimulationOn) {
-        await adminClient
-          .from("system_settings")
-          .upsert({
-            key: "simulation_mode",
-            value: { enabled: true },
-            updated_at: new Date().toISOString(),
-            updated_by: ownerCheck.user.id,
-          });
-      }
-    }
-
     revalidatePath("/admin/users");
-    revalidatePath("/admin/settings");
     revalidatePath("/");
     return { success: true, enabled };
   } catch (e) {
