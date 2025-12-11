@@ -249,8 +249,9 @@ export default async function HomePage() {
                       <p className="mt-2 text-slate-600">{step.description}</p>
                     </div>
                     {/* Slideup illustration panel - rises from bottom inside card */}
-                    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-br from-blue-50 to-emerald-50 border-t border-blue-100 translate-y-full group-hover/card:translate-y-0 transition-transform duration-500 ease-out flex items-center justify-center">
-                      <div className="opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 delay-150">
+                    {/* On mobile/tablet: always visible. On desktop: slides up on hover */}
+                    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-br from-blue-50 to-emerald-50 border-t border-blue-100 translate-y-0 lg:translate-y-full lg:group-hover/card:translate-y-0 transition-transform duration-500 ease-out flex items-center justify-center">
+                      <div className="opacity-100 lg:opacity-0 lg:group-hover/card:opacity-100 transition-opacity duration-300 lg:delay-150">
                         {index === 0 && (
                           /* Choose Your Causes - Grid of cause icons */
                           <div className="flex gap-2">
