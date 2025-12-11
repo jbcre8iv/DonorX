@@ -38,29 +38,49 @@ export async function HeaderWrapper() {
   } | null = null;
 
   if (authUser) {
-    let profile = null;
+    let profile: {
+      first_name: string | null;
+      last_name: string | null;
+      role: string | null;
+      avatar_url: string | null;
+      simulation_access?: boolean | null;
+    } | null = null;
 
     // Try admin client first (bypasses RLS), fall back to regular client
     try {
       const adminClient = createAdminClient();
+      // First try with simulation_access column
       const { data, error } = await adminClient
         .from("users")
         .select("first_name, last_name, role, avatar_url, simulation_access")
         .eq("id", authUser.id)
         .single();
+
       if (error) {
-        console.error("[HeaderWrapper] Admin client error:", error.message);
+        // If error mentions simulation_access column, try without it
+        if (error.message.includes("simulation_access")) {
+          console.log("[HeaderWrapper] simulation_access column not found, fetching without it");
+          const { data: fallbackData } = await adminClient
+            .from("users")
+            .select("first_name, last_name, role, avatar_url")
+            .eq("id", authUser.id)
+            .single();
+          profile = fallbackData ? { ...fallbackData, simulation_access: null } : null;
+        } else {
+          console.error("[HeaderWrapper] Admin client error:", error.message);
+        }
+      } else {
+        profile = data;
       }
-      profile = data;
     } catch (e) {
       console.log("[HeaderWrapper] Admin client not available, falling back");
       // Admin client not available, try regular client
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("users")
-        .select("first_name, last_name, role, avatar_url, simulation_access")
+        .select("first_name, last_name, role, avatar_url")
         .eq("id", authUser.id)
         .single();
-      profile = data;
+      profile = data ? { ...data, simulation_access: null } : null;
     }
 
     // Admin and Owner roles automatically have simulation access

@@ -46,13 +46,28 @@ export default async function AdminUsersPage() {
 
   try {
     const adminClient = createAdminClient();
-    const { data, error } = await adminClient
+    // Try with simulation_access column first
+    let { data, error } = await adminClient
       .from("users")
       .select(`
         id, email, first_name, last_name, avatar_url, role, status, created_at, approved_at, simulation_access,
         organization:organizations(id, name, type, logo_url, website)
       `)
       .order("created_at", { ascending: false });
+
+    // If simulation_access column doesn't exist, try without it
+    if (error && error.message.includes("simulation_access")) {
+      console.log("[AdminUsersPage] simulation_access column not found, fetching without it");
+      const fallbackResult = await adminClient
+        .from("users")
+        .select(`
+          id, email, first_name, last_name, avatar_url, role, status, created_at, approved_at,
+          organization:organizations(id, name, type, logo_url, website)
+        `)
+        .order("created_at", { ascending: false });
+      data = fallbackResult.data?.map(u => ({ ...u, simulation_access: null })) || null;
+      error = fallbackResult.error;
+    }
 
     if (error) {
       console.error("[AdminUsersPage] Error fetching users:", error.message);
@@ -75,12 +90,13 @@ export default async function AdminUsersPage() {
     const { data } = await supabase
       .from("users")
       .select(`
-        id, email, first_name, last_name, avatar_url, role, status, created_at, approved_at, simulation_access,
+        id, email, first_name, last_name, avatar_url, role, status, created_at, approved_at,
         organization:organizations(id, name, type, logo_url, website)
       `)
       .order("created_at", { ascending: false });
     users = (data || []).map((u) => ({
       ...u,
+      simulation_access: null,
       organization: Array.isArray(u.organization) ? u.organization[0] || null : u.organization,
     })) as User[];
   }
