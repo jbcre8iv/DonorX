@@ -228,34 +228,34 @@ export default async function HomePage() {
       </section>
 
       {/* Social Proof / Trust Bar */}
-      <section className="relative bg-slate-50 py-12 border-b border-slate-100">
+      <section className="relative bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <FadeInUp>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
               <div className="text-center">
-                <div className="text-3xl sm:text-4xl font-bold text-slate-900">500+</div>
-                <div className="mt-1 text-sm text-slate-500 flex items-center justify-center gap-1.5">
+                <div className="text-3xl sm:text-4xl font-bold text-white">500+</div>
+                <div className="mt-1 text-sm text-blue-100 flex items-center justify-center gap-1.5">
                   <Building2 className="h-4 w-4" />
                   Vetted Nonprofits
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-3xl sm:text-4xl font-bold text-slate-900">$2.4M+</div>
-                <div className="mt-1 text-sm text-slate-500 flex items-center justify-center gap-1.5">
+                <div className="text-3xl sm:text-4xl font-bold text-white">$2.4M+</div>
+                <div className="mt-1 text-sm text-blue-100 flex items-center justify-center gap-1.5">
                   <TrendingUp className="h-4 w-4" />
                   Donations Processed
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-3xl sm:text-4xl font-bold text-slate-900">150+</div>
-                <div className="mt-1 text-sm text-slate-500 flex items-center justify-center gap-1.5">
+                <div className="text-3xl sm:text-4xl font-bold text-white">150+</div>
+                <div className="mt-1 text-sm text-blue-100 flex items-center justify-center gap-1.5">
                   <Users className="h-4 w-4" />
                   Corporate Partners
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-3xl sm:text-4xl font-bold text-slate-900">12</div>
-                <div className="mt-1 text-sm text-slate-500 flex items-center justify-center gap-1.5">
+                <div className="text-3xl sm:text-4xl font-bold text-white">12</div>
+                <div className="mt-1 text-sm text-blue-100 flex items-center justify-center gap-1.5">
                   <Globe className="h-4 w-4" />
                   Cause Categories
                 </div>
