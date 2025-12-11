@@ -9,9 +9,21 @@ interface FloatingHeartProps {
   onComplete: () => void;
 }
 
+// Easing function for smooth deceleration
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+// Quadratic bezier curve for smooth arc path
+function quadraticBezier(t: number, p0: number, p1: number, p2: number): number {
+  const oneMinusT = 1 - t;
+  return oneMinusT * oneMinusT * p0 + 2 * oneMinusT * t * p1 + t * t * p2;
+}
+
 function FloatingHeartAnimation({ startPosition, onComplete }: FloatingHeartProps) {
   const [mounted, setMounted] = React.useState(false);
   const heartRef = React.useRef<HTMLDivElement>(null);
+  const animationRef = React.useRef<number | null>(null);
 
   React.useEffect(() => {
     setMounted(true);
@@ -31,22 +43,63 @@ function FloatingHeartAnimation({ startPosition, onComplete }: FloatingHeartProp
     const targetX = targetRect.left + targetRect.width / 2;
     const targetY = targetRect.top + targetRect.height / 2;
 
-    // Calculate the distance to travel
-    const deltaX = targetX - startPosition.x;
-    const deltaY = targetY - startPosition.y;
+    // Start and end positions
+    const startX = startPosition.x;
+    const startY = startPosition.y;
+    const endX = targetX;
+    const endY = targetY;
 
-    // Set CSS custom properties for the animation
-    heartRef.current.style.setProperty('--start-x', `${startPosition.x}px`);
-    heartRef.current.style.setProperty('--start-y', `${startPosition.y}px`);
-    heartRef.current.style.setProperty('--delta-x', `${deltaX}px`);
-    heartRef.current.style.setProperty('--delta-y', `${deltaY}px`);
+    // Control point for the bezier curve - creates a nice arc
+    // Place it to the left and above the midpoint for a sweeping curve
+    const midX = (startX + endX) / 2;
+    const midY = (startY + endY) / 2;
+    const controlX = midX - 80; // Curve to the left
+    const controlY = midY - 60; // And upward
 
-    // Trigger animation
-    heartRef.current.classList.add('animate-float-to-target');
+    const duration = 650; // ms
+    const startTime = performance.now();
 
-    // Clean up after animation
-    const timer = setTimeout(onComplete, 800);
-    return () => clearTimeout(timer);
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const rawProgress = Math.min(elapsed / duration, 1);
+
+      // Apply easing for smooth motion
+      const progress = easeOutCubic(rawProgress);
+
+      // Calculate position along bezier curve
+      const x = quadraticBezier(progress, startX, controlX, endX);
+      const y = quadraticBezier(progress, startY, controlY, endY);
+
+      // Scale: start at 1, grow to 1.2 at 30%, shrink to 0.4 at end
+      let scale: number;
+      if (progress < 0.3) {
+        scale = 1 + (progress / 0.3) * 0.2; // 1 -> 1.2
+      } else {
+        scale = 1.2 - ((progress - 0.3) / 0.7) * 0.8; // 1.2 -> 0.4
+      }
+
+      // Opacity: fully visible until 60%, then fade out
+      const opacity = progress < 0.6 ? 1 : 1 - ((progress - 0.6) / 0.4);
+
+      if (heartRef.current) {
+        heartRef.current.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${scale})`;
+        heartRef.current.style.opacity = String(opacity);
+      }
+
+      if (rawProgress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        onComplete();
+      }
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
   }, [mounted, startPosition, onComplete]);
 
   if (!mounted) return null;
@@ -54,17 +107,20 @@ function FloatingHeartAnimation({ startPosition, onComplete }: FloatingHeartProp
   return createPortal(
     <div
       ref={heartRef}
-      className="fixed pointer-events-none z-[9999] floating-heart-container"
+      className="fixed pointer-events-none z-[9999]"
       style={{
         left: 0,
         top: 0,
+        willChange: 'transform, opacity',
       }}
     >
       <div className="relative">
         <Heart className="h-6 w-6 text-pink-500 fill-pink-500 drop-shadow-lg" />
-        {/* Sparkle effects */}
-        <span className="absolute -top-1 -right-1 h-2 w-2 bg-pink-300 rounded-full animate-ping opacity-75" />
-        <span className="absolute -bottom-1 -left-1 h-1.5 w-1.5 bg-pink-400 rounded-full animate-ping opacity-75 animation-delay-100" />
+        {/* Trail effect - smaller hearts that follow */}
+        <Heart
+          className="absolute inset-0 h-6 w-6 text-pink-400 fill-pink-400 opacity-40 blur-[1px]"
+          style={{ transform: 'translate(-2px, 2px)' }}
+        />
       </div>
     </div>,
     document.body
