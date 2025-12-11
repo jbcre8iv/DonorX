@@ -76,6 +76,16 @@ function CauseIcon({ cause, nextCause, isFlipping, floatDelay, className }: Caus
   );
 }
 
+// Fisher-Yates shuffle
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export function HeroIllustration() {
   // Track which causes are currently displayed (indices into ALL_CAUSES)
   const [displayedIndices, setDisplayedIndices] = React.useState([0, 1, 2, 3, 4, 5]);
@@ -83,11 +93,18 @@ export function HeroIllustration() {
   const [flippingSlot, setFlippingSlot] = React.useState<number | null>(null);
   // Track the next cause index for the flipping slot
   const [nextCauseIndex, setNextCauseIndex] = React.useState<number | null>(null);
+  // Queue of slots to flip - ensures each slot flips once before any repeats
+  const slotQueueRef = React.useRef<number[]>([]);
 
   React.useEffect(() => {
     const flipInterval = setInterval(() => {
-      // Pick a random slot to flip
-      const slotToFlip = Math.floor(Math.random() * 6);
+      // If queue is empty, create a new shuffled queue of all 6 slots
+      if (slotQueueRef.current.length === 0) {
+        slotQueueRef.current = shuffleArray([0, 1, 2, 3, 4, 5]);
+      }
+
+      // Get the next slot from the queue
+      const slotToFlip = slotQueueRef.current.shift()!;
 
       // Find a cause that's not currently displayed
       const availableIndices = ALL_CAUSES.map((_, i) => i).filter(
