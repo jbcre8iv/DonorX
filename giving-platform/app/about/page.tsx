@@ -217,14 +217,20 @@ export default function AboutPage() {
                         <Heart className="h-8 w-8 text-white" />
                       </div>
 
-                      {/* Connection lines */}
+                      {/* Connection lines - curved paths with shortened endpoints for floating icons */}
                       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 225">
-                        <line x1="150" y1="112" x2="60" y2="45" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" className="animate-dash" />
-                        <line x1="150" y1="112" x2="240" y2="45" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" className="animate-dash" />
-                        <line x1="150" y1="112" x2="45" y2="140" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" className="animate-dash" />
-                        <line x1="150" y1="112" x2="255" y2="140" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" className="animate-dash" />
-                        <line x1="150" y1="112" x2="80" y2="195" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" className="animate-dash" />
-                        <line x1="150" y1="112" x2="220" y2="195" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" className="animate-dash" />
+                        {/* Top-left: Globe */}
+                        <path d="M150,112 Q100,70 68,55" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" fill="none" className="animate-dash" />
+                        {/* Top-right: Users */}
+                        <path d="M150,112 Q200,70 232,55" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" fill="none" className="animate-dash" />
+                        {/* Mid-left: Shield */}
+                        <path d="M150,112 Q95,120 55,125" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" fill="none" className="animate-dash" />
+                        {/* Mid-right: Award */}
+                        <path d="M150,112 Q205,120 245,125" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" fill="none" className="animate-dash" />
+                        {/* Bottom-left: Heart */}
+                        <path d="M150,112 Q110,160 88,180" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" fill="none" className="animate-dash" />
+                        {/* Bottom-right: TrendingUp */}
+                        <path d="M150,112 Q190,160 212,180" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" fill="none" className="animate-dash" />
                       </svg>
 
                       {/* Nonprofit nodes */}
