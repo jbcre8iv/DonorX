@@ -20,6 +20,17 @@ function quadraticBezier(t: number, p0: number, p1: number, p2: number): number 
   return oneMinusT * oneMinusT * p0 + 2 * oneMinusT * t * p1 + t * t * p2;
 }
 
+// Trigger impact effect on the giving list button
+function triggerImpactEffect(targetButton: Element) {
+  // Add impact class for the pulse/glow effect
+  targetButton.classList.add('heart-impact');
+
+  // Remove after animation completes
+  setTimeout(() => {
+    targetButton.classList.remove('heart-impact');
+  }, 400);
+}
+
 function FloatingHeartAnimation({ startPosition, onComplete }: FloatingHeartProps) {
   const [mounted, setMounted] = React.useState(false);
   const heartRef = React.useRef<HTMLDivElement>(null);
@@ -53,11 +64,12 @@ function FloatingHeartAnimation({ startPosition, onComplete }: FloatingHeartProp
     // Place it to the left and above the midpoint for a sweeping curve
     const midX = (startX + endX) / 2;
     const midY = (startY + endY) / 2;
-    const controlX = midX - 80; // Curve to the left
-    const controlY = midY - 60; // And upward
+    const controlX = midX - 100; // Curve to the left
+    const controlY = midY - 80; // And upward
 
-    const duration = 650; // ms
+    const duration = 850; // ms - slower for eye tracking
     const startTime = performance.now();
+    let impactTriggered = false;
 
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime;
@@ -70,20 +82,26 @@ function FloatingHeartAnimation({ startPosition, onComplete }: FloatingHeartProp
       const x = quadraticBezier(progress, startX, controlX, endX);
       const y = quadraticBezier(progress, startY, controlY, endY);
 
-      // Scale: start at 1, grow to 1.2 at 30%, shrink to 0.4 at end
+      // Scale: start at 1, grow to 1.3 at 25%, shrink to 0.3 at end
       let scale: number;
-      if (progress < 0.3) {
-        scale = 1 + (progress / 0.3) * 0.2; // 1 -> 1.2
+      if (progress < 0.25) {
+        scale = 1 + (progress / 0.25) * 0.3; // 1 -> 1.3
       } else {
-        scale = 1.2 - ((progress - 0.3) / 0.7) * 0.8; // 1.2 -> 0.4
+        scale = 1.3 - ((progress - 0.25) / 0.75) * 1.0; // 1.3 -> 0.3
       }
 
-      // Opacity: fully visible until 60%, then fade out
-      const opacity = progress < 0.6 ? 1 : 1 - ((progress - 0.6) / 0.4);
+      // Opacity: fully visible until 70%, then fade out
+      const opacity = progress < 0.7 ? 1 : 1 - ((progress - 0.7) / 0.3);
 
       if (heartRef.current) {
         heartRef.current.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${scale})`;
         heartRef.current.style.opacity = String(opacity);
+      }
+
+      // Trigger impact effect when heart is about to land (85% through animation)
+      if (!impactTriggered && rawProgress >= 0.85) {
+        impactTriggered = true;
+        triggerImpactEffect(targetButton);
       }
 
       if (rawProgress < 1) {

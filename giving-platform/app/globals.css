@@ -282,6 +282,27 @@ body {
   animation: bounceSubtle 0.6s ease-out;
 }
 
+/* Heart impact effect on giving list button */
+@keyframes heartImpact {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.7);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 8px rgba(236, 72, 153, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(236, 72, 153, 0);
+  }
+}
+
+.heart-impact {
+  animation: heartImpact 0.4s ease-out;
+  background-color: rgba(251, 207, 232, 0.5) !important;
+}
+
 /* Confetti animation */
 @keyframes confetti {
   0% {
