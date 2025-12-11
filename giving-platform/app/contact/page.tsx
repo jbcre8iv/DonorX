@@ -153,9 +153,9 @@ export default function ContactPage() {
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                          Company
+                          Organization
                         </label>
-                        <Input placeholder="Acme Inc." className="h-11" />
+                        <Input placeholder="Your organization" className="h-11" />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1.5">
