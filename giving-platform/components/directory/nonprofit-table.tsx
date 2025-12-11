@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { useToast } from "@/components/ui/toast";
+import { useFloatingHeart } from "@/components/ui/floating-heart";
 import type { Nonprofit } from "@/types/database";
 
 type SortOption = "name-asc" | "name-desc" | "category" | "recent";
@@ -31,6 +32,7 @@ function ActionButtons({
   onToggleFavorite,
   onQuickView,
   isMobile = false,
+  heartButtonRef,
 }: {
   className?: string;
   nonprofit: Nonprofit;
@@ -42,6 +44,7 @@ function ActionButtons({
   onToggleFavorite: (e: React.MouseEvent) => void;
   onQuickView?: (nonprofit: Nonprofit) => void;
   isMobile?: boolean;
+  heartButtonRef?: React.RefObject<HTMLButtonElement | null>;
 }) {
   return (
     <div className={`flex items-center ${isMobile ? "gap-2" : "gap-1"} ${className}`}>
@@ -103,6 +106,7 @@ function ActionButtons({
       {/* 5. Favorite - Passive "save for later" action */}
       <div className="relative group/tip">
         <button
+          ref={heartButtonRef}
           onClick={onToggleFavorite}
           className={`${isMobile ? "h-10 w-10" : "h-9 w-9"} flex items-center justify-center rounded-xl border transition-all ${
             !isLoggedIn
@@ -137,6 +141,9 @@ function NonprofitRow({
 }) {
   const { toggleFavorite, isFavorite, hasDraft, addToDraft, removeFromDraft, isInDraft, userId } = useCartFavorites();
   const { addToast } = useToast();
+  const { triggerFloatingHeart } = useFloatingHeart();
+  const heartButtonRef = React.useRef<HTMLButtonElement>(null);
+  const mobileHeartButtonRef = React.useRef<HTMLButtonElement>(null);
   const isLoggedIn = !!userId;
 
   const inDraft = isInDraft(nonprofit.id);
@@ -161,7 +168,7 @@ function NonprofitRow({
     }
   };
 
-  const handleToggleFavorite = async (e: React.MouseEvent) => {
+  const handleToggleFavorite = async (e: React.MouseEvent, buttonRef: React.RefObject<HTMLButtonElement | null>) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -172,6 +179,11 @@ function NonprofitRow({
         href: "/login?redirect=/directory",
       });
       return;
+    }
+
+    // Trigger floating heart animation when ADDING to favorites (not removing)
+    if (!favorited && buttonRef.current) {
+      triggerFloatingHeart(buttonRef.current);
     }
 
     await toggleFavorite({
@@ -278,8 +290,9 @@ function NonprofitRow({
             favorited={favorited}
             isLoggedIn={isLoggedIn}
             onToggleDonate={handleToggleDonate}
-            onToggleFavorite={handleToggleFavorite}
+            onToggleFavorite={(e) => handleToggleFavorite(e, heartButtonRef)}
             onQuickView={onQuickView}
+            heartButtonRef={heartButtonRef}
           />
         </td>
         {/* Mobile expand/status indicator */}
@@ -316,9 +329,10 @@ function NonprofitRow({
               favorited={favorited}
               isLoggedIn={isLoggedIn}
               onToggleDonate={handleToggleDonate}
-              onToggleFavorite={handleToggleFavorite}
+              onToggleFavorite={(e) => handleToggleFavorite(e, mobileHeartButtonRef)}
               onQuickView={onQuickView}
               isMobile={true}
+              heartButtonRef={mobileHeartButtonRef}
             />
           </td>
         </tr>

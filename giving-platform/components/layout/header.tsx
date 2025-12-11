@@ -39,6 +39,7 @@ function GivingListButton() {
   return (
     <button
       onClick={() => setSidebarOpen(!isSidebarOpen)}
+      data-giving-list-button
       className={cn(
         "relative rounded-lg p-2 md:p-2.5 transition-colors",
         hasDraft

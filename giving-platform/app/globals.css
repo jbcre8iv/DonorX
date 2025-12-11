@@ -282,6 +282,48 @@ body {
   animation: bounceSubtle 0.6s ease-out;
 }
 
+/* Floating heart animation - flies from source to target */
+@keyframes floatToTarget {
+  0% {
+    transform: translate(var(--start-x), var(--start-y)) scale(1);
+    opacity: 1;
+  }
+  30% {
+    transform: translate(
+      calc(var(--start-x) + var(--delta-x) * 0.3),
+      calc(var(--start-y) + var(--delta-y) * 0.1 - 30px)
+    ) scale(1.3);
+    opacity: 1;
+  }
+  70% {
+    transform: translate(
+      calc(var(--start-x) + var(--delta-x) * 0.8),
+      calc(var(--start-y) + var(--delta-y) * 0.7 - 15px)
+    ) scale(0.9);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(
+      calc(var(--start-x) + var(--delta-x)),
+      calc(var(--start-y) + var(--delta-y))
+    ) scale(0.3);
+    opacity: 0;
+  }
+}
+
+.floating-heart-container {
+  transform: translate(var(--start-x, 0), var(--start-y, 0));
+}
+
+.animate-float-to-target {
+  animation: floatToTarget 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Animation delay utility for sparkles */
+.animation-delay-100 {
+  animation-delay: 100ms;
+}
+
 /* Confetti animation */
 @keyframes confetti {
   0% {
