@@ -4,6 +4,17 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+// Check if we're on mobile (client-side only)
+function useIsMobile() {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMobile(window.innerWidth < 1024);
+  }, []);
+
+  return isMobile;
+}
+
 interface BlobProps {
   className?: string;
   color?: string;
@@ -23,6 +34,11 @@ const sizeMap = {
  * Use for hero sections and feature areas
  */
 export function Blob({ className, color = "bg-blue-500", animate = true, size = "lg" }: BlobProps) {
+  const isMobile = useIsMobile();
+
+  // On mobile, don't animate the blob morphing to reduce GPU load
+  const shouldAnimate = animate && !isMobile;
+
   const blob = (
     <div
       className={cn(
@@ -37,7 +53,7 @@ export function Blob({ className, color = "bg-blue-500", animate = true, size = 
     />
   );
 
-  if (!animate) return blob;
+  if (!shouldAnimate) return blob;
 
   return (
     <motion.div
@@ -150,6 +166,8 @@ export function FloatingDots({
   count?: number;
   color?: string;
 }) {
+  const isMobile = useIsMobile();
+
   // Use deterministic values based on index to avoid Math.random during render
   const dots = Array.from({ length: count }).map((_, i) => ({
     id: i,
@@ -159,6 +177,26 @@ export function FloatingDots({
     delay: seededRandom(i * 4 + 4) * 2,
     duration: 3 + seededRandom(i * 4 + 5) * 2,
   }));
+
+  // On mobile, show static dots without animation
+  if (isMobile) {
+    return (
+      <div className={cn("absolute inset-0 overflow-hidden pointer-events-none", className)}>
+        {dots.map((dot) => (
+          <div
+            key={dot.id}
+            className={cn("absolute rounded-full opacity-40", color)}
+            style={{
+              width: dot.size,
+              height: dot.size,
+              left: `${dot.x}%`,
+              top: `${dot.y}%`,
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className={cn("absolute inset-0 overflow-hidden pointer-events-none", className)}>
@@ -204,6 +242,9 @@ export function GradientOrb({
   size?: "sm" | "md" | "lg" | "xl";
   animate?: boolean;
 }) {
+  const isMobile = useIsMobile();
+  const shouldAnimate = animate && !isMobile;
+
   const sizeClasses = {
     sm: "w-48 h-48",
     md: "w-72 h-72",
@@ -223,7 +264,7 @@ export function GradientOrb({
     />
   );
 
-  if (!animate) return orb;
+  if (!shouldAnimate) return orb;
 
   return (
     <motion.div

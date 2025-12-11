@@ -4,6 +4,17 @@ import * as React from "react";
 import { motion, type MotionProps, type Variants } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+// Check if we're on mobile (client-side only)
+function useIsMobile() {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMobile(window.innerWidth < 1024);
+  }, []);
+
+  return isMobile;
+}
+
 // Animation variants for common patterns
 export const fadeIn: Variants = {
   hidden: { opacity: 0 },
@@ -52,6 +63,12 @@ const defaultTransition = {
   ease: [0.25, 0.1, 0.25, 1] as const,
 };
 
+// Faster transition for mobile - same easing, shorter duration
+const mobileTransition = {
+  duration: 0.25,
+  ease: [0.25, 0.1, 0.25, 1] as const,
+};
+
 interface AnimatedProps extends MotionProps {
   children: React.ReactNode;
   className?: string;
@@ -71,6 +88,11 @@ export function FadeIn({
   once = true,
   ...props
 }: AnimatedProps) {
+  const isMobile = useIsMobile();
+  const transition = isMobile
+    ? { ...mobileTransition, delay: delay * 0.5 }
+    : { ...defaultTransition, duration, delay };
+
   return (
     <motion.div
       className={className}
@@ -78,7 +100,7 @@ export function FadeIn({
       whileInView="visible"
       viewport={{ once, margin: "-50px" }}
       variants={fadeIn}
-      transition={{ ...defaultTransition, duration, delay }}
+      transition={transition}
       {...props}
     >
       {children}
@@ -97,6 +119,11 @@ export function FadeInUp({
   once = true,
   ...props
 }: AnimatedProps) {
+  const isMobile = useIsMobile();
+  const transition = isMobile
+    ? { ...mobileTransition, delay: delay * 0.5 }
+    : { ...defaultTransition, duration, delay };
+
   return (
     <motion.div
       className={className}
@@ -104,7 +131,7 @@ export function FadeInUp({
       whileInView="visible"
       viewport={{ once, margin: "-50px" }}
       variants={fadeInUp}
-      transition={{ ...defaultTransition, duration, delay }}
+      transition={transition}
       {...props}
     >
       {children}
@@ -123,6 +150,11 @@ export function FadeInDown({
   once = true,
   ...props
 }: AnimatedProps) {
+  const isMobile = useIsMobile();
+  const transition = isMobile
+    ? { ...mobileTransition, delay: delay * 0.5 }
+    : { ...defaultTransition, duration, delay };
+
   return (
     <motion.div
       className={className}
@@ -130,7 +162,7 @@ export function FadeInDown({
       whileInView="visible"
       viewport={{ once, margin: "-50px" }}
       variants={fadeInDown}
-      transition={{ ...defaultTransition, duration, delay }}
+      transition={transition}
       {...props}
     >
       {children}
@@ -149,6 +181,11 @@ export function FadeInLeft({
   once = true,
   ...props
 }: AnimatedProps) {
+  const isMobile = useIsMobile();
+  const transition = isMobile
+    ? { ...mobileTransition, delay: delay * 0.5 }
+    : { ...defaultTransition, duration, delay };
+
   return (
     <motion.div
       className={className}
@@ -156,7 +193,7 @@ export function FadeInLeft({
       whileInView="visible"
       viewport={{ once, margin: "-50px" }}
       variants={fadeInLeft}
-      transition={{ ...defaultTransition, duration, delay }}
+      transition={transition}
       {...props}
     >
       {children}
@@ -175,6 +212,11 @@ export function FadeInRight({
   once = true,
   ...props
 }: AnimatedProps) {
+  const isMobile = useIsMobile();
+  const transition = isMobile
+    ? { ...mobileTransition, delay: delay * 0.5 }
+    : { ...defaultTransition, duration, delay };
+
   return (
     <motion.div
       className={className}
@@ -182,7 +224,7 @@ export function FadeInRight({
       whileInView="visible"
       viewport={{ once, margin: "-50px" }}
       variants={fadeInRight}
-      transition={{ ...defaultTransition, duration, delay }}
+      transition={transition}
       {...props}
     >
       {children}
@@ -201,6 +243,11 @@ export function ScaleIn({
   once = true,
   ...props
 }: AnimatedProps) {
+  const isMobile = useIsMobile();
+  const transition = isMobile
+    ? { ...mobileTransition, delay: delay * 0.5 }
+    : { ...defaultTransition, duration, delay };
+
   return (
     <motion.div
       className={className}
@@ -208,7 +255,7 @@ export function ScaleIn({
       whileInView="visible"
       viewport={{ once, margin: "-50px" }}
       variants={scaleIn}
-      transition={{ ...defaultTransition, duration, delay }}
+      transition={transition}
       {...props}
     >
       {children}
@@ -227,6 +274,11 @@ export function StaggerContainer({
   once = true,
   ...props
 }: AnimatedProps & { staggerDelay?: number }) {
+  const isMobile = useIsMobile();
+  // On mobile, use faster stagger with less delay between children
+  const mobileStagger = 0.05;
+  const mobileDelay = delay * 0.5;
+
   return (
     <motion.div
       className={className}
@@ -238,8 +290,8 @@ export function StaggerContainer({
         visible: {
           opacity: 1,
           transition: {
-            staggerChildren: staggerDelay,
-            delayChildren: delay,
+            staggerChildren: isMobile ? mobileStagger : staggerDelay,
+            delayChildren: isMobile ? mobileDelay : delay,
           },
         },
       }}
@@ -258,11 +310,13 @@ export function StaggerItem({
   className,
   ...props
 }: Omit<AnimatedProps, "delay" | "duration" | "once">) {
+  const isMobile = useIsMobile();
+
   return (
     <motion.div
       className={className}
       variants={fadeInUp}
-      transition={defaultTransition}
+      transition={isMobile ? mobileTransition : defaultTransition}
       {...props}
     >
       {children}
