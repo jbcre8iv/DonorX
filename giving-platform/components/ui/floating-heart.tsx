@@ -95,7 +95,7 @@ function FloatingHeartAnimation({ startPosition, onComplete }: FloatingHeartProp
     const controlX = midX - 100; // Curve to the left
     const controlY = midY - 80; // And upward
 
-    const duration = 1400; // ms - extended for slow start then moderate speed finish
+    const duration = 1650; // ms - slow start with gentler travel speed
     const startTime = performance.now();
     let impactTriggered = false;
 
