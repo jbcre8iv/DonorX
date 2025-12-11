@@ -298,21 +298,21 @@ export default function AboutPage() {
             </div>
           </FadeInUp>
 
-          <StaggerContainer className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <StaggerContainer className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
             {values.map((value) => {
               const colors = colorClasses[value.color as keyof typeof colorClasses];
               return (
-                <StaggerItem key={value.title}>
-                  <HoverLift>
-                    <Card className="h-full border-0 shadow-lg hover:shadow-xl transition-shadow">
-                      <CardContent className="pt-8 pb-6 px-6 text-center">
+                <StaggerItem key={value.title} className="h-full">
+                  <HoverLift className="h-full">
+                    <Card className="h-full border-0 shadow-lg hover:shadow-xl transition-shadow flex flex-col">
+                      <CardContent className="pt-8 pb-6 px-6 text-center flex-1 flex flex-col">
                         <div className={`mx-auto flex h-16 w-16 items-center justify-center rounded-2xl ${colors.bg} mb-6`}>
                           <value.icon className={`h-8 w-8 ${colors.text}`} />
                         </div>
                         <h3 className="text-lg font-semibold text-slate-900">
                           {value.title}
                         </h3>
-                        <p className="mt-3 text-slate-600 leading-relaxed">{value.description}</p>
+                        <p className="mt-3 text-slate-600 leading-relaxed flex-1">{value.description}</p>
                       </CardContent>
                     </Card>
                   </HoverLift>
@@ -345,17 +345,17 @@ export default function AboutPage() {
             </div>
           </FadeInUp>
 
-          <StaggerContainer className="mt-16 grid gap-8 sm:grid-cols-3">
+          <StaggerContainer className="mt-16 grid gap-8 sm:grid-cols-3 items-stretch">
             {team.map((dept) => (
-              <StaggerItem key={dept.name}>
-                <HoverScale>
-                  <Card className="h-full border-0 shadow-lg bg-white">
-                    <CardContent className="p-8">
+              <StaggerItem key={dept.name} className="h-full">
+                <HoverScale className="h-full">
+                  <Card className="h-full border-0 shadow-lg bg-white flex flex-col">
+                    <CardContent className="p-8 flex-1 flex flex-col">
                       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 mb-6">
                         <dept.icon className="h-6 w-6 text-white" />
                       </div>
                       <h3 className="text-xl font-semibold text-slate-900">{dept.name}</h3>
-                      <p className="mt-3 text-slate-600 leading-relaxed">{dept.description}</p>
+                      <p className="mt-3 text-slate-600 leading-relaxed flex-1">{dept.description}</p>
                     </CardContent>
                   </Card>
                 </HoverScale>
