@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Sparkles, Loader2, Lightbulb, PieChart, ArrowRight, X, ChevronDown, LogIn } from "lucide-react";
@@ -76,6 +76,89 @@ export function AllocationAdvisor({
       }, 100);
     }
   }, [advice]);
+
+  // Recalculate allocation amounts when donation amount changes
+  const adjustedAllocations = useMemo(() => {
+    if (!advice) return [];
+    return advice.allocations.map(alloc => ({
+      ...alloc,
+      amount: (currentAmount * alloc.percentage) / 100,
+    }));
+  }, [advice, currentAmount]);
+
+  // Generate dynamic tips based on current amount and allocations
+  const dynamicTips = useMemo(() => {
+    if (!advice || !currentAmount) return advice?.tips || [];
+
+    const tips: string[] = [];
+    const allocations = adjustedAllocations;
+    const numOrgs = allocations.length;
+
+    // Tip 1: Monthly recurring suggestion based on current amount
+    const monthlyAmount = Math.round(currentAmount / 12);
+    if (monthlyAmount >= 50) {
+      tips.push(
+        `Consider setting up recurring monthly donations of $${monthlyAmount.toLocaleString()} to maximize your impact throughout the year`
+      );
+    } else if (currentAmount >= 100) {
+      tips.push(
+        `A recurring donation of $${Math.round(currentAmount / 4).toLocaleString()} quarterly could provide steady support to these organizations`
+      );
+    }
+
+    // Tip 2: Impact reports suggestion based on number of allocations
+    if (numOrgs > 0) {
+      if (numOrgs === 1) {
+        tips.push(
+          `Ask ${allocations[0].name} for impact reports to see exactly how your donation helps their mission`
+        );
+      } else if (numOrgs <= 3) {
+        tips.push(
+          `Ask these organizations for impact reports to see exactly how your donation helps their missions`
+        );
+      } else {
+        tips.push(
+          `With ${numOrgs} organizations, consider requesting consolidated impact reports to track your giving`
+        );
+      }
+    }
+
+    // Tip 3: Employer matching based on amount
+    if (currentAmount >= 1000) {
+      tips.push(
+        `Many employers offer donation matching - check if you can double your $${currentAmount.toLocaleString()} impact`
+      );
+    } else if (currentAmount >= 250) {
+      tips.push(
+        `Check if your employer offers donation matching to amplify your contribution`
+      );
+    }
+
+    // Tip 4: Volunteering suggestion
+    if (numOrgs > 0 && numOrgs <= 4) {
+      tips.push(
+        `Consider volunteering with one of these organizations to see your impact firsthand`
+      );
+    }
+
+    // Tip 5: Tax planning for larger donations
+    if (currentAmount >= 5000) {
+      tips.push(
+        `For donations of this size, consider consulting a tax advisor to maximize your charitable deduction benefits`
+      );
+    }
+
+    // Tip 6: Concentration suggestion if one org has high percentage
+    const highConcentration = allocations.find(a => a.percentage >= 50);
+    if (highConcentration && numOrgs > 1) {
+      tips.push(
+        `${highConcentration.name} receives ${highConcentration.percentage}% of your donation - this focused approach can create meaningful impact`
+      );
+    }
+
+    // Return max 4 tips
+    return tips.slice(0, 4);
+  }, [advice, currentAmount]);
 
   const getAdvice = async (strategy?: string) => {
     // Check if user is logged in first
@@ -327,7 +410,7 @@ export function AllocationAdvisor({
                 Allocation Breakdown
               </h4>
               <div className="h-6 rounded-full overflow-hidden flex">
-                {advice.allocations.map((alloc, i) => (
+                {adjustedAllocations.map((alloc, i) => (
                   <div
                     key={i}
                     className={`${getColorClass(i)} transition-all`}
@@ -337,7 +420,7 @@ export function AllocationAdvisor({
                 ))}
               </div>
               <div className="flex flex-wrap gap-3 mt-2">
-                {advice.allocations.map((alloc, i) => (
+                {adjustedAllocations.map((alloc, i) => (
                   <div key={i} className="flex items-center gap-1.5">
                     <div
                       className={`w-3 h-3 rounded-full ${getColorClass(i)}`}
@@ -350,7 +433,7 @@ export function AllocationAdvisor({
 
             {/* Allocation Details */}
             <div className="space-y-2">
-              {advice.allocations.map((alloc, i) => {
+              {adjustedAllocations.map((alloc, i) => {
                 const isExpanded = expandedIndex === i;
                 return (
                   <div
@@ -403,15 +486,15 @@ export function AllocationAdvisor({
               })}
             </div>
 
-            {/* Tips */}
-            {advice.tips && advice.tips.length > 0 && (
+            {/* Tips - dynamically updated based on amount and allocations */}
+            {dynamicTips.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
                   <Lightbulb className="h-4 w-4 text-amber-500" />
                   Tips
                 </h4>
                 <ul className="space-y-2">
-                  {advice.tips.map((tip, i) => (
+                  {dynamicTips.map((tip, i) => (
                     <li
                       key={i}
                       className="text-sm text-slate-600 flex items-start gap-2"
