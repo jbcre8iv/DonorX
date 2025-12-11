@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { Globe, Eye, Heart, Check } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { useToast } from "@/components/ui/toast";
+import { useFloatingHeart } from "@/components/ui/floating-heart";
 import type { Nonprofit } from "@/types/database";
 
 interface NonprofitCardProps {
@@ -17,6 +19,8 @@ interface NonprofitCardProps {
 export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
   const { toggleFavorite, isFavorite, hasDraft, addToDraft, removeFromDraft, isInDraft, userId } = useCartFavorites();
   const { addToast } = useToast();
+  const { triggerFloatingHeart } = useFloatingHeart();
+  const favoriteButtonRef = React.useRef<HTMLButtonElement>(null);
   const isLoggedIn = !!userId;
 
   const inDraft = isInDraft(nonprofit.id);
@@ -52,6 +56,11 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
         href: "/login?redirect=/directory",
       });
       return;
+    }
+
+    // Trigger flying heart animation when adding (not removing)
+    if (!favorited && favoriteButtonRef.current) {
+      triggerFloatingHeart(favoriteButtonRef.current);
     }
 
     await toggleFavorite({
@@ -98,6 +107,7 @@ export function NonprofitCard({ nonprofit, onQuickView }: NonprofitCardProps) {
           <div className="flex items-center gap-1 flex-shrink-0">
             <div className="relative group/fav">
               <button
+                ref={favoriteButtonRef}
                 onClick={handleToggleFavorite}
                 className={`h-9 w-9 flex items-center justify-center rounded-xl border transition-all cursor-pointer ${
                   !isLoggedIn
