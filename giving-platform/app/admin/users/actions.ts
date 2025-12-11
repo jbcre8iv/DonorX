@@ -289,15 +289,13 @@ export async function toggleSimulationAccess(userId: string, enabled: boolean) {
       return { error: "Admins and owners automatically have simulation access" };
     }
 
-    // Update simulation access and also set simulation_enabled when granting access
-    const updateData: { simulation_access: boolean; simulation_enabled?: boolean } = {
+    // Update simulation access and simulation_enabled together
+    // When granting access: turn ON simulation for that user by default
+    // When revoking access: turn OFF simulation to fully disable it
+    const updateData = {
       simulation_access: enabled,
+      simulation_enabled: enabled, // Always sync: enabled=true means ON, enabled=false means OFF
     };
-
-    // When granting access, also turn ON simulation for that user by default
-    if (enabled) {
-      updateData.simulation_enabled = true;
-    }
 
     const { error } = await adminClient
       .from("users")
