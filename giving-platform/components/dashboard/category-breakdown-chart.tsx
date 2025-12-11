@@ -55,12 +55,12 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base font-semibold">Giving by Category</CardTitle>
+        <CardTitle className="text-base font-semibold">Giving by Cause</CardTitle>
       </CardHeader>
       <CardContent>
         {filteredData.length === 0 ? (
           <div className="flex items-center justify-center h-[140px] text-slate-500">
-            No category data yet
+            No cause data yet
           </div>
         ) : (
           <div className="flex items-center gap-3">
@@ -123,7 +123,7 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
                   ) : (
                     <>
                       <ChevronDown className="h-3 w-3" />
-                      +{dataWithColors.length - MAX_VISIBLE} more {dataWithColors.length - MAX_VISIBLE === 1 ? "category" : "categories"}
+                      +{dataWithColors.length - MAX_VISIBLE} more cause{dataWithColors.length - MAX_VISIBLE === 1 ? "" : "s"}
                     </>
                   )}
                 </button>

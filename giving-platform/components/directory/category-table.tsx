@@ -51,7 +51,7 @@ function CategoryRow({
         targetName: category.name,
         icon: category.icon || undefined,
       });
-      addToast(`Added ${category.name} category to your donation`, "success", 3000);
+      addToast(`Added ${category.name} cause to your donation`, "success", 3000);
     }
   };
 
@@ -142,7 +142,7 @@ function CategoryRow({
                 Nonprofits
               </Button>
               <span className="hidden sm:block absolute bottom-full right-0 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
-                View nonprofits in this category
+                View nonprofits in this cause
               </span>
             </div>
           </div>
@@ -212,7 +212,7 @@ export function CategoryTable({ categories, nonprofitCounts, sortBy, onSortChang
   if (categories.length === 0) {
     return (
       <div className="text-center py-12 text-slate-500">
-        <p>No categories found.</p>
+        <p>No causes found.</p>
       </div>
     );
   }
@@ -248,11 +248,11 @@ export function CategoryTable({ categories, nonprofitCounts, sortBy, onSortChang
                   onClick={handleNameSort}
                   className="flex items-center gap-1.5 hover:text-slate-900 transition-colors"
                 >
-                  Category
+                  Cause
                   {renderSortIcon()}
                 </button>
               ) : (
-                "Category"
+                "Cause"
               )}
             </th>
             <th className="pb-3 font-medium hidden lg:table-cell">Description</th>

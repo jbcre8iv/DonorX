@@ -38,18 +38,24 @@ const steps = [
     title: "Choose Your Causes",
     description:
       "Browse our curated directory of vetted nonprofits or select entire cause categories.",
+    tooltip: "Browse 500+ vetted nonprofits across 12 cause areas",
+    href: "/directory",
   },
   {
     icon: Receipt,
     title: "One Simple Donation",
     description:
       "Make a single donation and allocate it across multiple organizations as you see fit.",
+    tooltip: "Split your gift across multiple organizations with one transaction",
+    href: "/donate",
   },
   {
     icon: BarChart3,
     title: "Track Your Impact",
     description:
       "Receive consolidated tax receipts and quarterly impact reports from all your beneficiaries.",
+    tooltip: "Get consolidated tax receipts and quarterly impact reports",
+    href: "/dashboard",
   },
 ];
 
@@ -152,7 +158,7 @@ export default async function HomePage() {
                   </Link>
                 </Button>
               </div>
-              <p className="mt-4 text-sm text-slate-500 text-center lg:text-left">
+              <p className="mt-6 text-sm text-slate-500 text-center lg:text-left">
                 Are you a nonprofit?{" "}
                 <Link href="/apply" className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline">
                   Apply to join our directory →
@@ -283,25 +289,34 @@ export default async function HomePage() {
           <StaggerContainer className="mt-16 grid gap-8 sm:grid-cols-3">
             {steps.map((step, index) => (
               <StaggerItem key={step.title}>
-                <HoverScale className="h-full">
-                  <Card className="h-full text-center p-8 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-200 group bg-white">
-                    <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
-                      {/* Animated gradient ring on hover */}
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 opacity-0 group-hover:opacity-30 blur-lg transition-opacity duration-300" />
-                      <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-50 to-emerald-50 ring-1 ring-blue-100 group-hover:ring-blue-300 transition-all duration-300 group-hover:scale-110">
-                        <step.icon className="h-8 w-8 text-blue-700" />
+                <Link href={step.href} className="block h-full group/card">
+                  <HoverScale className="h-full">
+                    <Card className="relative h-full text-center p-8 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-200 group bg-white cursor-pointer">
+                      <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
+                        {/* Animated gradient ring on hover */}
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 opacity-0 group-hover:opacity-30 blur-lg transition-opacity duration-300" />
+                        <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-50 to-emerald-50 ring-1 ring-blue-100 group-hover:ring-blue-300 transition-all duration-300 group-hover:scale-110">
+                          <step.icon className="h-8 w-8 text-blue-700" />
+                        </div>
+                        {/* Step number badge */}
+                        <div className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-blue-700 text-sm font-bold text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+                          {index + 1}
+                        </div>
                       </div>
-                      {/* Step number badge */}
-                      <div className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-blue-700 text-sm font-bold text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
-                        {index + 1}
+                      <h3 className="mt-6 text-lg font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
+                        {step.title}
+                      </h3>
+                      <p className="mt-2 text-slate-600">{step.description}</p>
+                      {/* Tooltip on hover */}
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 translate-y-full opacity-0 group-hover/card:opacity-100 transition-all duration-200 pointer-events-none z-10">
+                        <div className="bg-slate-800 text-white text-xs font-medium px-3 py-2 rounded-lg shadow-lg whitespace-nowrap">
+                          {step.tooltip}
+                          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45" />
+                        </div>
                       </div>
-                    </div>
-                    <h3 className="mt-6 text-lg font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
-                      {step.title}
-                    </h3>
-                    <p className="mt-2 text-slate-600">{step.description}</p>
-                  </Card>
-                </HoverScale>
+                    </Card>
+                  </HoverScale>
+                </Link>
               </StaggerItem>
             ))}
           </StaggerContainer>

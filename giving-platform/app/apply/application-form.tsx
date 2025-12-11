@@ -226,7 +226,7 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
   }
 
   const categoryOptions = [
-    { value: "", label: "Select a category" },
+    { value: "", label: "Select a cause" },
     ...categories.map((c) => ({ value: c.id, label: c.name })),
   ];
 
@@ -338,7 +338,7 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">
-              Category
+              Cause
             </label>
             <Select
               options={categoryOptions}

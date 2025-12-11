@@ -25,7 +25,7 @@ type BrowseMode = "nonprofits" | "categories";
 const SORT_OPTIONS: { value: SortOption; label: string; shortLabel: string }[] = [
   { value: "name-asc", label: "Name (A-Z)", shortLabel: "A-Z" },
   { value: "name-desc", label: "Name (Z-A)", shortLabel: "Z-A" },
-  { value: "category", label: "Category", shortLabel: "Category" },
+  { value: "category", label: "Cause", shortLabel: "Cause" },
   { value: "recent", label: "Recently Added", shortLabel: "Recent" },
 ];
 
@@ -270,7 +270,7 @@ export function DirectoryClient({
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder={browseMode === "nonprofits" ? "Search nonprofits..." : "Search categories..."}
+                placeholder={browseMode === "nonprofits" ? "Search nonprofits..." : "Search causes..."}
                 className="pl-10 pr-10"
               />
               {search && (
@@ -300,10 +300,10 @@ export function DirectoryClient({
                 size="sm"
                 className="h-8 px-2 gap-1"
                 onClick={() => setBrowseMode("categories")}
-                title="Browse categories"
+                title="Browse causes"
               >
                 <Tags className="h-4 w-4" />
-                <span className="hidden sm:inline text-xs">Categories</span>
+                <span className="hidden sm:inline text-xs">Causes</span>
               </Button>
             </div>
             {/* View mode toggle - Grid vs List */}
@@ -341,7 +341,7 @@ export function DirectoryClient({
                   onChange={(e) => setSelectedCategory(e.target.value || null)}
                   className={`flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:ring-offset-0 ${selectedCategory ? "pr-16" : "pr-10"}`}
                 >
-                  <option value="">All Categories</option>
+                  <option value="">All Causes</option>
                   {filteredCategories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.icon ? `${category.icon} ` : ""}{category.name}
@@ -352,7 +352,7 @@ export function DirectoryClient({
                   <button
                     onClick={() => setSelectedCategory(null)}
                     className="absolute right-8 top-1/2 -translate-y-1/2 h-5 w-5 flex items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 text-slate-500 hover:text-slate-700 transition-colors"
-                    aria-label="Clear category filter"
+                    aria-label="Clear cause filter"
                   >
                     <span className="text-xs font-medium">×</span>
                   </button>
@@ -400,7 +400,7 @@ export function DirectoryClient({
             {browseMode === "nonprofits" ? (
               <>Showing {filteredNonprofits.length} nonprofit{filteredNonprofits.length !== 1 ? "s" : ""}</>
             ) : (
-              <>Showing {filteredCategoriesForView.length} categor{filteredCategoriesForView.length !== 1 ? "ies" : "y"}</>
+              <>Showing {filteredCategoriesForView.length} cause{filteredCategoriesForView.length !== 1 ? "s" : ""}</>
             )}
           </p>
         </div>
@@ -467,7 +467,7 @@ export function DirectoryClient({
               </>
             ) : (
               <div className="text-center py-12 text-slate-500">
-                <p>No categories found matching your search.</p>
+                <p>No causes found matching your search.</p>
               </div>
             )
           )}
