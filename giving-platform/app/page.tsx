@@ -418,8 +418,8 @@ export default async function HomePage() {
           </StaggerContainer>
           <FadeInUp delay={0.3} className="mt-10 text-center">
             <Button variant="outline" asChild className="hover:bg-white">
-              <Link href="/directory">
-                View All Categories
+              <Link href="/directory?view=causes">
+                View All Causes
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>

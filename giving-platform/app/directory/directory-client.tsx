@@ -40,6 +40,7 @@ export function DirectoryClient({
 }: DirectoryClientProps) {
   const searchParams = useSearchParams();
   const categorySlug = searchParams.get("category");
+  const viewParam = searchParams.get("view");
   const { preferences, setPreference, loading: preferencesLoading } = usePreferences();
   const { isSidebarOpen } = useCartFavorites();
 
@@ -57,7 +58,9 @@ export function DirectoryClient({
   const [selectedNonprofit, setSelectedNonprofit] = React.useState<Nonprofit | null>(null);
   const [modalOpen, setModalOpen] = React.useState(false);
   const [currentPage, setCurrentPage] = React.useState(1);
-  const [browseMode, setBrowseMode] = React.useState<BrowseMode>("nonprofits");
+  const [browseMode, setBrowseMode] = React.useState<BrowseMode>(
+    viewParam === "causes" ? "categories" : "nonprofits"
+  );
 
   // View mode is managed by preferences hook, with responsive default
   // Default: grid on desktop (>=640px), table on mobile (<640px)
