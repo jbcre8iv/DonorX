@@ -224,15 +224,15 @@ export function Header({ initialUser = null }: HeaderProps) {
               <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                className="flex items-center justify-center rounded-full hover:ring-2 hover:ring-slate-200 transition-all"
               >
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-semibold overflow-hidden">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-sm font-semibold overflow-hidden">
                   {user.avatarUrl ? (
                     <Image
                       src={user.avatarUrl}
                       alt="Profile"
-                      width={24}
-                      height={24}
+                      width={36}
+                      height={36}
                       className="h-full w-full object-cover"
                       unoptimized
                     />
@@ -240,7 +240,6 @@ export function Header({ initialUser = null }: HeaderProps) {
                     getInitials(user.firstName, user.lastName, user.email)
                   )}
                 </div>
-                <span className="max-w-[150px] truncate">{getFullName(user.firstName, user.lastName) || user.email}</span>
               </button>
               {userMenuOpen && (
                 <div className="absolute right-0 top-full mt-2 w-56 rounded-lg border border-slate-200 bg-white shadow-lg py-1">
