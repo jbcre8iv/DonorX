@@ -31,7 +31,6 @@ import {
   Blob,
   GradientOrb,
   FloatingDots,
-  WaveDivider,
   CornerBlob,
 } from "@/components/ui/decorative-shapes";
 
@@ -226,8 +225,6 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* Wave divider */}
-        <WaveDivider className="absolute -bottom-1 left-0 right-0" color="#f8fafc" />
       </section>
 
       {/* Social Proof / Trust Bar */}
