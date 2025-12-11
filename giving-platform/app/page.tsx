@@ -186,6 +186,7 @@ export default async function HomePage() {
                 </div>
 
                 {/* Animated flow lines - SVG (behind cards) */}
+                {/* Lines shortened to end at icon centers, accounting for float animation range */}
                 <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 400 400">
                   {/* Flow paths from center to each node */}
                   <defs>
@@ -194,18 +195,18 @@ export default async function HomePage() {
                       <stop offset="100%" stopColor="#10b981" stopOpacity="0.3" />
                     </linearGradient>
                   </defs>
-                  {/* Health - top center */}
-                  <path d="M200,200 Q200,120 200,40" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" />
-                  {/* Education - top right */}
-                  <path d="M200,200 Q300,140 360,72" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.3s" }} />
-                  {/* Environment - bottom right */}
-                  <path d="M200,200 Q300,260 360,328" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.6s" }} />
-                  {/* Housing - bottom center */}
-                  <path d="M200,200 Q200,280 200,360" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.9s" }} />
-                  {/* Food - bottom left */}
-                  <path d="M200,200 Q100,260 40,328" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "1.2s" }} />
-                  {/* Arts - top left */}
-                  <path d="M200,200 Q100,140 40,72" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "1.5s" }} />
+                  {/* Health - top center (slight curve for visibility) */}
+                  <path d="M200,200 Q215,130 200,56" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" />
+                  {/* Education - top right (shortened endpoint) */}
+                  <path d="M200,200 Q290,150 340,100" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.3s" }} />
+                  {/* Environment - bottom right (shortened endpoint) */}
+                  <path d="M200,200 Q290,250 340,300" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.6s" }} />
+                  {/* Housing - bottom center (slight curve for visibility) */}
+                  <path d="M200,200 Q185,270 200,344" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.9s" }} />
+                  {/* Food - bottom left (shortened endpoint) */}
+                  <path d="M200,200 Q110,250 60,300" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "1.2s" }} />
+                  {/* Arts - top left (shortened endpoint) */}
+                  <path d="M200,200 Q110,150 60,100" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "1.5s" }} />
                 </svg>
 
                 {/* Orbiting cause nodes (above lines) */}

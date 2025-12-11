@@ -102,12 +102,15 @@ export default async function NonprofitPage({ params }: NonprofitPageProps) {
                   {typedNonprofit.category.name}
                 </Badge>
               )}
-              {typedNonprofit.ein && (
-                <span className="text-sm text-slate-500 flex items-center gap-1">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  EIN: {typedNonprofit.ein}
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 border border-green-200 text-xs font-medium text-green-700 animate-[pulse-badge_0.6s_ease-out]">
+                  <CheckCircle className="h-3 w-3 fill-green-600 text-white animate-[scale-check_0.4s_ease-out_0.2s_both]" />
+                  Verified
                 </span>
-              )}
+                <span className="text-sm text-slate-500">
+                  EIN: {typedNonprofit.ein || "Not provided"}
+                </span>
+              </div>
             </div>
 
             {typedNonprofit.website && (

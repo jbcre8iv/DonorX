@@ -159,9 +159,9 @@ export default function ContactPage() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                          EIN <span className="text-red-500">*</span>
+                          EIN
                         </label>
-                        <Input placeholder="XX-XXXXXXX" className="h-11" required />
+                        <Input placeholder="XX-XXXXXXX" className="h-11" />
                       </div>
                     </div>
                     <div>

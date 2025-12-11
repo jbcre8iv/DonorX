@@ -303,6 +303,33 @@ body {
   background-color: rgba(251, 207, 232, 0.5) !important;
 }
 
+/* Verified badge entrance animation */
+@keyframes pulse-badge {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scale-check {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 /* Confetti animation */
 @keyframes confetti {
   0% {
