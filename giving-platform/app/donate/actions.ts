@@ -34,18 +34,31 @@ async function getBaseUrl(): Promise<string> {
 
 async function isSimulationModeEnabled(): Promise<boolean> {
   try {
-    const adminClient = createAdminClient();
-    const { data, error } = await adminClient
-      .from("system_settings")
-      .select("value")
-      .eq("key", "simulation_mode")
-      .single();
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (error || !data) {
+    if (!user) {
       return false;
     }
 
-    return data.value?.enabled === true;
+    // Check the current user's simulation_enabled flag
+    const adminClient = createAdminClient();
+    const { data: userData, error } = await adminClient
+      .from("users")
+      .select("role, simulation_access, simulation_enabled")
+      .eq("id", user.id)
+      .single();
+
+    if (error || !userData) {
+      return false;
+    }
+
+    // Admin/owner automatically have access, others need explicit access
+    const isAdminOrOwner = userData.role === "owner" || userData.role === "admin";
+    const hasAccess = isAdminOrOwner || userData.simulation_access === true;
+
+    // User must have access AND have simulation enabled
+    return hasAccess && userData.simulation_enabled === true;
   } catch {
     return false;
   }
