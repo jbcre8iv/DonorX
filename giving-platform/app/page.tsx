@@ -154,8 +154,8 @@ export default async function HomePage() {
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" asChild className="hover:bg-slate-50">
-                  <Link href="/about">
-                    Learn More
+                  <Link href="/directory">
+                    Explore Nonprofits
                   </Link>
                 </Button>
               </div>
