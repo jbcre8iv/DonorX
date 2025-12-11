@@ -290,9 +290,9 @@ export default async function HomePage() {
             {steps.map((step, index) => (
               <StaggerItem key={step.title}>
                 <Link href={step.href} className="block h-full group/card">
-                  <Card className="relative h-full overflow-hidden transition-all duration-500 ease-out hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-200 group bg-white cursor-pointer">
+                  <Card className="relative h-full overflow-visible transition-all duration-500 ease-out hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-200 group bg-white cursor-pointer group-hover/card:pb-24">
                     {/* Main content */}
-                    <div className="relative z-10 text-center p-8 bg-white transition-transform duration-500 ease-out group-hover/card:-translate-y-6">
+                    <div className="relative z-10 text-center p-8 bg-white">
                       <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
                         {/* Animated gradient ring on hover */}
                         <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 opacity-0 group-hover:opacity-30 blur-lg transition-opacity duration-300" />
@@ -310,7 +310,7 @@ export default async function HomePage() {
                       <p className="mt-2 text-slate-600">{step.description}</p>
                     </div>
                     {/* Slideup illustration panel */}
-                    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-br from-blue-50 to-emerald-50 border-t border-blue-100 translate-y-full group-hover/card:translate-y-0 transition-transform duration-500 ease-out flex items-center justify-center">
+                    <div className="absolute top-full left-0 right-0 h-24 bg-gradient-to-br from-blue-50 to-emerald-50 border-t border-blue-100 rounded-b-xl opacity-0 group-hover/card:opacity-100 transition-all duration-500 ease-out flex items-center justify-center shadow-lg">
                       <div className="opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 delay-150">
                         {index === 0 && (
                           /* Choose Your Causes - Grid of cause icons */
