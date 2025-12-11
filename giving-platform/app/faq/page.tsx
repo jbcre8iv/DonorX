@@ -212,7 +212,6 @@ export default function FAQPage() {
                     <details
                       key={index}
                       className="group rounded-lg border border-slate-200 bg-white"
-                      open={section.id === "disbursement-fees" && index === 1}
                     >
                       <summary className="flex cursor-pointer items-center justify-between gap-4 p-5 text-slate-900 font-medium hover:bg-slate-50 transition-colors rounded-lg">
                         <span>{item.question}</span>
