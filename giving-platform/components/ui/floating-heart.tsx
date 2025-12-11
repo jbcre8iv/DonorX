@@ -43,8 +43,20 @@ function FloatingHeartAnimation({ startPosition, onComplete }: FloatingHeartProp
   React.useEffect(() => {
     if (!mounted || !heartRef.current) return;
 
-    // Find the giving list button in the header
-    const targetButton = document.querySelector('[data-giving-list-button]');
+    // Find the VISIBLE giving list button in the header
+    // There are two buttons (desktop and mobile), we need the one that's actually visible
+    const allButtons = document.querySelectorAll('[data-giving-list-button]');
+    let targetButton: Element | null = null;
+
+    for (const button of allButtons) {
+      const rect = button.getBoundingClientRect();
+      // Check if the button is visible (has dimensions and is on screen)
+      if (rect.width > 0 && rect.height > 0 && rect.top >= 0) {
+        targetButton = button;
+        break;
+      }
+    }
+
     if (!targetButton) {
       onComplete();
       return;
