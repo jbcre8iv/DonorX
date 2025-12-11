@@ -291,8 +291,8 @@ export default async function HomePage() {
               <StaggerItem key={step.title}>
                 <Link href={step.href} className="block h-full group/card">
                   <HoverScale className="h-full">
-                    <div className="relative h-full">
-                      <Card className="relative h-full text-center p-8 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-200 group bg-white cursor-pointer z-10">
+                    <div className="relative h-full pb-14">
+                      <Card className="relative h-full text-center p-8 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-200 group bg-white cursor-pointer">
                         <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
                           {/* Animated gradient ring on hover */}
                           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 opacity-0 group-hover:opacity-30 blur-lg transition-opacity duration-300" />
@@ -309,8 +309,8 @@ export default async function HomePage() {
                         </h3>
                         <p className="mt-2 text-slate-600">{step.description}</p>
                       </Card>
-                      {/* Tooltip that slides down from behind card */}
-                      <div className="absolute left-0 right-0 -bottom-3 flex justify-center transition-all duration-300 ease-out opacity-0 translate-y-0 group-hover/card:opacity-100 group-hover/card:translate-y-4 pointer-events-none">
+                      {/* Tooltip that slides down below card */}
+                      <div className="absolute left-0 right-0 bottom-0 flex justify-center transition-all duration-300 ease-out opacity-0 group-hover/card:opacity-100 pointer-events-none">
                         <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg shadow-blue-500/25 flex items-center gap-2">
                           <span>{step.tooltip}</span>
                           <ArrowRight className="h-4 w-4" />
