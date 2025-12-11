@@ -810,8 +810,8 @@ export function DonateClient({
                   disableRecurring={requiresAchOrCheck}
                 />
                 {requiresAchOrCheck && (
-                  <p className="mt-3 text-sm text-amber-600">
-                    Recurring donations require credit card payment (max $10,000). For larger amounts, only one-time donations are available.
+                  <p className="mt-2 text-xs text-amber-600">
+                    Recurring options require credit card (max $10,000).
                   </p>
                 )}
                 {isRecurring && !requiresAchOrCheck && (
@@ -916,11 +916,9 @@ export function DonateClient({
                   {requiresAchOrCheck ? (
                     // Large donation - ACH/Check only
                     <div className="mt-4 space-y-3">
-                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                        <p className="text-sm text-amber-800 text-center">
-                          Donations over $10,000 require ACH or check payment
-                        </p>
-                      </div>
+                      <p className="text-xs text-amber-700 text-center">
+                        Donations over $10,000 require ACH or check payment
+                      </p>
                       <Button
                         fullWidth
                         size="lg"

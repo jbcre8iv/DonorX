@@ -253,22 +253,12 @@ export function AmountInput({
         </div>
       )}
 
-      {/* ACH/Check Required Notice */}
+      {/* ACH/Check Required Notice - compact inline */}
       {requiresAchOrCheck && (
-        <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
-          <div className="flex gap-3">
-            <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-amber-800">
-                Large donation payment options
-              </p>
-              <p className="text-sm text-amber-700 mt-1">
-                Donations over ${creditCardMax.toLocaleString()} require ACH bank transfer or check payment.
-                Credit card payments are limited to ${creditCardMax.toLocaleString()} or less.
-              </p>
-            </div>
-          </div>
-        </div>
+        <p className="text-xs text-amber-700 flex items-center gap-1.5">
+          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+          Donations over ${creditCardMax.toLocaleString()} require ACH or check payment.
+        </p>
       )}
     </div>
   );
