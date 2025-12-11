@@ -58,7 +58,7 @@ const roleIcons: Record<UserRole, typeof Shield> = {
 type SortField = "name" | "email" | "role" | "joined";
 type SortDirection = "asc" | "desc";
 
-// Simulation access toggle component
+// Simulation access toggle component - allows owner to grant/revoke simulation access
 function SimulationAccessToggle({
   userId,
   hasAccess,
@@ -70,48 +70,61 @@ function SimulationAccessToggle({
 }) {
   const [isPending, startTransition] = useTransition();
   const [isEnabled, setIsEnabled] = useState(hasAccess);
+  const [error, setError] = useState<string | null>(null);
 
   // Admins and owners automatically have access
   const isAutoEnabled = role === "admin" || role === "owner";
 
   const handleToggle = () => {
     if (isAutoEnabled) return;
+    setError(null);
 
     startTransition(async () => {
       const result = await toggleSimulationAccess(userId, !isEnabled);
       if (result.success) {
         setIsEnabled(result.enabled ?? !isEnabled);
+      } else if (result.error) {
+        setError(result.error);
+        console.error("[SimulationAccessToggle] Error:", result.error);
       }
     });
   };
 
+  // For members/viewers, show a proper toggle switch
+  if (!isAutoEnabled) {
+    return (
+      <div className="flex flex-col items-center">
+        <button
+          onClick={handleToggle}
+          disabled={isPending}
+          className={cn(
+            "relative w-10 h-5 rounded-full transition-colors cursor-pointer",
+            isPending && "opacity-50",
+            isEnabled ? "bg-amber-500" : "bg-slate-300 hover:bg-slate-400"
+          )}
+          title={isEnabled ? "Click to revoke simulation access" : "Click to grant simulation access"}
+        >
+          <div className={cn(
+            "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform flex items-center justify-center",
+            isEnabled ? "translate-x-5" : "translate-x-0.5"
+          )}>
+            {isPending && <Loader2 className="h-2.5 w-2.5 animate-spin text-slate-400" />}
+          </div>
+        </button>
+        {error && <span className="text-xs text-red-500 mt-1">{error}</span>}
+      </div>
+    );
+  }
+
+  // For admins/owners, show "Auto" badge
   return (
-    <button
-      onClick={handleToggle}
-      disabled={isPending || isAutoEnabled}
-      className={cn(
-        "flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-colors",
-        isAutoEnabled
-          ? "bg-amber-100 text-amber-700 cursor-default"
-          : isEnabled
-          ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-          : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-      )}
-      title={
-        isAutoEnabled
-          ? `${role === "owner" ? "Owners" : "Admins"} automatically have simulation access`
-          : isEnabled
-          ? "Click to revoke simulation access"
-          : "Click to grant simulation access"
-      }
+    <span
+      className="flex items-center gap-1.5 px-2 py-1 rounded text-xs bg-amber-100 text-amber-700"
+      title={`${role === "owner" ? "Owners" : "Admins"} automatically have simulation access`}
     >
-      {isPending ? (
-        <Loader2 className="h-3 w-3 animate-spin" />
-      ) : (
-        <TestTube className="h-3 w-3" />
-      )}
-      <span>{isAutoEnabled ? "Auto" : isEnabled ? "On" : "Off"}</span>
-    </button>
+      <TestTube className="h-3 w-3" />
+      Auto
+    </span>
   );
 }
 
