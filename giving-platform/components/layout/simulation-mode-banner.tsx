@@ -24,9 +24,9 @@ export function SimulationModeBanner({ enabled, isAdmin }: SimulationModeBannerP
     });
   };
 
-  // Auto-collapse after 1.5 seconds for admins
+  // Auto-collapse after 3 seconds for all users
   useEffect(() => {
-    if (enabled && isAdmin) {
+    if (enabled) {
       const timer = setTimeout(() => {
         setIsAnimating(true);
         // After animation starts, collapse after the animation duration
@@ -34,11 +34,11 @@ export function SimulationModeBanner({ enabled, isAdmin }: SimulationModeBannerP
           setCollapsed(true);
           setIsAnimating(false);
         }, 500); // Match the CSS transition duration
-      }, 1500);
+      }, 3000); // Show banner for 3 seconds before auto-hiding
 
       return () => clearTimeout(timer);
     }
-  }, [enabled, isAdmin]);
+  }, [enabled]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
