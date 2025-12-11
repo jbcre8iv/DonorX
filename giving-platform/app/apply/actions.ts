@@ -14,6 +14,7 @@ export interface ApplicationData {
   logo_url?: string;
   contact_name: string;
   contact_email: string;
+  contact_phone?: string;
 }
 
 export async function submitApplication(data: ApplicationData) {
