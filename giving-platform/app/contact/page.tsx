@@ -182,7 +182,7 @@ export default function ContactPage() {
                       </label>
                       <textarea
                         rows={3}
-                        placeholder="Tell us about your giving goals..."
+                        placeholder="Tell us how we can help..."
                         className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                       />
                     </div>
