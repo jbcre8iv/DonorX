@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { X, HandHeart, Heart } from "lucide-react";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { CartTab } from "./cart-tab";
@@ -19,15 +19,6 @@ export function CartFavoritesSidebar() {
 
   const isLoggedIn = !!userId;
 
-  // Track previous open state to detect closing
-  const wasOpen = useRef(false);
-  const isClosing = wasOpen.current && !isSidebarOpen;
-
-  // Update ref after render
-  useEffect(() => {
-    wasOpen.current = isSidebarOpen;
-  });
-
   // Close sidebar on escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -40,9 +31,7 @@ export function CartFavoritesSidebar() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isSidebarOpen, setSidebarOpen]);
 
-  // Don't render if not open and not in closing animation
-  if (!isSidebarOpen && !isClosing) return null;
-
+  // Always render for CSS transitions to work
   return (
     <>
       {/* Backdrop - fades in/out */}
@@ -59,7 +48,7 @@ export function CartFavoritesSidebar() {
         className={`fixed right-0 top-0 z-50 h-full w-full max-w-md bg-white shadow-2xl border-l border-slate-200 transition-transform duration-300 ${
           isSidebarOpen
             ? "translate-x-0 ease-out"
-            : "translate-x-full ease-in"
+            : "translate-x-full ease-in pointer-events-none"
         }`}
       >
         {/* Header */}
