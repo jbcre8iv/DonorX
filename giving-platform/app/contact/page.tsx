@@ -116,7 +116,7 @@ export default function ContactPage() {
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 border border-white/10">
                       <MapPin className="h-5 w-5" />
                     </div>
-                    <span>San Francisco, CA</span>
+                    <span>Georgetown, IN</span>
                   </div>
                 </div>
               </div>
