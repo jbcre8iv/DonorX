@@ -176,7 +176,25 @@ export default async function HomePage() {
                   </div>
                 </div>
 
-                {/* Orbiting cause nodes */}
+                {/* Animated flow lines - SVG (behind cards) */}
+                <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 400 400">
+                  {/* Flow paths from center to each node */}
+                  <defs>
+                    <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.6" />
+                      <stop offset="100%" stopColor="#10b981" stopOpacity="0.3" />
+                    </linearGradient>
+                  </defs>
+                  {/* Paths to each cause - Health (top), Education (top-right), Environment (bottom-right), Housing (bottom), Food (bottom-left), Arts (top-left) */}
+                  <path d="M200,200 Q200,130 200,50" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" />
+                  <path d="M200,200 Q280,150 350,100" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.3s" }} />
+                  <path d="M200,200 Q280,250 350,300" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.6s" }} />
+                  <path d="M200,200 Q200,270 200,350" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.9s" }} />
+                  <path d="M200,200 Q120,250 50,300" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "1.2s" }} />
+                  <path d="M200,200 Q120,150 50,100" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "1.5s" }} />
+                </svg>
+
+                {/* Orbiting cause nodes (above lines) */}
                 {[
                   { icon: "🏥", label: "Health", position: "top-4 left-1/2 -translate-x-1/2", delay: "0s" },
                   { icon: "🎓", label: "Education", position: "top-[18%] right-4", delay: "0.5s" },
@@ -187,7 +205,7 @@ export default async function HomePage() {
                 ].map((cause, i) => (
                   <div
                     key={i}
-                    className={`absolute ${cause.position} animate-float`}
+                    className={`absolute ${cause.position} animate-float z-10`}
                     style={{ animationDelay: cause.delay }}
                   >
                     <div className="relative group">
@@ -198,24 +216,6 @@ export default async function HomePage() {
                     </div>
                   </div>
                 ))}
-
-                {/* Animated flow lines - SVG */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 400 400">
-                  {/* Flow paths from center to each node */}
-                  <defs>
-                    <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.6" />
-                      <stop offset="100%" stopColor="#10b981" stopOpacity="0.3" />
-                    </linearGradient>
-                  </defs>
-                  {/* Paths to each cause - adjusted for new positions */}
-                  <path d="M200,200 Q200,130 200,50" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" />
-                  <path d="M200,200 Q280,150 350,100" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.3s" }} />
-                  <path d="M200,200 Q280,250 350,300" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.6s" }} />
-                  <path d="M200,200 Q200,270 200,350" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "0.9s" }} />
-                  <path d="M200,200 Q120,250 50,300" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "1.2s" }} />
-                  <path d="M200,200 Q120,150 50,100" stroke="url(#flowGradient)" strokeWidth="2" fill="none" strokeDasharray="4 4" className="animate-dash" style={{ animationDelay: "1.5s" }} />
-                </svg>
               </div>
             </FadeInRight>
           </div>
