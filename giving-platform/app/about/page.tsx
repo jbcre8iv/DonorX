@@ -67,10 +67,10 @@ const values = [
 ];
 
 const stats = [
-  { value: "$2.4M+", label: "Donations Processed" },
-  { value: "500+", label: "Verified Nonprofits" },
-  { value: "150+", label: "Corporate Partners" },
-  { value: "99.9%", label: "Platform Uptime" },
+  { value: "$2.4M+", label: "Donations Processed", icon: TrendingUp, description: "And growing every month" },
+  { value: "500+", label: "Verified Nonprofits", icon: Shield, description: "Thoroughly vetted organizations" },
+  { value: "150+", label: "Corporate Partners", icon: Users, description: "Trusting us with their giving" },
+  { value: "99.9%", label: "Platform Uptime", icon: Zap, description: "Enterprise-grade reliability" },
 ];
 
 const team = [
@@ -258,17 +258,60 @@ export default function AboutPage() {
       </section>
 
       {/* Stats Section */}
-      <section className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 py-16 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 pointer-events-none">
-          <FloatingDots className="absolute top-0 left-0 w-full h-full" />
+      <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 py-20 sm:py-24 relative overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px]" />
         </div>
+
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
-          <StaggerContainer className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {stats.map((stat) => (
+          <FadeInUp>
+            <div className="text-center mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white">
+                Trusted by organizations worldwide
+              </h2>
+              <p className="mt-3 text-blue-200 max-w-2xl mx-auto">
+                Real impact, real numbers
+              </p>
+            </div>
+          </FadeInUp>
+
+          <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {stats.map((stat, index) => (
               <StaggerItem key={stat.label}>
-                <div className="text-center">
-                  <div className="text-4xl sm:text-5xl font-bold text-white">{stat.value}</div>
-                  <div className="mt-2 text-blue-100 font-medium">{stat.label}</div>
+                <div className="group relative">
+                  {/* Card with glassmorphism effect */}
+                  <div className="relative bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 hover:bg-white/15 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                    {/* Icon */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
+                        <stat.icon className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="text-4xl font-bold text-white opacity-10 group-hover:opacity-20 transition-opacity">
+                        0{index + 1}
+                      </div>
+                    </div>
+
+                    {/* Value */}
+                    <div className="text-4xl sm:text-5xl font-bold text-white mb-2">
+                      {stat.value}
+                    </div>
+
+                    {/* Label */}
+                    <div className="text-white font-semibold mb-1">
+                      {stat.label}
+                    </div>
+
+                    {/* Description */}
+                    <div className="text-blue-200 text-sm">
+                      {stat.description}
+                    </div>
+
+                    {/* Decorative gradient line at bottom */}
+                    <div className="absolute bottom-0 left-6 right-6 h-1 bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                 </div>
               </StaggerItem>
             ))}
