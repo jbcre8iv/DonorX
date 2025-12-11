@@ -290,9 +290,9 @@ export default async function HomePage() {
             {steps.map((step, index) => (
               <StaggerItem key={step.title}>
                 <Link href={step.href} className="block h-full group/card">
-                  <Card className="relative h-full overflow-hidden transition-all duration-500 ease-out hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-200 group bg-white cursor-pointer">
+                  <Card className="relative h-full min-h-[340px] overflow-hidden transition-all duration-500 ease-out hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-200 group bg-white cursor-pointer">
                     {/* Main content */}
-                    <div className="relative z-10 text-center p-8 pb-28 bg-white">
+                    <div className="relative z-10 text-center p-8 bg-white">
                       <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
                         {/* Animated gradient ring on hover */}
                         <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 opacity-0 group-hover:opacity-30 blur-lg transition-opacity duration-300" />
