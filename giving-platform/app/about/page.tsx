@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   FadeInUp,
-  FadeIn,
   FadeInLeft,
   FadeInRight,
   StaggerContainer,
@@ -130,12 +129,16 @@ export default function AboutPage() {
         {/* Decorative elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <GradientOrb
-            className="absolute -top-40 -right-40 w-96 h-96 opacity-30"
-            colors={["#3b82f6", "#8b5cf6"]}
+            className="absolute -top-40 -right-40 opacity-30"
+            size="lg"
+            from="from-blue-400"
+            to="to-purple-400"
           />
           <GradientOrb
-            className="absolute -bottom-20 -left-20 w-72 h-72 opacity-20"
-            colors={["#10b981", "#3b82f6"]}
+            className="absolute -bottom-20 -left-20 opacity-20"
+            size="md"
+            from="from-emerald-400"
+            to="to-blue-400"
           />
           <FloatingDots className="absolute top-20 left-10 w-32 h-32 opacity-40" />
           <FloatingDots className="absolute bottom-20 right-20 w-24 h-24 opacity-30" />
@@ -261,7 +264,7 @@ export default function AboutPage() {
         </div>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
           <StaggerContainer className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {stats.map((stat, index) => (
+            {stats.map((stat) => (
               <StaggerItem key={stat.label}>
                 <div className="text-center">
                   <div className="text-4xl sm:text-5xl font-bold text-white">{stat.value}</div>
@@ -323,7 +326,7 @@ export default function AboutPage() {
       {/* Team Section */}
       <section className="bg-gradient-to-b from-slate-50 to-white py-20 sm:py-24 relative overflow-hidden">
         <div className="absolute top-20 right-10 opacity-20 pointer-events-none">
-          <GradientOrb className="w-64 h-64" colors={["#8b5cf6", "#ec4899"]} />
+          <GradientOrb size="md" from="from-purple-400" to="to-pink-400" />
         </div>
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">

@@ -87,12 +87,16 @@ export default function ContactPage() {
         {/* Decorative elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <GradientOrb
-            className="absolute -top-40 -right-40 w-96 h-96 opacity-30"
-            colors={["#3b82f6", "#8b5cf6"]}
+            className="absolute -top-40 -right-40 opacity-30"
+            size="lg"
+            from="from-blue-400"
+            to="to-purple-400"
           />
           <GradientOrb
-            className="absolute -bottom-20 -left-20 w-72 h-72 opacity-20"
-            colors={["#10b981", "#3b82f6"]}
+            className="absolute -bottom-20 -left-20 opacity-20"
+            size="md"
+            from="from-emerald-400"
+            to="to-blue-400"
           />
           <FloatingDots className="absolute top-10 left-10 w-24 h-24 opacity-30" />
         </div>
