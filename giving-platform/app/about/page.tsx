@@ -7,6 +7,7 @@ import {
   Zap,
   Award,
   Users,
+  Shield,
 } from "lucide-react";
 import { NetworkIllustration } from "@/components/about/network-illustration";
 import { config } from "@/lib/config";
