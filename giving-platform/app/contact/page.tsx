@@ -111,7 +111,7 @@ export default function ContactPage() {
               <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
                 Contact Our{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600">
-                  Sales Team
+                  Team
                 </span>
               </h1>
               <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
