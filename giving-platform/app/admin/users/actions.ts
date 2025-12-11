@@ -260,6 +260,54 @@ export async function removeFromTeam(userId: string) {
 }
 
 /**
+ * Toggle simulation access for a user - only owners can toggle
+ */
+export async function toggleSimulationAccess(userId: string, enabled: boolean) {
+  // Only owners can toggle simulation access
+  const ownerCheck = await requireOwner();
+  if ("error" in ownerCheck) {
+    return { error: ownerCheck.error };
+  }
+
+  try {
+    const adminClient = createAdminClient();
+
+    // Check user exists
+    const { data: user } = await adminClient
+      .from("users")
+      .select("id, role")
+      .eq("id", userId)
+      .single();
+
+    if (!user) {
+      return { error: "User not found" };
+    }
+
+    // Admins and owners automatically have simulation access, no need to toggle
+    if (user.role === "admin" || user.role === "owner") {
+      return { error: "Admins and owners automatically have simulation access" };
+    }
+
+    // Update simulation access
+    const { error } = await adminClient
+      .from("users")
+      .update({ simulation_access: enabled })
+      .eq("id", userId);
+
+    if (error) {
+      console.error("[toggleSimulationAccess] Error:", error.message);
+      return { error: "Failed to update simulation access" };
+    }
+
+    revalidatePath("/admin/users");
+    return { success: true, enabled };
+  } catch (e) {
+    console.error("[toggleSimulationAccess] Admin client error:", e);
+    return { error: "Failed to update simulation access" };
+  }
+}
+
+/**
  * Delete a rejected user - only owners can delete users
  * This removes both the user record and their auth account
  */

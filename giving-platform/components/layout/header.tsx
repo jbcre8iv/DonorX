@@ -3,14 +3,15 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { Menu, X, LogOut, LayoutDashboard, Settings, Shield, HandHeart, ChevronDown } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Menu, X, LogOut, LayoutDashboard, Settings, Shield, HandHeart, ChevronDown, TestTube, Loader2 } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { logout } from "@/app/(auth)/actions";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
+import { toggleSimulationMode } from "@/app/admin/settings/actions";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -72,17 +73,54 @@ function GivingListButton() {
 
 
 interface HeaderProps {
-  initialUser?: { email: string; firstName: string | null; lastName: string | null; role: string | null; avatarUrl: string | null } | null;
+  initialUser?: {
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    role: string | null;
+    avatarUrl: string | null;
+    simulationAccess?: boolean;
+  } | null;
+  simulationEnabled?: boolean;
+  canAccessSimulation?: boolean;
 }
 
-export function Header({ initialUser = null }: HeaderProps) {
+export function Header({ initialUser = null, simulationEnabled = false, canAccessSimulation = false }: HeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
-  const [user, setUser] = React.useState<{ email: string; firstName: string | null; lastName: string | null; role: string | null; avatarUrl: string | null } | null>(initialUser);
+  const [user, setUser] = React.useState<{
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    role: string | null;
+    avatarUrl: string | null;
+    simulationAccess?: boolean;
+  } | null>(initialUser);
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
   const [mobileUserMenuOpen, setMobileUserMenuOpen] = React.useState(false);
+  const [isSimulationEnabled, setIsSimulationEnabled] = React.useState(simulationEnabled);
+  const [isTogglingSimulation, setIsTogglingSimulation] = React.useState(false);
   const userMenuRef = React.useRef<HTMLDivElement>(null);
+
+  // Sync simulation state
+  React.useEffect(() => {
+    setIsSimulationEnabled(simulationEnabled);
+  }, [simulationEnabled]);
+
+  const handleToggleSimulation = async () => {
+    setIsTogglingSimulation(true);
+    try {
+      const result = await toggleSimulationMode();
+      if (result.success) {
+        setIsSimulationEnabled(result.enabled);
+        router.refresh();
+      }
+    } finally {
+      setIsTogglingSimulation(false);
+    }
+  };
 
   // Helper to get full name from first and last name
   const getFullName = (firstName: string | null, lastName: string | null) => {
@@ -273,6 +311,44 @@ export function Header({ initialUser = null }: HeaderProps) {
                       Admin Panel
                     </Link>
                   )}
+                  {/* Simulation Mode Toggle - visible to users with simulation access */}
+                  {canAccessSimulation && (
+                    <div className="border-t border-slate-100 mt-1 pt-1">
+                      <button
+                        onClick={handleToggleSimulation}
+                        disabled={isTogglingSimulation}
+                        className={cn(
+                          "flex w-full items-center justify-between px-4 py-2 text-sm transition-colors",
+                          isSimulationEnabled
+                            ? "text-amber-700 hover:bg-amber-50"
+                            : "text-slate-700 hover:bg-slate-50"
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          {isTogglingSimulation ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <TestTube className="h-4 w-4" />
+                          )}
+                          <span>Simulation Mode</span>
+                        </div>
+                        <div className={cn(
+                          "relative w-9 h-5 rounded-full transition-colors",
+                          isSimulationEnabled ? "bg-amber-500" : "bg-slate-300"
+                        )}>
+                          <div className={cn(
+                            "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform",
+                            isSimulationEnabled ? "translate-x-4" : "translate-x-0.5"
+                          )} />
+                        </div>
+                      </button>
+                      {isSimulationEnabled && (
+                        <p className="px-4 pb-2 text-xs text-amber-600">
+                          Donations won&apos;t process real payments
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <div className="border-t border-slate-100 mt-1 pt-1">
                     <button
                       onClick={handleLogout}
@@ -392,6 +468,44 @@ export function Header({ initialUser = null }: HeaderProps) {
                           <Shield className="h-4 w-4" />
                           Admin Panel
                         </Link>
+                      )}
+                      {/* Simulation Mode Toggle for mobile */}
+                      {canAccessSimulation && (
+                        <div className="pt-2 mt-2 border-t border-slate-200">
+                          <button
+                            onClick={handleToggleSimulation}
+                            disabled={isTogglingSimulation}
+                            className={cn(
+                              "flex w-full items-center justify-between py-2 px-2 rounded-lg transition-colors",
+                              isSimulationEnabled
+                                ? "text-amber-700 hover:bg-amber-50"
+                                : "text-slate-700 hover:bg-slate-50"
+                            )}
+                          >
+                            <div className="flex items-center gap-3">
+                              {isTogglingSimulation ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <TestTube className="h-4 w-4" />
+                              )}
+                              <span>Simulation Mode</span>
+                            </div>
+                            <div className={cn(
+                              "relative w-9 h-5 rounded-full transition-colors",
+                              isSimulationEnabled ? "bg-amber-500" : "bg-slate-300"
+                            )}>
+                              <div className={cn(
+                                "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform",
+                                isSimulationEnabled ? "translate-x-4" : "translate-x-0.5"
+                              )} />
+                            </div>
+                          </button>
+                          {isSimulationEnabled && (
+                            <p className="px-2 pb-1 text-xs text-amber-600">
+                              Donations won&apos;t process real payments
+                            </p>
+                          )}
+                        </div>
                       )}
                       <button
                         onClick={() => {

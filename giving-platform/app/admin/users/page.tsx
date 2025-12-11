@@ -30,6 +30,7 @@ interface User {
   created_at: string;
   approved_at: string | null;
   organization: Organization | null;
+  simulation_access: boolean | null;
 }
 
 export default async function AdminUsersPage() {
@@ -48,7 +49,7 @@ export default async function AdminUsersPage() {
     const { data, error } = await adminClient
       .from("users")
       .select(`
-        id, email, first_name, last_name, avatar_url, role, status, created_at, approved_at,
+        id, email, first_name, last_name, avatar_url, role, status, created_at, approved_at, simulation_access,
         organization:organizations(id, name, type, logo_url, website)
       `)
       .order("created_at", { ascending: false });
@@ -74,7 +75,7 @@ export default async function AdminUsersPage() {
     const { data } = await supabase
       .from("users")
       .select(`
-        id, email, first_name, last_name, avatar_url, role, status, created_at, approved_at,
+        id, email, first_name, last_name, avatar_url, role, status, created_at, approved_at, simulation_access,
         organization:organizations(id, name, type, logo_url, website)
       `)
       .order("created_at", { ascending: false });

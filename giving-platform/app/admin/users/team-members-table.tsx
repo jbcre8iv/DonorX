@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useTransition } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { formatDate } from "@/lib/utils";
-import { Users, Shield, UserCheck, Clock, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { formatDate, cn } from "@/lib/utils";
+import { Users, Shield, UserCheck, Clock, Search, ArrowUpDown, ArrowUp, ArrowDown, TestTube, Loader2 } from "lucide-react";
 import { RoleSelector } from "./role-selector";
 import { RemoveFromTeamButton } from "./user-list";
 import { ViewProfileButton } from "./user-profile-modal";
+import { toggleSimulationAccess } from "./actions";
 
 type UserRole = "owner" | "admin" | "member" | "viewer";
 
@@ -31,6 +32,7 @@ interface User {
   created_at: string;
   approved_at: string | null;
   organization: Organization | null;
+  simulation_access: boolean | null;
 }
 
 interface TeamMembersTableProps {
@@ -55,6 +57,63 @@ const roleIcons: Record<UserRole, typeof Shield> = {
 
 type SortField = "name" | "email" | "role" | "joined";
 type SortDirection = "asc" | "desc";
+
+// Simulation access toggle component
+function SimulationAccessToggle({
+  userId,
+  hasAccess,
+  role,
+}: {
+  userId: string;
+  hasAccess: boolean;
+  role: UserRole;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [isEnabled, setIsEnabled] = useState(hasAccess);
+
+  // Admins and owners automatically have access
+  const isAutoEnabled = role === "admin" || role === "owner";
+
+  const handleToggle = () => {
+    if (isAutoEnabled) return;
+
+    startTransition(async () => {
+      const result = await toggleSimulationAccess(userId, !isEnabled);
+      if (result.success) {
+        setIsEnabled(result.enabled ?? !isEnabled);
+      }
+    });
+  };
+
+  return (
+    <button
+      onClick={handleToggle}
+      disabled={isPending || isAutoEnabled}
+      className={cn(
+        "flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-colors",
+        isAutoEnabled
+          ? "bg-amber-100 text-amber-700 cursor-default"
+          : isEnabled
+          ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+          : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+      )}
+      title={
+        isAutoEnabled
+          ? `${role === "owner" ? "Owners" : "Admins"} automatically have simulation access`
+          : isEnabled
+          ? "Click to revoke simulation access"
+          : "Click to grant simulation access"
+      }
+    >
+      {isPending ? (
+        <Loader2 className="h-3 w-3 animate-spin" />
+      ) : (
+        <TestTube className="h-3 w-3" />
+      )}
+      <span>{isAutoEnabled ? "Auto" : isEnabled ? "On" : "Off"}</span>
+    </button>
+  );
+}
 
 export function TeamMembersTable({ teamMembers, currentUserId, currentUserRole }: TeamMembersTableProps) {
   const [search, setSearch] = useState("");
@@ -206,6 +265,14 @@ export function TeamMembersTable({ teamMembers, currentUserId, currentUserRole }
                       {renderSortIcon("joined")}
                     </div>
                   </th>
+                  {currentUserRole === "owner" && (
+                    <th className="pb-3 text-center text-sm font-medium text-slate-600">
+                      <div className="flex items-center justify-center gap-1" title="Simulation mode access">
+                        <TestTube className="h-3.5 w-3.5" />
+                        Sim
+                      </div>
+                    </th>
+                  )}
                   <th className="pb-3 text-right text-sm font-medium text-slate-600">Actions</th>
                 </tr>
               </thead>
@@ -250,6 +317,15 @@ export function TeamMembersTable({ teamMembers, currentUserId, currentUserRole }
                           {formatDate(user.created_at)}
                         </div>
                       </td>
+                      {currentUserRole === "owner" && (
+                        <td className="py-4 text-center">
+                          <SimulationAccessToggle
+                            userId={user.id}
+                            hasAccess={user.simulation_access ?? false}
+                            role={role}
+                          />
+                        </td>
+                      )}
                       <td className="py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <ViewProfileButton user={user} />
