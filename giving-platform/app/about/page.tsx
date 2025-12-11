@@ -170,7 +170,7 @@ export default function AboutPage() {
       {/* Mission Section */}
       <section className="py-20 sm:py-24 relative">
         <div className="absolute top-0 right-0 w-64 h-64 opacity-10 pointer-events-none">
-          <Blob className="w-full h-full text-blue-500" animated />
+          <Blob className="w-full h-full text-blue-500" animate />
         </div>
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
