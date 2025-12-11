@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { X, HandHeart, Heart } from "lucide-react";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { CartTab } from "./cart-tab";
@@ -15,10 +15,25 @@ export function CartFavoritesSidebar() {
     cartItems,
     favorites,
     userId,
-    hasDraft,
   } = useCartFavorites();
 
   const isLoggedIn = !!userId;
+
+  // Track if sidebar should be rendered (for exit animation)
+  const [shouldRender, setShouldRender] = useState(false);
+
+  useEffect(() => {
+    if (isSidebarOpen) {
+      setShouldRender(true);
+    }
+  }, [isSidebarOpen]);
+
+  // Handle animation end to unmount
+  const handleTransitionEnd = () => {
+    if (!isSidebarOpen) {
+      setShouldRender(false);
+    }
+  };
 
   // Close sidebar on escape key
   useEffect(() => {
@@ -32,25 +47,28 @@ export function CartFavoritesSidebar() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isSidebarOpen, setSidebarOpen]);
 
-  // Note: We no longer prevent body scroll so users can continue browsing
-
-  if (!isSidebarOpen) return null;
+  // Don't render at all if not needed
+  if (!shouldRender && !isSidebarOpen) return null;
 
   return (
     <>
-      {/* No backdrop - sidebar slides in alongside content on desktop */}
-      {/* On mobile, show a subtle backdrop that doesn't block interaction */}
+      {/* Backdrop - fades in/out */}
       <div
-        className="fixed inset-0 z-40 bg-black/20 lg:hidden transition-opacity"
+        className={`fixed inset-0 z-40 bg-black/20 lg:bg-black/10 transition-opacity duration-300 ease-out ${
+          isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
         onClick={() => setSidebarOpen(false)}
         aria-hidden="true"
       />
 
-      {/* Sidebar - fixed position, slides in from right */}
+      {/* Sidebar - slides in from right with spring-like easing */}
       <div
-        className={`fixed right-0 top-0 z-50 h-full w-full max-w-md bg-white shadow-xl border-l border-slate-200 transition-transform duration-300 ease-in-out ${
-          isSidebarOpen ? "translate-x-0" : "translate-x-full"
+        className={`fixed right-0 top-0 z-50 h-full w-full max-w-md bg-white shadow-2xl border-l border-slate-200 transition-transform duration-300 ${
+          isSidebarOpen
+            ? "translate-x-0 ease-out"
+            : "translate-x-full ease-in"
         }`}
+        onTransitionEnd={handleTransitionEnd}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
