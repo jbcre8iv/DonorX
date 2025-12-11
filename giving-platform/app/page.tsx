@@ -148,7 +148,7 @@ export default async function HomePage() {
               </p>
               <div className="mt-10 flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
                 <Button size="lg" asChild className="shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-shadow">
-                  <Link href="/directory">
+                  <Link href="/donate">
                     Start Giving
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
