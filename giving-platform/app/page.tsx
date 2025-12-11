@@ -151,13 +151,13 @@ export default async function HomePage() {
                     Learn More
                   </Link>
                 </Button>
-                <Button size="lg" variant="ghost" asChild className="text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50">
-                  <Link href="/apply">
-                    <Building2 className="mr-2 h-4 w-4" />
-                    For Nonprofits
-                  </Link>
-                </Button>
               </div>
+              <p className="mt-4 text-sm text-slate-500 text-center lg:text-left">
+                Are you a nonprofit?{" "}
+                <Link href="/apply" className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline">
+                  Apply to join our directory →
+                </Link>
+              </p>
             </FadeInLeft>
 
             {/* Right: Hero Illustration - Connected Giving Flow */}
