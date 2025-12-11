@@ -291,30 +291,32 @@ export default async function HomePage() {
               <StaggerItem key={step.title}>
                 <Link href={step.href} className="block h-full group/card">
                   <HoverScale className="h-full">
-                    <Card className="relative h-full text-center p-8 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-200 group bg-white cursor-pointer">
-                      <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
-                        {/* Animated gradient ring on hover */}
-                        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 opacity-0 group-hover:opacity-30 blur-lg transition-opacity duration-300" />
-                        <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-50 to-emerald-50 ring-1 ring-blue-100 group-hover:ring-blue-300 transition-all duration-300 group-hover:scale-110">
-                          <step.icon className="h-8 w-8 text-blue-700" />
+                    <div className="relative h-full">
+                      <Card className="relative h-full text-center p-8 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-200 group bg-white cursor-pointer z-10">
+                        <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
+                          {/* Animated gradient ring on hover */}
+                          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 opacity-0 group-hover:opacity-30 blur-lg transition-opacity duration-300" />
+                          <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-50 to-emerald-50 ring-1 ring-blue-100 group-hover:ring-blue-300 transition-all duration-300 group-hover:scale-110">
+                            <step.icon className="h-8 w-8 text-blue-700" />
+                          </div>
+                          {/* Step number badge */}
+                          <div className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-blue-700 text-sm font-bold text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+                            {index + 1}
+                          </div>
                         </div>
-                        {/* Step number badge */}
-                        <div className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-blue-700 text-sm font-bold text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
-                          {index + 1}
+                        <h3 className="mt-6 text-lg font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
+                          {step.title}
+                        </h3>
+                        <p className="mt-2 text-slate-600">{step.description}</p>
+                      </Card>
+                      {/* Tooltip that slides down from behind card */}
+                      <div className="absolute left-0 right-0 -bottom-3 flex justify-center transition-all duration-300 ease-out opacity-0 translate-y-0 group-hover/card:opacity-100 group-hover/card:translate-y-4 pointer-events-none">
+                        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg shadow-blue-500/25 flex items-center gap-2">
+                          <span>{step.tooltip}</span>
+                          <ArrowRight className="h-4 w-4" />
                         </div>
                       </div>
-                      <h3 className="mt-6 text-lg font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
-                        {step.title}
-                      </h3>
-                      <p className="mt-2 text-slate-600">{step.description}</p>
-                      {/* Tooltip on hover */}
-                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 translate-y-full opacity-0 group-hover/card:opacity-100 transition-all duration-200 pointer-events-none z-10">
-                        <div className="bg-slate-800 text-white text-xs font-medium px-3 py-2 rounded-lg shadow-lg whitespace-nowrap">
-                          {step.tooltip}
-                          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45" />
-                        </div>
-                      </div>
-                    </Card>
+                    </div>
                   </HoverScale>
                 </Link>
               </StaggerItem>
