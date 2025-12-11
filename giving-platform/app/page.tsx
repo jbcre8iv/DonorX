@@ -606,7 +606,7 @@ export default async function HomePage() {
                     className="bg-white text-blue-700 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all"
                     asChild
                   >
-                    <Link href="/register">Get Started Free</Link>
+                    <Link href="/register">Start Giving</Link>
                   </Button>
                   <Button
                     size="lg"
@@ -614,7 +614,7 @@ export default async function HomePage() {
                     className="border-white/30 bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm"
                     asChild
                   >
-                    <Link href="/contact">Contact Sales</Link>
+                    <Link href="/contact">Get in Touch</Link>
                   </Button>
                 </div>
               </div>
