@@ -1,16 +1,12 @@
 import Link from "next/link";
 import {
   Heart,
-  Shield,
-  Users,
-  Globe,
-  Award,
-  TrendingUp,
   ArrowRight,
   Sparkles,
   Target,
   Zap,
 } from "lucide-react";
+import { NetworkIllustration } from "@/components/about/network-illustration";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -211,48 +207,7 @@ export default function AboutPage() {
                 <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-blue-100 via-emerald-50 to-purple-100 p-8 shadow-lg">
                   <div className="h-full w-full rounded-xl bg-white shadow-xl overflow-hidden p-6">
                     {/* Strategic giving network illustration */}
-                    <div className="h-full flex flex-col items-center justify-center relative">
-                      {/* Central donor hub */}
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg z-10 animate-pulse-soft">
-                        <Heart className="h-8 w-8 text-white" />
-                      </div>
-
-                      {/* Connection lines - curved paths extending to icon centers */}
-                      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 225">
-                        {/* Top-left: Globe - icon at top-2 left-8 (w-12) */}
-                        <path d="M150,112 Q95,65 55,35" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" fill="none" className="animate-dash" />
-                        {/* Top-right: Users - icon at top-2 right-8 (w-12) */}
-                        <path d="M150,112 Q205,65 245,35" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" fill="none" className="animate-dash" />
-                        {/* Mid-left: Shield - icon at left-0 (w-10) */}
-                        <path d="M150,112 Q80,112 20,112" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" fill="none" className="animate-dash" />
-                        {/* Mid-right: Award - icon at right-0 (w-10) */}
-                        <path d="M150,112 Q220,112 280,112" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" fill="none" className="animate-dash" />
-                        {/* Bottom-left: Heart - icon at bottom-2 left-12 (w-11) */}
-                        <path d="M150,112 Q100,165 70,195" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" fill="none" className="animate-dash" />
-                        {/* Bottom-right: TrendingUp - icon at bottom-2 right-12 (w-11) */}
-                        <path d="M150,112 Q200,165 230,195" stroke="#93c5fd" strokeWidth="2" strokeDasharray="4 2" fill="none" className="animate-dash" />
-                      </svg>
-
-                      {/* Nonprofit nodes */}
-                      <div className="absolute top-2 left-8 w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center border-2 border-emerald-300 animate-float">
-                        <Globe className="h-5 w-5 text-emerald-600" />
-                      </div>
-                      <div className="absolute top-2 right-8 w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center border-2 border-purple-300 animate-float" style={{ animationDelay: "0.5s" }}>
-                        <Users className="h-5 w-5 text-purple-600" />
-                      </div>
-                      <div className="absolute top-1/2 -translate-y-1/2 left-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center border-2 border-blue-300 animate-float" style={{ animationDelay: "1s" }}>
-                        <Shield className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <div className="absolute top-1/2 -translate-y-1/2 right-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center border-2 border-amber-300 animate-float" style={{ animationDelay: "1.5s" }}>
-                        <Award className="h-4 w-4 text-amber-600" />
-                      </div>
-                      <div className="absolute bottom-2 left-12 w-11 h-11 rounded-full bg-rose-100 flex items-center justify-center border-2 border-rose-300 animate-float" style={{ animationDelay: "2s" }}>
-                        <Heart className="h-5 w-5 text-rose-500" />
-                      </div>
-                      <div className="absolute bottom-2 right-12 w-11 h-11 rounded-full bg-teal-100 flex items-center justify-center border-2 border-teal-300 animate-float" style={{ animationDelay: "2.5s" }}>
-                        <TrendingUp className="h-5 w-5 text-teal-600" />
-                      </div>
-                    </div>
+                    <NetworkIllustration />
                   </div>
                 </div>
                 {/* Decorative corner blob */}
