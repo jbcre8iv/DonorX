@@ -47,6 +47,7 @@ export function DonateClient({
   const { donationDraft, saveDonationDraft, clearDonationDraft, toggleLockAllocation, isLocked, canLock } = useCartFavorites();
   const { addToast } = useToast();
   const [draftLoaded, setDraftLoaded] = React.useState(false);
+  const allocationSectionRef = React.useRef<HTMLDivElement>(null);
   // Track if allocations were loaded from a draft (vs preselected nonprofit or cart)
   const [loadedFromDraft, setLoadedFromDraft] = React.useState(false);
   // Track the last draft we saved to avoid syncing our own changes back
@@ -656,6 +657,14 @@ export function DonateClient({
         });
       }
       setAllocations(newAllocations);
+
+      // Auto-scroll to Allocation section after applying AI recommendations
+      setTimeout(() => {
+        allocationSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
     }
   };
 
@@ -823,6 +832,7 @@ export function DonateClient({
             </Card>
 
             {/* Allocation Builder */}
+            <div ref={allocationSectionRef} className="scroll-mt-20">
             <AllocationBuilder
               allocations={allocations}
               onAllocationsChange={setAllocations}
@@ -835,6 +845,7 @@ export function DonateClient({
               onToggleLock={toggleLockAllocation}
               canLock={canLock}
             />
+            </div>
           </div>
 
           {/* Summary Sidebar */}
