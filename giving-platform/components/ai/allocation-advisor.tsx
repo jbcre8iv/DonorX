@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Sparkles, Loader2, Lightbulb, PieChart, ArrowRight, X, ChevronDown, LogIn } from "lucide-react";
@@ -59,9 +59,23 @@ export function AllocationAdvisor({
   const [error, setError] = useState<string | null>(null);
   const [requiresLogin, setRequiresLogin] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const strategyRef = useRef<HTMLDivElement>(null);
 
   // The actual amount to use for calculations
   const currentAmount = hasExternalAmount ? externalAmount : 0;
+
+  // Auto-scroll to Recommended Strategy when advice is set
+  useEffect(() => {
+    if (advice && strategyRef.current) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        strategyRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
+    }
+  }, [advice]);
 
   const getAdvice = async (strategy?: string) => {
     // Check if user is logged in first
@@ -300,7 +314,7 @@ export function AllocationAdvisor({
         {advice && (
           <div className="space-y-6 pt-4 border-t border-slate-200">
             {/* Strategy Overview */}
-            <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-100">
+            <div ref={strategyRef} className="p-4 bg-emerald-50 rounded-lg border border-emerald-100 scroll-mt-20">
               <h4 className="font-medium text-emerald-900 mb-2">
                 Recommended Strategy
               </h4>
