@@ -8,7 +8,6 @@ import {
   Shield,
   ArrowRight,
   CheckCircle,
-  Sparkles,
   TrendingUp,
   Globe,
   Landmark,
@@ -31,7 +30,6 @@ import {
   Blob,
   GradientOrb,
   FloatingDots,
-  CornerBlob,
 } from "@/components/ui/decorative-shapes";
 
 const steps = [
@@ -151,6 +149,12 @@ export default async function HomePage() {
                 <Button size="lg" variant="outline" asChild className="hover:bg-slate-50">
                   <Link href="/about">
                     Learn More
+                  </Link>
+                </Button>
+                <Button size="lg" variant="ghost" asChild className="text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50">
+                  <Link href="/apply">
+                    <Building2 className="mr-2 h-4 w-4" />
+                    For Nonprofits
                   </Link>
                 </Button>
               </div>
@@ -311,65 +315,6 @@ export default async function HomePage() {
               <ArrowRight className="h-5 w-5" />
               <div className="w-24 h-0.5 bg-gradient-to-r from-slate-200 via-slate-200 to-transparent" />
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* For Nonprofits Section */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 py-16 sm:py-20">
-        {/* Decorative corner blob */}
-        <CornerBlob
-          position="top-right"
-          color="fill-emerald-400"
-          className="w-64 h-64 opacity-20"
-        />
-        <Blob
-          className="-bottom-32 -left-32 opacity-10"
-          color="bg-teal-500"
-          size="lg"
-          animate={false}
-        />
-
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center gap-8 lg:flex-row lg:justify-between">
-            <FadeInUp className="max-w-xl text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-medium text-emerald-700 shadow-sm">
-                <Building2 className="h-4 w-4" />
-                For Nonprofits
-              </div>
-              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-                Get Your Organization Listed
-              </h2>
-              <p className="mt-4 text-lg text-slate-600">
-                Join our directory and connect with donors who want to support your mission.
-                Our AI-powered Quick Fill makes applying fast and easy.
-              </p>
-              <ul className="mt-6 space-y-3 text-left">
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-600" />
-                  <span className="text-slate-700">Free to list your organization</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-600" />
-                  <span className="text-slate-700">AI-powered Quick Fill from your website</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-600" />
-                  <span className="text-slate-700">Connect with corporate donors</span>
-                </li>
-              </ul>
-            </FadeInUp>
-            <FadeIn delay={0.2} className="flex flex-col items-center gap-4">
-              <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all" asChild>
-                <Link href="/apply">
-                  <Sparkles className="mr-2 h-5 w-5 animate-pulse" />
-                  Apply to Join
-                </Link>
-              </Button>
-              <p className="text-sm text-slate-500">
-                No account required
-              </p>
-            </FadeIn>
           </div>
         </div>
       </section>
