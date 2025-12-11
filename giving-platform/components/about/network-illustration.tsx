@@ -70,7 +70,7 @@ export function NetworkIllustration() {
 
     // Add slight curve based on position
     const curveOffset = 15;
-    let qx = midX;
+    const qx = midX;
     let qy = midY;
 
     // Offset control point slightly for visual interest

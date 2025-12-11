@@ -5,6 +5,8 @@ import {
   Sparkles,
   Target,
   Zap,
+  Award,
+  Users,
 } from "lucide-react";
 import { NetworkIllustration } from "@/components/about/network-illustration";
 import { config } from "@/lib/config";
