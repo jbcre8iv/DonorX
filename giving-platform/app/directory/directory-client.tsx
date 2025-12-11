@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, LayoutGrid, List, ChevronDown, ArrowUpDown, Building2, Tags } from "lucide-react";
+import { Search, LayoutGrid, List, ChevronDown, ArrowUpDown, Building2, Tags, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
@@ -13,6 +13,7 @@ import { NonprofitModal } from "@/components/directory/nonprofit-modal";
 import { usePreferences } from "@/hooks/use-preferences";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { smartFilterNonprofit } from "@/lib/smart-search";
+import { GradientOrb, FloatingDots } from "@/components/ui/decorative-shapes";
 import type { Nonprofit, Category } from "@/types/database";
 
 const ITEMS_PER_PAGE_GRID = 9;
@@ -220,20 +221,49 @@ export function DirectoryClient({
   );
 
   return (
-    <div className={`py-12 overflow-visible transition-all duration-300 ${isSidebarOpen ? "lg:mr-[28rem]" : ""}`}>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 overflow-visible">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-3xl font-semibold text-slate-900 sm:text-4xl">
-            Nonprofit Directory
-          </h1>
-          <p className="mt-4 text-lg text-slate-600">
-            Browse our curated directory of vetted 501(c)(3) organizations
-          </p>
+    <div className={`overflow-visible transition-all duration-300 ${isSidebarOpen ? "lg:mr-[28rem]" : ""}`}>
+      {/* Hero Section with decorative elements */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-white py-12 sm:py-16">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <GradientOrb
+            className="absolute -top-40 -right-40 opacity-20"
+            size="lg"
+            from="from-blue-400"
+            to="to-purple-400"
+          />
+          <GradientOrb
+            className="absolute -bottom-20 -left-20 opacity-15"
+            size="md"
+            from="from-emerald-400"
+            to="to-blue-400"
+          />
+          <FloatingDots className="absolute top-10 left-10 w-24 h-24 opacity-30" />
         </div>
 
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
+          {/* Header */}
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700 mb-4">
+              <Sparkles className="h-4 w-4" />
+              500+ Vetted Organizations
+            </div>
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+              Nonprofit{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600">
+                Directory
+              </span>
+            </h1>
+            <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
+              Browse our curated directory of vetted 501(c)(3) organizations
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 overflow-visible pb-12">
         {/* Search and Filters */}
-        <div className="mt-10 space-y-4">
+        <div className="space-y-4">
           <div className="flex items-center gap-3 max-w-2xl mx-auto">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
