@@ -4,6 +4,29 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+// Hook to detect if user prefers reduced motion or is on mobile
+function useReducedMotion() {
+  const [reducedMotion, setReducedMotion] = React.useState(false);
+
+  React.useEffect(() => {
+    // Check for prefers-reduced-motion
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    // Check for mobile (rough heuristic: screen width < 1024px)
+    const isMobile = window.innerWidth < 1024;
+
+    setReducedMotion(mediaQuery.matches || isMobile);
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setReducedMotion(e.matches || window.innerWidth < 1024);
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  return reducedMotion;
+}
+
 interface BlobProps {
   className?: string;
   color?: string;
@@ -23,6 +46,9 @@ const sizeMap = {
  * Use for hero sections and feature areas
  */
 export function Blob({ className, color = "bg-blue-500", animate = true, size = "lg" }: BlobProps) {
+  const reducedMotion = useReducedMotion();
+  const shouldAnimate = animate && !reducedMotion;
+
   const blob = (
     <div
       className={cn(
@@ -37,7 +63,7 @@ export function Blob({ className, color = "bg-blue-500", animate = true, size = 
     />
   );
 
-  if (!animate) return blob;
+  if (!shouldAnimate) return blob;
 
   return (
     <motion.div
@@ -49,6 +75,7 @@ export function Blob({ className, color = "bg-blue-500", animate = true, size = 
       )}
       style={{
         borderRadius: "60% 40% 30% 70% / 60% 30% 70% 40%",
+        willChange: "border-radius",
       }}
       animate={{
         borderRadius: [
@@ -150,6 +177,8 @@ export function FloatingDots({
   count?: number;
   color?: string;
 }) {
+  const reducedMotion = useReducedMotion();
+
   // Use deterministic values based on index to avoid Math.random during render
   const dots = Array.from({ length: count }).map((_, i) => ({
     id: i,
@@ -159,6 +188,26 @@ export function FloatingDots({
     delay: seededRandom(i * 4 + 4) * 2,
     duration: 3 + seededRandom(i * 4 + 5) * 2,
   }));
+
+  // On mobile/reduced motion: show static dots
+  if (reducedMotion) {
+    return (
+      <div className={cn("absolute inset-0 overflow-hidden pointer-events-none", className)}>
+        {dots.map((dot) => (
+          <div
+            key={dot.id}
+            className={cn("absolute rounded-full opacity-40", color)}
+            style={{
+              width: dot.size,
+              height: dot.size,
+              left: `${dot.x}%`,
+              top: `${dot.y}%`,
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className={cn("absolute inset-0 overflow-hidden pointer-events-none", className)}>
@@ -171,6 +220,7 @@ export function FloatingDots({
             height: dot.size,
             left: `${dot.x}%`,
             top: `${dot.y}%`,
+            willChange: "transform",
           }}
           animate={{
             y: [-10, 10, -10],
@@ -204,6 +254,9 @@ export function GradientOrb({
   size?: "sm" | "md" | "lg" | "xl";
   animate?: boolean;
 }) {
+  const reducedMotion = useReducedMotion();
+  const shouldAnimate = animate && !reducedMotion;
+
   const sizeClasses = {
     sm: "w-48 h-48",
     md: "w-72 h-72",
@@ -223,7 +276,7 @@ export function GradientOrb({
     />
   );
 
-  if (!animate) return orb;
+  if (!shouldAnimate) return orb;
 
   return (
     <motion.div
@@ -234,6 +287,7 @@ export function GradientOrb({
         sizeClasses[size],
         className
       )}
+      style={{ willChange: "transform, opacity" }}
       animate={{
         scale: [1, 1.1, 1],
         opacity: [0.5, 0.6, 0.5],

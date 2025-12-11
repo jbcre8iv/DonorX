@@ -4,6 +4,29 @@ import * as React from "react";
 import { motion, type MotionProps, type Variants } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+// Hook to detect if we should use reduced/simpler animations
+function useSimplifiedAnimations() {
+  const [simplified, setSimplified] = React.useState(false);
+
+  React.useEffect(() => {
+    // Check for prefers-reduced-motion
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    // Check for mobile (rough heuristic: screen width < 1024px)
+    const isMobile = window.innerWidth < 1024;
+
+    setSimplified(mediaQuery.matches || isMobile);
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setSimplified(e.matches || window.innerWidth < 1024);
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  return simplified;
+}
+
 // Animation variants for common patterns
 export const fadeIn: Variants = {
   hidden: { opacity: 0 },
@@ -46,10 +69,34 @@ export const staggerContainer: Variants = {
   },
 };
 
+// Simplified variants for mobile - just fade, no transforms
+const simpleFadeIn: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+};
+
+// Simplified stagger - faster, less delay
+const simpleStaggerContainer: Variants = {
+  hidden: { opacity: 1 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0,
+    },
+  },
+};
+
 // Default transition for smooth animations
 const defaultTransition = {
   duration: 0.5,
   ease: [0.25, 0.1, 0.25, 1] as const,
+};
+
+// Faster transition for mobile
+const mobileTransition = {
+  duration: 0.3,
+  ease: "easeOut" as const,
 };
 
 interface AnimatedProps extends MotionProps {
@@ -71,6 +118,8 @@ export function FadeIn({
   once = true,
   ...props
 }: AnimatedProps) {
+  const simplified = useSimplifiedAnimations();
+
   return (
     <motion.div
       className={className}
@@ -78,7 +127,7 @@ export function FadeIn({
       whileInView="visible"
       viewport={{ once, margin: "-50px" }}
       variants={fadeIn}
-      transition={{ ...defaultTransition, duration, delay }}
+      transition={simplified ? { ...mobileTransition, delay: delay * 0.5 } : { ...defaultTransition, duration, delay }}
       {...props}
     >
       {children}
@@ -97,14 +146,16 @@ export function FadeInUp({
   once = true,
   ...props
 }: AnimatedProps) {
+  const simplified = useSimplifiedAnimations();
+
   return (
     <motion.div
       className={className}
       initial="hidden"
       whileInView="visible"
       viewport={{ once, margin: "-50px" }}
-      variants={fadeInUp}
-      transition={{ ...defaultTransition, duration, delay }}
+      variants={simplified ? simpleFadeIn : fadeInUp}
+      transition={simplified ? { ...mobileTransition, delay: delay * 0.5 } : { ...defaultTransition, duration, delay }}
       {...props}
     >
       {children}
@@ -123,14 +174,16 @@ export function FadeInDown({
   once = true,
   ...props
 }: AnimatedProps) {
+  const simplified = useSimplifiedAnimations();
+
   return (
     <motion.div
       className={className}
       initial="hidden"
       whileInView="visible"
       viewport={{ once, margin: "-50px" }}
-      variants={fadeInDown}
-      transition={{ ...defaultTransition, duration, delay }}
+      variants={simplified ? simpleFadeIn : fadeInDown}
+      transition={simplified ? { ...mobileTransition, delay: delay * 0.5 } : { ...defaultTransition, duration, delay }}
       {...props}
     >
       {children}
@@ -149,14 +202,16 @@ export function FadeInLeft({
   once = true,
   ...props
 }: AnimatedProps) {
+  const simplified = useSimplifiedAnimations();
+
   return (
     <motion.div
       className={className}
       initial="hidden"
       whileInView="visible"
       viewport={{ once, margin: "-50px" }}
-      variants={fadeInLeft}
-      transition={{ ...defaultTransition, duration, delay }}
+      variants={simplified ? simpleFadeIn : fadeInLeft}
+      transition={simplified ? { ...mobileTransition, delay: delay * 0.5 } : { ...defaultTransition, duration, delay }}
       {...props}
     >
       {children}
@@ -175,14 +230,16 @@ export function FadeInRight({
   once = true,
   ...props
 }: AnimatedProps) {
+  const simplified = useSimplifiedAnimations();
+
   return (
     <motion.div
       className={className}
       initial="hidden"
       whileInView="visible"
       viewport={{ once, margin: "-50px" }}
-      variants={fadeInRight}
-      transition={{ ...defaultTransition, duration, delay }}
+      variants={simplified ? simpleFadeIn : fadeInRight}
+      transition={simplified ? { ...mobileTransition, delay: delay * 0.5 } : { ...defaultTransition, duration, delay }}
       {...props}
     >
       {children}
@@ -201,14 +258,16 @@ export function ScaleIn({
   once = true,
   ...props
 }: AnimatedProps) {
+  const simplified = useSimplifiedAnimations();
+
   return (
     <motion.div
       className={className}
       initial="hidden"
       whileInView="visible"
       viewport={{ once, margin: "-50px" }}
-      variants={scaleIn}
-      transition={{ ...defaultTransition, duration, delay }}
+      variants={simplified ? simpleFadeIn : scaleIn}
+      transition={simplified ? { ...mobileTransition, delay: delay * 0.5 } : { ...defaultTransition, duration, delay }}
       {...props}
     >
       {children}
@@ -227,13 +286,15 @@ export function StaggerContainer({
   once = true,
   ...props
 }: AnimatedProps & { staggerDelay?: number }) {
+  const simplified = useSimplifiedAnimations();
+
   return (
     <motion.div
       className={className}
       initial="hidden"
       whileInView="visible"
       viewport={{ once, margin: "-50px" }}
-      variants={{
+      variants={simplified ? simpleStaggerContainer : {
         hidden: { opacity: 1 },
         visible: {
           opacity: 1,
@@ -258,11 +319,13 @@ export function StaggerItem({
   className,
   ...props
 }: Omit<AnimatedProps, "delay" | "duration" | "once">) {
+  const simplified = useSimplifiedAnimations();
+
   return (
     <motion.div
       className={className}
-      variants={fadeInUp}
-      transition={defaultTransition}
+      variants={simplified ? simpleFadeIn : fadeInUp}
+      transition={simplified ? mobileTransition : defaultTransition}
       {...props}
     >
       {children}
