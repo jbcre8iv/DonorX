@@ -261,6 +261,7 @@ export async function removeFromTeam(userId: string) {
 
 /**
  * Toggle simulation access for a user - only owners can toggle
+ * When enabling access, also enables global simulation mode automatically
  */
 export async function toggleSimulationAccess(userId: string, enabled: boolean) {
   // Only owners can toggle simulation access
@@ -299,7 +300,32 @@ export async function toggleSimulationAccess(userId: string, enabled: boolean) {
       return { error: "Failed to update simulation access" };
     }
 
+    // If enabling simulation access, also enable global simulation mode
+    if (enabled) {
+      const { data: currentSetting } = await adminClient
+        .from("system_settings")
+        .select("value")
+        .eq("key", "simulation_mode")
+        .single();
+
+      const isSimulationOn = currentSetting?.value?.enabled === true;
+
+      // Only turn on if not already on
+      if (!isSimulationOn) {
+        await adminClient
+          .from("system_settings")
+          .upsert({
+            key: "simulation_mode",
+            value: { enabled: true },
+            updated_at: new Date().toISOString(),
+            updated_by: ownerCheck.user.id,
+          });
+      }
+    }
+
     revalidatePath("/admin/users");
+    revalidatePath("/admin/settings");
+    revalidatePath("/");
     return { success: true, enabled };
   } catch (e) {
     console.error("[toggleSimulationAccess] Admin client error:", e);
