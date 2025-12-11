@@ -571,14 +571,20 @@ export function DonateClient({
     setIsRenaming(false);
   };
 
-  const isRecurring = frequency !== "one-time";
-
   const totalPercentage = allocations.reduce((sum, item) => sum + item.percentage, 0);
   const isValidAllocation = totalPercentage === 100;
   const amountCents = amount * 100;
   const isValidAmount = amountCents >= config.features.minDonationCents && amountCents <= config.features.maxDonationCents;
   const requiresAchOrCheck = amountCents > config.features.creditCardMaxCents;
   const canUseCreditCard = amountCents <= config.features.creditCardMaxCents;
+  const isRecurring = frequency !== "one-time";
+
+  // Auto-switch to one-time if amount exceeds credit card limit (recurring requires credit card)
+  React.useEffect(() => {
+    if (requiresAchOrCheck && frequency !== "one-time") {
+      setFrequency("one-time");
+    }
+  }, [requiresAchOrCheck, frequency]);
 
   // Handler for applying AI allocation recommendations
   const handleApplyAiAllocation = (aiAllocations: AIAllocation[]) => {
@@ -798,8 +804,17 @@ export function DonateClient({
                 </div>
               </CardHeader>
               <CardContent>
-                <FrequencySelector value={frequency} onChange={setFrequency} />
-                {isRecurring && (
+                <FrequencySelector
+                  value={frequency}
+                  onChange={setFrequency}
+                  disableRecurring={requiresAchOrCheck}
+                />
+                {requiresAchOrCheck && (
+                  <p className="mt-3 text-sm text-amber-600">
+                    Recurring donations require credit card payment (max $10,000). For larger amounts, only one-time donations are available.
+                  </p>
+                )}
+                {isRecurring && !requiresAchOrCheck && (
                   <p className="mt-3 text-sm text-slate-500">
                     You can cancel or modify your recurring donation anytime from your dashboard.
                   </p>
