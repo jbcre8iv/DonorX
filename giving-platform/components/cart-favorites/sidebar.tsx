@@ -34,9 +34,9 @@ export function CartFavoritesSidebar() {
   // Always render for CSS transitions to work
   return (
     <>
-      {/* Backdrop - fades in/out */}
+      {/* Backdrop - only on mobile, fades in/out */}
       <div
-        className={`fixed inset-0 z-40 bg-black/20 lg:bg-black/10 transition-opacity duration-300 ease-out ${
+        className={`fixed inset-0 z-40 bg-black/20 lg:hidden transition-opacity duration-300 ease-out ${
           isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setSidebarOpen(false)}
