@@ -290,7 +290,7 @@ export default async function HomePage() {
             {steps.map((step, index) => (
               <StaggerItem key={step.title}>
                 <Link href={step.href} className="block h-full group/card">
-                  <Card className="relative h-full min-h-[340px] overflow-hidden transition-all duration-500 ease-out hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-200 group bg-white cursor-pointer">
+                  <Card className="relative h-full min-h-[380px] overflow-hidden transition-all duration-500 ease-out hover:shadow-xl hover:shadow-blue-500/10 hover:border-blue-200 group bg-white cursor-pointer">
                     {/* Main content */}
                     <div className="relative z-10 text-center p-8 bg-white">
                       <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
