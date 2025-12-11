@@ -150,11 +150,19 @@ export default function ContactPage() {
                       </label>
                       <Input type="email" placeholder="john@company.com" className="h-11" />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Company
-                      </label>
-                      <Input placeholder="Acme Inc." className="h-11" />
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                          Company
+                        </label>
+                        <Input placeholder="Acme Inc." className="h-11" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                          EIN <span className="text-red-500">*</span>
+                        </label>
+                        <Input placeholder="XX-XXXXXXX" className="h-11" required />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1.5">

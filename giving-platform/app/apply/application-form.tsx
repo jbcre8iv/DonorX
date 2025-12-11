@@ -38,8 +38,10 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
   const [mission, setMission] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
-  const [contactName, setContactName] = useState("");
+  const [contactFirstName, setContactFirstName] = useState("");
+  const [contactLastName, setContactLastName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
 
   const handleQuickFill = async () => {
     if (!website) {
@@ -111,14 +113,15 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
     startTransition(async () => {
       const result = await submitApplication({
         name,
-        ein: ein || undefined,
+        ein,
         website: website || undefined,
         description: description || undefined,
         mission: mission || undefined,
         category_id: categoryId || undefined,
         logo_url: logoUrl || undefined,
-        contact_name: contactName,
+        contact_name: `${contactFirstName} ${contactLastName}`.trim(),
         contact_email: contactEmail,
+        contact_phone: contactPhone || undefined,
       });
 
       if (result.error) {
@@ -282,15 +285,28 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">
-              Your Name <span className="text-red-500">*</span>
+              First Name <span className="text-red-500">*</span>
             </label>
             <Input
               required
-              placeholder="John Doe"
-              value={contactName}
-              onChange={(e) => setContactName(e.target.value)}
+              placeholder="John"
+              value={contactFirstName}
+              onChange={(e) => setContactFirstName(e.target.value)}
             />
           </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">
+              Last Name <span className="text-red-500">*</span>
+            </label>
+            <Input
+              required
+              placeholder="Doe"
+              value={contactLastName}
+              onChange={(e) => setContactLastName(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">
               Email Address <span className="text-red-500">*</span>
@@ -301,6 +317,17 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
               placeholder="john@nonprofit.org"
               value={contactEmail}
               onChange={(e) => setContactEmail(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">
+              Phone Number
+            </label>
+            <Input
+              type="tel"
+              placeholder="(555) 123-4567"
+              value={contactPhone}
+              onChange={(e) => setContactPhone(e.target.value)}
             />
           </div>
         </div>
@@ -325,16 +352,14 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">
-              EIN (Tax ID)
+              EIN (Tax ID) <span className="text-red-500">*</span>
             </label>
             <Input
+              required
               placeholder="XX-XXXXXXX"
               value={ein}
               onChange={(e) => setEin(e.target.value)}
             />
-            <p className="mt-1 text-xs text-slate-500">
-              Optional - can be added later
-            </p>
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">
