@@ -102,8 +102,8 @@ export function GiftDedicationForm({ value, onChange }: GiftDedicationFormProps)
 
           {/* Honoree name */}
           <Input
-            label="Honoree's name"
-            placeholder="Enter the person's name"
+            label="Honoree name"
+            placeholder="Enter the person&apos;s name"
             value={value.honoreeName}
             onChange={(e) => updateDedication({ honoreeName: e.target.value })}
           />
@@ -147,7 +147,7 @@ export function GiftDedicationForm({ value, onChange }: GiftDedicationFormProps)
                 </span>
               </div>
               <p className="mt-1 text-xs text-slate-500">
-                We'll email them about this dedication (your donation amount won't be shared)
+                We&apos;ll email them about this dedication (your donation amount won&apos;t be shared)
               </p>
             </div>
           </label>
@@ -156,13 +156,13 @@ export function GiftDedicationForm({ value, onChange }: GiftDedicationFormProps)
           {value.notifyRecipient && (
             <div className="space-y-4 pl-8 border-l-2 border-purple-100">
               <Input
-                label="Recipient's name"
+                label="Recipient name"
                 placeholder="Who should we address the notification to?"
                 value={value.recipientName || ""}
                 onChange={(e) => updateDedication({ recipientName: e.target.value })}
               />
               <Input
-                label="Recipient's email"
+                label="Recipient email"
                 type="email"
                 placeholder="email@example.com"
                 value={value.recipientEmail || ""}
