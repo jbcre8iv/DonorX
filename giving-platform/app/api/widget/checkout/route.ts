@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
       .update({ stripe_payment_intent_id: session.id })
       .eq("id", donation.id);
 
-    return NextResponse.json({ sessionId: session.id });
+    return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error("Widget checkout error:", error);
     return NextResponse.json(

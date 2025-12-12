@@ -1,14 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Heart, Loader2, CheckCircle, Building2 } from "lucide-react";
-import { loadStripe } from "@stripe/stripe-js";
+import { Heart, Loader2, Building2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import type { WidgetToken, Nonprofit } from "@/types/database";
-
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-);
 
 interface WidgetDonationFormProps {
   widget: WidgetToken & { nonprofit: Nonprofit };
@@ -73,14 +68,10 @@ export function WidgetDonationForm({ widget }: WidgetDonationFormProps) {
       }
 
       // Redirect to Stripe Checkout
-      const stripe = await stripePromise;
-      if (stripe) {
-        const { error: stripeError } = await stripe.redirectToCheckout({
-          sessionId: data.sessionId,
-        });
-        if (stripeError) {
-          throw new Error(stripeError.message);
-        }
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL returned");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
