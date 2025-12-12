@@ -384,29 +384,30 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
           />
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Logo URL
-          </label>
-          <Input
-            placeholder="https://yournonprofit.org/logo.png"
-            value={logoUrl}
-            onChange={(e) => setLogoUrl(e.target.value)}
-          />
-          {logoUrl && (
-            <div className="mt-2 flex items-center gap-2">
-              <img
-                src={logoUrl}
-                alt="Logo preview"
-                className="h-10 w-10 rounded object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
-              <span className="text-xs text-slate-500">Preview</span>
+        {/* Logo preview - shown when auto-detected, but URL input hidden from user */}
+        {logoUrl && (
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
+            <img
+              src={logoUrl}
+              alt="Organization logo"
+              className="h-12 w-12 rounded-lg object-contain border border-slate-200 bg-white"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-slate-700">Logo detected</p>
+              <p className="text-xs text-slate-500 truncate">{logoUrl}</p>
             </div>
-          )}
-        </div>
+            <button
+              type="button"
+              onClick={() => setLogoUrl("")}
+              className="text-xs text-slate-500 hover:text-slate-700 px-2 py-1 rounded hover:bg-slate-100"
+            >
+              Remove
+            </button>
+          </div>
+        )}
 
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
