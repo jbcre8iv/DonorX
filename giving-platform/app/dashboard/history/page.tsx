@@ -13,7 +13,7 @@ export const metadata = {
 };
 
 interface HistoryPageProps {
-  searchParams: Promise<{ status?: string; year?: string }>;
+  searchParams: Promise<{ status?: string; year?: string; q?: string }>;
 }
 
 export default async function HistoryPage({ searchParams }: HistoryPageProps) {
@@ -57,12 +57,49 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
 
   const { data: donations } = await query;
 
-  const allDonations = donations || [];
+  let allDonations = donations || [];
 
-  // Get available years for filter
+  // Get available years for filter (before search filtering)
   const years = [...new Set(allDonations.map((d) =>
     new Date(d.created_at).getFullYear()
   ))].sort((a, b) => b - a);
+
+  // Apply search filter
+  const searchQuery = params.q?.toLowerCase().trim();
+  if (searchQuery) {
+    allDonations = allDonations.filter((donation) => {
+      // Search in amount (formatted)
+      const amountStr = (donation.amount_cents / 100).toFixed(2);
+      if (amountStr.includes(searchQuery) || `$${amountStr}`.includes(searchQuery)) {
+        return true;
+      }
+
+      // Search in status
+      if (donation.status.toLowerCase().includes(searchQuery)) {
+        return true;
+      }
+
+      // Search in date
+      const dateStr = formatDate(donation.created_at).toLowerCase();
+      if (dateStr.includes(searchQuery)) {
+        return true;
+      }
+
+      // Search in nonprofit/category names
+      const recipients = donation.allocations?.map(
+        (a: {
+          nonprofit?: { id: string; name: string } | null;
+          category?: { id: string; name: string } | null;
+        }) => (a.nonprofit?.name || a.category?.name || "").toLowerCase()
+      ) || [];
+
+      if (recipients.some((name: string) => name.includes(searchQuery))) {
+        return true;
+      }
+
+      return false;
+    });
+  }
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -106,10 +143,14 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
         <CardContent>
           {allDonations.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-slate-500">No donations found.</p>
-              <Button asChild className="mt-4">
-                <Link href="/donate">Make a Donation</Link>
-              </Button>
+              <p className="text-slate-500">
+                {searchQuery ? `No donations matching "${params.q}"` : "No donations found."}
+              </p>
+              {!searchQuery && (
+                <Button asChild className="mt-4">
+                  <Link href="/donate">Make a Donation</Link>
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
