@@ -10,6 +10,7 @@ import {
   Target,
   Users,
   UserCircle,
+  Code,
 } from "lucide-react";
 import type { Nonprofit, NonprofitUser } from "@/types/database";
 
@@ -18,6 +19,7 @@ const nonprofitLinks = [
   { href: "/nonprofit/profile", label: "Profile", icon: UserCircle },
   { href: "/nonprofit/goals", label: "Fundraising Goals", icon: Target },
   { href: "/nonprofit/reports", label: "Impact Reports", icon: FileText },
+  { href: "/nonprofit/widget", label: "Donation Widget", icon: Code },
   { href: "/nonprofit/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/nonprofit/team", label: "Team", icon: Users, adminOnly: true },
   { href: "/nonprofit/settings", label: "Settings", icon: Settings },
