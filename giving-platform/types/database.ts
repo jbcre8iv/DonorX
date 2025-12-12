@@ -36,6 +36,8 @@ export type Nonprofit = {
   category_id: string | null;
   status: "pending" | "approved" | "rejected";
   featured: boolean;
+  fundraising_goal_cents?: number | null;
+  total_raised_cents?: number;
   created_at: string;
   approved_at: string | null;
   category?: Category;
@@ -56,6 +58,9 @@ export type Donation = {
   status: "pending" | "processing" | "completed" | "failed" | "refunded";
   receipt_url: string | null;
   notes: string | null;
+  cover_fees?: boolean;
+  fee_amount_cents?: number;
+  is_anonymous?: boolean;
   created_at: string;
   completed_at: string | null;
 };
@@ -116,5 +121,20 @@ export type ImpactReport = {
   people_served: number | null;
   media_urls: string[] | null;
   report_date: string | null;
+  created_at: string;
+};
+
+export type DedicationType = "in_honor_of" | "in_memory_of";
+
+export type GiftDedication = {
+  id: string;
+  donation_id: string;
+  dedication_type: DedicationType;
+  honoree_name: string;
+  notification_email: string | null;
+  notification_name: string | null;
+  personal_message: string | null;
+  send_notification: boolean;
+  notification_sent_at: string | null;
   created_at: string;
 };

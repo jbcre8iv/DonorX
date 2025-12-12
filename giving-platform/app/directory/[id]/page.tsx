@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, ExternalLink, Globe, Building2, CheckCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DonationThermometer } from "@/components/ui/donation-thermometer";
 import { DonateButton } from "./donate-button";
 import type { Nonprofit, ImpactReport } from "@/types/database";
 
@@ -139,6 +140,25 @@ export default async function NonprofitPage({ params }: NonprofitPageProps) {
             />
           </div>
         </div>
+
+        {/* Fundraising Progress */}
+        {((typedNonprofit.total_raised_cents ?? 0) > 0 || typedNonprofit.fundraising_goal_cents) && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Fundraising Progress</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DonationThermometer
+                current={typedNonprofit.total_raised_cents || 0}
+                goal={typedNonprofit.fundraising_goal_cents || undefined}
+                size="md"
+                showAmounts={true}
+                showPercentage={!!typedNonprofit.fundraising_goal_cents}
+                animate={true}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Mission */}
         <Card className="mb-8">

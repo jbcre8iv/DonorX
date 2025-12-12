@@ -79,6 +79,24 @@ export interface CreateCheckoutResult {
 
 export type DonationFrequency = "one-time" | RecurringInterval;
 
+// Gift dedication types
+export interface GiftDedicationInput {
+  type: "in_honor_of" | "in_memory_of";
+  honoreeName: string;
+  notifyRecipient: boolean;
+  recipientEmail?: string;
+  recipientName?: string;
+  personalMessage?: string;
+}
+
+// Donation options for checkout
+export interface DonationOptions {
+  coverFees?: boolean;
+  feeAmountCents?: number;
+  isAnonymous?: boolean;
+  giftDedication?: GiftDedicationInput;
+}
+
 // Template types
 export interface TemplateItem {
   type: "nonprofit" | "category";
@@ -659,8 +677,13 @@ export async function clearDraft(): Promise<{ success: boolean; error?: string }
 export async function createCheckoutSession(
   amountCents: number,
   allocations: AllocationInput[],
-  frequency: DonationFrequency = "one-time"
+  frequency: DonationFrequency = "one-time",
+  options: DonationOptions = {}
 ): Promise<CreateCheckoutResult> {
+  const { coverFees = false, feeAmountCents = 0, isAnonymous = false, giftDedication } = options;
+
+  // Calculate total amount including fee if covering fees
+  const totalAmountCents = amountCents + (coverFees ? feeAmountCents : 0);
   const supabase = await createClient();
 
   // Get the current user
@@ -738,6 +761,10 @@ export async function createCheckoutSession(
         completed_at: simulationMode ? new Date().toISOString() : null,
         stripe_payment_intent_id: simulationMode ? `sim_${Date.now()}` : null,
         stripe_charge_id: simulationMode ? `sim_ch_${Date.now()}` : null,
+        // Quick Win features
+        cover_fees: coverFees,
+        fee_amount_cents: coverFees ? feeAmountCents : 0,
+        is_anonymous: isAnonymous,
       })
       .select()
       .single();
@@ -762,6 +789,26 @@ export async function createCheckoutSession(
       // Clean up the donation
       await adminClient.from("donations").delete().eq("id", donation.id);
       return { success: false, error: "Failed to create allocation records" };
+    }
+
+    // Create gift dedication record if provided
+    if (giftDedication && giftDedication.honoreeName) {
+      const { error: dedicationError } = await adminClient
+        .from("gift_dedications")
+        .insert({
+          donation_id: donation.id,
+          dedication_type: giftDedication.type,
+          honoree_name: giftDedication.honoreeName,
+          notification_email: giftDedication.notifyRecipient ? giftDedication.recipientEmail : null,
+          notification_name: giftDedication.notifyRecipient ? giftDedication.recipientName : null,
+          personal_message: giftDedication.personalMessage || null,
+          send_notification: giftDedication.notifyRecipient,
+        });
+
+      if (dedicationError) {
+        console.error("Failed to create gift dedication:", dedicationError);
+        // Non-fatal - donation can proceed without dedication record
+      }
     }
 
     // Get base URL for redirects
@@ -791,6 +838,11 @@ export async function createCheckoutSession(
       // Create subscription checkout
       const { interval, interval_count } = stripeIntervalMap[recurringInterval];
 
+      // Build product description including fee coverage
+      const productDescription = coverFees
+        ? `${frequency} donation (includes processing fee) - Allocation: ${allocationSummary}`
+        : `${frequency} donation - Allocation: ${allocationSummary}`;
+
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         customer_email: user.email,
@@ -800,9 +852,9 @@ export async function createCheckoutSession(
               currency: "usd",
               product_data: {
                 name: "Recurring Charitable Donation",
-                description: `${frequency} donation - Allocation: ${allocationSummary}`,
+                description: productDescription,
               },
-              unit_amount: amountCents,
+              unit_amount: totalAmountCents,
               recurring: {
                 interval,
                 interval_count,
@@ -816,6 +868,10 @@ export async function createCheckoutSession(
           user_id: user.id,
           frequency,
           allocations: JSON.stringify(allocations),
+          cover_fees: coverFees.toString(),
+          fee_amount_cents: feeAmountCents.toString(),
+          is_anonymous: isAnonymous.toString(),
+          has_dedication: (!!giftDedication).toString(),
         },
         subscription_data: {
           metadata: {
@@ -837,6 +893,11 @@ export async function createCheckoutSession(
       return { success: true, url: session.url || undefined };
     } else {
       // Create one-time payment checkout
+      // Build product description including fee coverage
+      const oneTimeDescription = coverFees
+        ? `Allocation: ${allocationSummary} (includes processing fee)`
+        : `Allocation: ${allocationSummary}`;
+
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
         customer_email: user.email,
@@ -846,9 +907,9 @@ export async function createCheckoutSession(
               currency: "usd",
               product_data: {
                 name: "Charitable Donation",
-                description: `Allocation: ${allocationSummary}`,
+                description: oneTimeDescription,
               },
-              unit_amount: amountCents,
+              unit_amount: totalAmountCents,
             },
             quantity: 1,
           },
@@ -856,6 +917,10 @@ export async function createCheckoutSession(
         metadata: {
           donation_id: donation.id,
           user_id: user.id,
+          cover_fees: coverFees.toString(),
+          fee_amount_cents: feeAmountCents.toString(),
+          is_anonymous: isAnonymous.toString(),
+          has_dedication: (!!giftDedication).toString(),
         },
         success_url: `${baseUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/donate?canceled=true`,

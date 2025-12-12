@@ -11,6 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { AmountInput } from "@/components/donation/amount-input";
 import { AllocationBuilder, type AllocationItem } from "@/components/donation/allocation-builder";
 import { FrequencySelector, type DonationFrequency } from "@/components/donation/frequency-selector";
+import { CoverFeesCheckbox, calculateFeeAmountCents } from "@/components/donation/cover-fees-checkbox";
+import { AnonymousToggle } from "@/components/donation/anonymous-toggle";
+import { GiftDedicationForm, type GiftDedication } from "@/components/donation/gift-dedication-form";
 import { type Allocation as AIAllocation } from "@/components/ai/allocation-advisor";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { createCheckoutSession, saveTemplate, updateTemplate, loadTemplates, deleteTemplate, renameTemplate, type AllocationInput, type DonationTemplate, type TemplateItem, type SaveTemplateResult } from "./actions";
@@ -61,6 +64,11 @@ export function DonateClient({
   const [amountExplicitlySet, setAmountExplicitlySet] = React.useState(false); // Track if user changed amount
   const [frequency, setFrequency] = React.useState<DonationFrequency>("one-time");
   const [allocations, setAllocations] = React.useState<AllocationItem[]>([]);
+
+  // Quick Win features state
+  const [coverFees, setCoverFees] = React.useState(false);
+  const [isAnonymous, setIsAnonymous] = React.useState(false);
+  const [giftDedication, setGiftDedication] = React.useState<GiftDedication | null>(null);
 
   // Wrapper to track explicit amount changes from user interaction
   const handleAmountChange = React.useCallback((newAmount: number) => {
@@ -576,6 +584,8 @@ export function DonateClient({
   const totalPercentage = allocations.reduce((sum, item) => sum + item.percentage, 0);
   const isValidAllocation = totalPercentage === 100;
   const amountCents = amount * 100;
+  const feeAmountCents = coverFees ? calculateFeeAmountCents(amountCents) : 0;
+  const totalAmountCents = amountCents + feeAmountCents;
   const isValidAmount = amountCents >= config.features.minDonationCents && amountCents <= config.features.maxDonationCents;
   const requiresAchOrCheck = amountCents > config.features.creditCardMaxCents;
   const canUseCreditCard = amountCents <= config.features.creditCardMaxCents;
@@ -694,7 +704,17 @@ export function DonateClient({
     }));
 
     try {
-      const result = await createCheckoutSession(amountCents, allocationInputs, frequency);
+      const result = await createCheckoutSession(
+        amountCents,
+        allocationInputs,
+        frequency,
+        {
+          coverFees,
+          feeAmountCents,
+          isAnonymous,
+          giftDedication: giftDedication || undefined,
+        }
+      );
 
       if (result.success && result.url) {
         // Mark that we're proceeding to payment to prevent redirect on draft clear
@@ -839,6 +859,28 @@ export function DonateClient({
               </CardContent>
             </Card>
 
+            {/* Donation Options */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Donation Options</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <CoverFeesCheckbox
+                  checked={coverFees}
+                  onChange={setCoverFees}
+                  donationAmount={amount}
+                />
+                <AnonymousToggle
+                  checked={isAnonymous}
+                  onChange={setIsAnonymous}
+                />
+                <GiftDedicationForm
+                  value={giftDedication}
+                  onChange={setGiftDedication}
+                />
+              </CardContent>
+            </Card>
+
             {/* Allocation Builder */}
             <div ref={allocationSectionRef} className="scroll-mt-20">
             <AllocationBuilder
@@ -878,11 +920,27 @@ export function DonateClient({
                     <span className="text-slate-600">Platform Fee</span>
                     <span className="font-medium text-emerald-600">$0.00</span>
                   </div>
+                  {coverFees && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">Processing Fee Coverage</span>
+                      <span className="font-medium text-emerald-600">+{formatCurrency(feeAmountCents)}</span>
+                    </div>
+                  )}
+                  {isAnonymous && (
+                    <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                      <span>Donating anonymously</span>
+                    </div>
+                  )}
+                  {giftDedication && giftDedication.honoreeName && (
+                    <div className="text-sm text-purple-600">
+                      {giftDedication.type === "in_honor_of" ? "In honor of" : "In memory of"} {giftDedication.honoreeName}
+                    </div>
+                  )}
                   <div className="border-t border-slate-200 pt-4">
                     <div className="flex justify-between">
                       <span className="font-semibold">Total</span>
                       <span className="font-semibold">
-                        {formatCurrency(amountCents)}
+                        {formatCurrency(totalAmountCents)}
                         {isRecurring && <span className="text-sm font-normal text-slate-500">/{frequency === "monthly" ? "mo" : frequency === "quarterly" ? "qtr" : "yr"}</span>}
                       </span>
                     </div>
