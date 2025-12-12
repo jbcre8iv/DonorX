@@ -117,7 +117,8 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
         website: website || undefined,
         description: description || undefined,
         mission: mission || undefined,
-        category_id: categoryId || undefined,
+        // Don't send "other" as category_id - it's not a valid UUID
+        category_id: categoryId && categoryId !== "other" ? categoryId : undefined,
         logo_url: logoUrl || undefined,
         contact_name: `${contactFirstName} ${contactLastName}`.trim(),
         contact_email: contactEmail,
@@ -231,6 +232,7 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
   const categoryOptions = [
     { value: "", label: "Select a cause" },
     ...categories.map((c) => ({ value: c.id, label: c.name })),
+    { value: "other", label: "Other" },
   ];
 
   return (
