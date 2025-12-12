@@ -16,8 +16,10 @@ export function CoverFeesCheckbox({
   donationAmount,
   feePercentage = 0.03,
 }: CoverFeesCheckboxProps) {
-  // Calculate fee amount (round up to nearest cent)
-  const feeAmount = Math.ceil(donationAmount * feePercentage * 100) / 100;
+  // donationAmount is in dollars, convert to cents for calculations
+  const donationAmountCents = donationAmount * 100;
+  // Calculate fee amount in cents (round up)
+  const feeAmountCents = Math.ceil(donationAmountCents * feePercentage);
 
   return (
     <label className="flex items-start gap-3 cursor-pointer group">
@@ -46,11 +48,11 @@ export function CoverFeesCheckbox({
         <div className="flex items-center gap-2">
           <Heart className="h-4 w-4 text-emerald-600" />
           <span className="text-sm font-medium text-slate-700">
-            Add {formatCurrency(feeAmount)} to cover processing fees
+            Add {formatCurrency(feeAmountCents)} to cover processing fees
           </span>
         </div>
         <p className="mt-1 text-xs text-slate-500">
-          100% of your {formatCurrency(donationAmount)} donation will go directly to the nonprofits
+          100% of your {formatCurrency(donationAmountCents)} donation will go directly to the nonprofits
         </p>
       </div>
     </label>
