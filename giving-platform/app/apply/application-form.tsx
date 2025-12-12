@@ -98,6 +98,8 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
       const existsCheck = await checkNonprofitExists(info.name, undefined, url);
       if (existsCheck.exists && existsCheck.nonprofit) {
         setExistingNonprofit(existsCheck.nonprofit);
+        // Scroll to top so user sees the message
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to extract info");
