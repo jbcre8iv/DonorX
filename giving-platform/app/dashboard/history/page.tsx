@@ -187,7 +187,7 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
                       </Button>
                       {donation.status === "completed" && (
                         <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/dashboard/receipts?donation=${donation.id}`}>
+                          <Link href={`/dashboard/receipts/${donation.id}`}>
                             <Download className="mr-2 h-4 w-4" />
                             Receipt
                           </Link>
