@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
 import { NonprofitCard } from "@/components/directory/nonprofit-card";
 import { NonprofitTable } from "@/components/directory/nonprofit-table";
+import { CategoryCard } from "@/components/directory/category-card";
 import { CategoryTable } from "@/components/directory/category-table";
 import { NonprofitModal } from "@/components/directory/nonprofit-modal";
 import { usePreferences } from "@/hooks/use-preferences";
@@ -451,13 +452,26 @@ export function DirectoryClient({
             /* Categories View */
             paginatedCategories.length > 0 ? (
               <>
-                <CategoryTable
-                  categories={paginatedCategories}
-                  nonprofitCounts={nonprofitCountByCategory}
-                  sortBy={sortBy}
-                  onSortChange={setSortBy}
-                  onViewOrgs={handleViewOrgsFromCategory}
-                />
+                {viewMode === "grid" ? (
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {paginatedCategories.map((category) => (
+                      <CategoryCard
+                        key={category.id}
+                        category={category}
+                        nonprofitCount={nonprofitCountByCategory[category.id] || 0}
+                        onViewOrgs={handleViewOrgsFromCategory}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <CategoryTable
+                    categories={paginatedCategories}
+                    nonprofitCounts={nonprofitCountByCategory}
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                    onViewOrgs={handleViewOrgsFromCategory}
+                  />
+                )}
                 {/* Pagination */}
                 {totalPages > 1 && (
                   <Pagination
