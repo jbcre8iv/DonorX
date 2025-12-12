@@ -42,7 +42,7 @@ export default async function NonprofitTeamPage() {
     redirect("/nonprofit");
   }
 
-  const nonprofit = currentUserMembership.nonprofit as Nonprofit;
+  const nonprofit = currentUserMembership.nonprofit as unknown as Nonprofit;
 
   // Get all team members
   const { data: teamMembers } = await supabase

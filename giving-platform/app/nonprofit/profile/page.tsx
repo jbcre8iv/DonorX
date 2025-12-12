@@ -32,7 +32,7 @@ export default async function NonprofitProfilePage() {
     redirect("/nonprofit");
   }
 
-  const nonprofit = nonprofitUser.nonprofit as Nonprofit;
+  const nonprofit = nonprofitUser.nonprofit as unknown as Nonprofit;
   const canEdit = ["admin", "editor"].includes(nonprofitUser.role);
 
   return (

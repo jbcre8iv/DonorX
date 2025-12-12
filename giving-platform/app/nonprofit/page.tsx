@@ -38,7 +38,7 @@ export default async function NonprofitDashboardPage() {
     redirect("/nonprofit");
   }
 
-  const nonprofit = nonprofitUser.nonprofit as Nonprofit;
+  const nonprofit = nonprofitUser.nonprofit as unknown as Nonprofit;
 
   // Get donations to this nonprofit
   const { data: allocations } = await supabase

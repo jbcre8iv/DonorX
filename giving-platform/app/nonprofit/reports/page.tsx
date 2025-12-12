@@ -38,7 +38,7 @@ export default async function ImpactReportsPage() {
     redirect("/nonprofit");
   }
 
-  const nonprofit = nonprofitUser.nonprofit as Nonprofit;
+  const nonprofit = nonprofitUser.nonprofit as unknown as Nonprofit;
   const canEdit = ["admin", "editor"].includes(nonprofitUser.role);
   const isAdmin = nonprofitUser.role === "admin";
 

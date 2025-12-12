@@ -85,7 +85,7 @@ export default async function NonprofitLayout({
     );
   }
 
-  const nonprofit = nonprofitUser.nonprofit as Nonprofit;
+  const nonprofit = nonprofitUser.nonprofit as unknown as Nonprofit;
   const isAdmin = nonprofitUser.role === "admin";
 
   // Filter links based on user role
