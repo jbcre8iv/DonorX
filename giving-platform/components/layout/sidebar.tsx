@@ -23,6 +23,7 @@ import {
   X,
   Shield,
   UserCheck,
+  Code,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +50,7 @@ const donorLinks: SidebarLink[] = [
 const adminLinks: SidebarLink[] = [
   { href: "/admin", label: "Dashboard", icon: BarChart3 },
   { href: "/admin/nonprofits", label: "Nonprofits", icon: Building2 },
+  { href: "/admin/widgets", label: "Widgets", icon: Code },
   { href: "/admin/donations", label: "Donations", icon: CreditCard },
   { href: "/admin/donors", label: "Donors", icon: Heart },
   { href: "/admin/categories", label: "Categories", icon: Tag },
