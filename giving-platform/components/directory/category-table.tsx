@@ -2,10 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Check, ChevronDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Check, ChevronDown, ArrowUp, ArrowDown, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartFavorites } from "@/contexts/cart-favorites-context";
 import { useToast } from "@/components/ui/toast";
+import { useFloatingHeart } from "@/components/ui/floating-heart";
 import type { Category } from "@/types/database";
 
 type SortOption = "name-asc" | "name-desc" | "category" | "recent";
@@ -31,10 +32,14 @@ function CategoryRow({
   onToggleExpand: () => void;
   onViewOrgs?: (categoryId: string) => void;
 }) {
-  const { hasDraft, addToDraft, removeFromDraft, isInDraft } = useCartFavorites();
+  const { addToDraft, removeFromDraft, isInDraft, toggleFavorite, isFavorite, userId } = useCartFavorites();
   const { addToast } = useToast();
+  const { triggerFloatingHeart } = useFloatingHeart();
+  const favoriteButtonRef = React.useRef<HTMLButtonElement>(null);
+  const isLoggedIn = !!userId;
 
   const inDraft = isInDraft(undefined, category.id);
+  const favorited = isFavorite(undefined, category.id);
 
   // Toggle donate handler - adds to or removes from draft
   const handleToggleDonate = async (e: React.MouseEvent) => {
@@ -53,6 +58,32 @@ function CategoryRow({
       });
       addToast(`Added ${category.name} cause to your donation`, "success", 3000);
     }
+  };
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isLoggedIn) {
+      addToast("Sign in to save favorites", "info", 4000, {
+        label: "Sign in",
+        href: "/login?redirect=/directory?view=causes",
+      });
+      return;
+    }
+
+    if (!favorited && favoriteButtonRef.current) {
+      triggerFloatingHeart(favoriteButtonRef.current);
+    }
+
+    await toggleFavorite({
+      categoryId: category.id,
+      category: {
+        id: category.id,
+        name: category.name,
+        icon: category.icon || undefined,
+      },
+    });
   };
 
   return (
@@ -145,6 +176,25 @@ function CategoryRow({
                 View nonprofits in this cause
               </span>
             </div>
+            {/* Favorite button */}
+            <div className="relative group/tip">
+              <button
+                ref={favoriteButtonRef}
+                onClick={handleToggleFavorite}
+                className={`h-9 w-9 flex items-center justify-center rounded-xl border transition-all cursor-pointer ${
+                  !isLoggedIn
+                    ? "text-slate-300 border-slate-200 bg-slate-50"
+                    : favorited
+                    ? "text-pink-500 bg-pink-50 border-pink-200 hover:bg-pink-100 hover:shadow-md"
+                    : "text-slate-600 border-slate-200 bg-white hover:text-pink-500 hover:border-pink-300 hover:bg-pink-50 hover:shadow-md"
+                }`}
+              >
+                <Heart className={`h-4 w-4 ${favorited ? "fill-current" : ""}`} />
+              </button>
+              <span className="hidden sm:block absolute bottom-full right-0 mb-2 px-2 py-1 text-xs font-medium text-white bg-slate-800 rounded whitespace-nowrap tooltip-animate z-50">
+                {!isLoggedIn ? "Sign in to save favorites" : favorited ? "Remove from favorites" : "Add to favorites"}
+              </span>
+            </div>
           </div>
         </td>
         {/* Mobile expand/status indicator */}
@@ -198,6 +248,19 @@ function CategoryRow({
               >
                 Nonprofits
               </Button>
+              {/* Favorite button */}
+              <button
+                onClick={handleToggleFavorite}
+                className={`h-10 w-10 flex items-center justify-center rounded-xl border transition-all ${
+                  !isLoggedIn
+                    ? "text-slate-300 border-slate-200 bg-white"
+                    : favorited
+                    ? "text-pink-500 bg-pink-50 border-pink-200"
+                    : "text-slate-600 border-slate-200 bg-white"
+                }`}
+              >
+                <Heart className={`h-5 w-5 ${favorited ? "fill-current" : ""}`} />
+              </button>
             </div>
           </td>
         </tr>
