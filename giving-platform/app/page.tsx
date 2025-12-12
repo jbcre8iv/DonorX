@@ -107,25 +107,25 @@ export default async function HomePage() {
     <div className="flex flex-col">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-white pt-16 pb-24 sm:pt-24 sm:pb-32">
-        {/* Decorative elements */}
+        {/* Decorative elements - hidden or reduced on mobile for cleaner look */}
         <Blob
-          className="-top-32 -right-32 opacity-20"
+          className="-top-32 -right-32 opacity-0 sm:opacity-20"
           color="bg-blue-400"
           size="xl"
         />
         <Blob
-          className="-bottom-48 -left-48 opacity-15"
+          className="-bottom-48 -left-48 opacity-0 sm:opacity-15"
           color="bg-emerald-400"
           size="xl"
         />
         <GradientOrb
-          className="top-20 left-1/4 opacity-30"
+          className="top-20 left-1/4 opacity-0 sm:opacity-30"
           from="from-blue-300"
           to="to-purple-300"
           size="md"
         />
         <FloatingDots
-          className="opacity-40"
+          className="opacity-0 sm:opacity-40"
           count={8}
           color="bg-blue-300"
         />
