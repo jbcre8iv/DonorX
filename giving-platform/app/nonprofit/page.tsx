@@ -1,9 +1,12 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Building2, DollarSign, Users, FileText, TrendingUp, Plus } from "lucide-react";
+import { DollarSign, Users, FileText, TrendingUp, Plus, Target } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { DonationThermometer } from "@/components/ui/donation-thermometer";
+import { formatCurrency } from "@/lib/utils";
+import type { Nonprofit } from "@/types/database";
 
 export const metadata = {
   title: "Nonprofit Dashboard",
@@ -12,37 +15,30 @@ export const metadata = {
 export default async function NonprofitDashboardPage() {
   const supabase = await createClient();
 
-  // For demo purposes, we'll show aggregated data
-  // In production, this would be filtered by the nonprofit the user manages
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Get sample nonprofit data
-  const { data: nonprofits } = await supabase
-    .from("nonprofits")
-    .select("id, name")
-    .eq("status", "approved")
-    .limit(1);
-
-  const nonprofit = nonprofits?.[0];
-
-  if (!nonprofit) {
-    return (
-      <div className="space-y-6">
-        <div className="text-center py-12">
-          <Building2 className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-          <h1 className="text-2xl font-semibold text-slate-900 mb-2">
-            Welcome to the Nonprofit Portal
-          </h1>
-          <p className="text-slate-600 max-w-md mx-auto">
-            This portal allows nonprofit organizations to manage their profile,
-            submit impact reports, and view donation analytics.
-          </p>
-          <p className="text-sm text-slate-500 mt-4">
-            Contact support to get your organization set up.
-          </p>
-        </div>
-      </div>
-    );
+  if (!user) {
+    redirect("/login");
   }
+
+  // Get nonprofit from user's nonprofit_users record
+  const { data: nonprofitUser } = await supabase
+    .from("nonprofit_users")
+    .select(`
+      *,
+      nonprofit:nonprofits(*)
+    `)
+    .eq("user_id", user.id)
+    .single();
+
+  // Layout handles the access denied case, so if we're here we have a nonprofit
+  if (!nonprofitUser) {
+    redirect("/nonprofit");
+  }
+
+  const nonprofit = nonprofitUser.nonprofit as Nonprofit;
 
   // Get donations to this nonprofit
   const { data: allocations } = await supabase
@@ -104,6 +100,33 @@ export default async function NonprofitDashboardPage() {
           </Link>
         </Button>
       </div>
+
+      {/* Fundraising Progress */}
+      {nonprofit.fundraising_goal_cents && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              Fundraising Goal Progress
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DonationThermometer
+              current={nonprofit.total_raised_cents || 0}
+              goal={nonprofit.fundraising_goal_cents}
+              size="md"
+              showAmounts={true}
+              showPercentage={true}
+              animate={true}
+            />
+            <p className="mt-3 text-sm text-slate-500">
+              <Link href="/nonprofit/goals" className="text-emerald-600 hover:text-emerald-700 font-medium">
+                Manage your fundraising goal &rarr;
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

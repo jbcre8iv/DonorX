@@ -38,6 +38,15 @@ export type Nonprofit = {
   featured: boolean;
   fundraising_goal_cents?: number | null;
   total_raised_cents?: number;
+  contact_email?: string | null;
+  contact_name?: string | null;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
+  country?: string | null;
+  phone?: string | null;
   created_at: string;
   approved_at: string | null;
   category?: Category;
@@ -126,6 +135,28 @@ export type ImpactReport = {
 
 export type DedicationType = "in_honor_of" | "in_memory_of";
 
+export type WidgetToken = {
+  id: string;
+  nonprofit_id: string;
+  token: string;
+  name: string;
+  allowed_domains: string[];
+  is_active: boolean;
+  primary_color: string;
+  button_text: string;
+  show_cover_fees: boolean;
+  show_anonymous: boolean;
+  show_dedications: boolean;
+  preset_amounts: number[];
+  allow_custom_amount: boolean;
+  min_amount_cents: number;
+  total_donations: number;
+  total_raised_cents: number;
+  created_at: string;
+  updated_at: string;
+  nonprofit?: Nonprofit;
+};
+
 export type GiftDedication = {
   id: string;
   donation_id: string;
@@ -137,4 +168,30 @@ export type GiftDedication = {
   send_notification: boolean;
   notification_sent_at: string | null;
   created_at: string;
+};
+
+export type NonprofitUserRole = "admin" | "editor" | "viewer";
+
+export type NonprofitUser = {
+  id: string;
+  nonprofit_id: string;
+  user_id: string;
+  role: NonprofitUserRole;
+  invited_by: string | null;
+  created_at: string;
+  nonprofit?: Nonprofit;
+  user?: User;
+};
+
+export type NonprofitInvitation = {
+  id: string;
+  nonprofit_id: string;
+  email: string;
+  role: NonprofitUserRole;
+  token: string;
+  invited_by: string | null;
+  expires_at: string;
+  accepted_at: string | null;
+  created_at: string;
+  nonprofit?: Nonprofit;
 };
