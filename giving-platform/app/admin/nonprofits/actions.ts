@@ -377,7 +377,14 @@ ${combinedHtml}`
     }
   } catch (error) {
     console.error("Nonprofit info extraction error:", error);
-    return { error: error instanceof Error ? error.message : "Failed to extract nonprofit info" };
+
+    // Check for API credit/billing errors
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes("credit balance") || errorMessage.includes("billing") || errorMessage.includes("invalid_request_error")) {
+      return { error: "AI extraction temporarily unavailable. Please enter details manually." };
+    }
+
+    return { error: "Failed to extract nonprofit info. Please enter details manually." };
   }
 }
 
@@ -501,6 +508,13 @@ ${truncatedHtml}`
     }
   } catch (error) {
     console.error("Logo detection error:", error);
-    return { error: error instanceof Error ? error.message : "Failed to detect logo" };
+
+    // Check for API credit/billing errors
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes("credit balance") || errorMessage.includes("billing") || errorMessage.includes("invalid_request_error")) {
+      return { error: "Logo detection temporarily unavailable. Please enter URL manually." };
+    }
+
+    return { error: "Failed to detect logo. Please enter URL manually." };
   }
 }

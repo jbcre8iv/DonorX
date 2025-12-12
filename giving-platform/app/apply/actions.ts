@@ -324,6 +324,13 @@ ${combinedHtml}`
     }
   } catch (error) {
     console.error("Nonprofit info extraction error:", error);
-    return { error: error instanceof Error ? error.message : "Failed to extract nonprofit info" };
+
+    // Check for API credit/billing errors
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes("credit balance") || errorMessage.includes("billing") || errorMessage.includes("invalid_request_error")) {
+      return { error: "Quick Fill is temporarily unavailable. Please fill in the form manually." };
+    }
+
+    return { error: "Failed to extract information. Please fill in the form manually." };
   }
 }
