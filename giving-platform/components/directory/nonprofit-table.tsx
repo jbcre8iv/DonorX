@@ -10,7 +10,7 @@ import { useToast } from "@/components/ui/toast";
 import { useFloatingHeart } from "@/components/ui/floating-heart";
 import type { Nonprofit } from "@/types/database";
 
-type SortOption = "name-asc" | "name-desc" | "category" | "recent";
+type SortOption = "name-asc" | "name-desc" | "category-asc" | "category-desc" | "recent";
 
 interface NonprofitTableProps {
   nonprofits: Nonprofit[];
@@ -363,14 +363,14 @@ export function NonprofitTable({ nonprofits, onQuickView, sortBy, onSortChange, 
 
   const handleCategorySort = () => {
     if (!onSortChange) return;
-    onSortChange("category");
+    onSortChange(sortBy === "category-asc" ? "category-desc" : "category-asc");
   };
 
   const renderSortIcon = (column: "name" | "category") => {
     if (!onSortChange) return null;
 
     const isNameSort = column === "name" && (sortBy === "name-asc" || sortBy === "name-desc");
-    const isCategorySort = column === "category" && sortBy === "category";
+    const isCategorySort = column === "category" && (sortBy === "category-asc" || sortBy === "category-desc");
 
     if (isNameSort) {
       return sortBy === "name-asc"
@@ -378,7 +378,9 @@ export function NonprofitTable({ nonprofits, onQuickView, sortBy, onSortChange, 
         : <ArrowDown className="h-3.5 w-3.5 text-blue-600" />;
     }
     if (isCategorySort) {
-      return <ArrowUp className="h-3.5 w-3.5 text-blue-600" />;
+      return sortBy === "category-asc"
+        ? <ArrowUp className="h-3.5 w-3.5 text-blue-600" />
+        : <ArrowDown className="h-3.5 w-3.5 text-blue-600" />;
     }
     return null;
   };

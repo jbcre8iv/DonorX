@@ -20,13 +20,14 @@ import type { Nonprofit, Category } from "@/types/database";
 const ITEMS_PER_PAGE_GRID = 9;
 const ITEMS_PER_PAGE_TABLE = 25;
 
-type SortOption = "name-asc" | "name-desc" | "category" | "recent";
+type SortOption = "name-asc" | "name-desc" | "category-asc" | "category-desc" | "recent";
 type BrowseMode = "nonprofits" | "categories";
 
 const SORT_OPTIONS: { value: SortOption; label: string; shortLabel: string }[] = [
   { value: "name-asc", label: "Name (A-Z)", shortLabel: "A-Z" },
   { value: "name-desc", label: "Name (Z-A)", shortLabel: "Z-A" },
-  { value: "category", label: "Cause", shortLabel: "Cause" },
+  { value: "category-asc", label: "Cause (A-Z)", shortLabel: "Cause" },
+  { value: "category-desc", label: "Cause (Z-A)", shortLabel: "Cause" },
   { value: "recent", label: "Recently Added", shortLabel: "Recent" },
 ];
 
@@ -153,12 +154,19 @@ export function DirectoryClient({
         return sorted.sort((a, b) => a.name.localeCompare(b.name));
       case "name-desc":
         return sorted.sort((a, b) => b.name.localeCompare(a.name));
-      case "category":
+      case "category-asc":
         return sorted.sort((a, b) => {
           const catA = a.category?.name || "";
           const catB = b.category?.name || "";
           if (catA === catB) return a.name.localeCompare(b.name);
           return catA.localeCompare(catB);
+        });
+      case "category-desc":
+        return sorted.sort((a, b) => {
+          const catA = a.category?.name || "";
+          const catB = b.category?.name || "";
+          if (catA === catB) return b.name.localeCompare(a.name);
+          return catB.localeCompare(catA);
         });
       case "recent":
         return sorted.sort((a, b) => {

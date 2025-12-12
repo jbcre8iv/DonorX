@@ -9,7 +9,7 @@ import { useToast } from "@/components/ui/toast";
 import { useFloatingHeart } from "@/components/ui/floating-heart";
 import type { Category } from "@/types/database";
 
-type SortOption = "name-asc" | "name-desc" | "category" | "recent";
+type SortOption = "name-asc" | "name-desc" | "category-asc" | "category-desc" | "recent";
 
 interface CategoryTableProps {
   categories: Category[];
