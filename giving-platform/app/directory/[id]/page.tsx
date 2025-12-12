@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Globe, Building2, CheckCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DonateButton } from "./donate-button";
 import type { Nonprofit, ImpactReport } from "@/types/database";
@@ -93,15 +92,7 @@ export default async function NonprofitPage({ params }: NonprofitPageProps) {
               {typedNonprofit.name}
             </h1>
 
-            <div className="flex items-center gap-4 mt-3 flex-wrap">
-              {typedNonprofit.category && (
-                <Badge variant="secondary">
-                  {typedNonprofit.category.icon && (
-                    <span className="mr-1">{typedNonprofit.category.icon}</span>
-                  )}
-                  {typedNonprofit.category.name}
-                </Badge>
-              )}
+            <div className="flex items-center gap-3 mt-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 border border-green-200 text-xs font-medium text-green-700 animate-[pulse-badge_0.6s_ease-out]">
                   <CheckCircle className="h-3 w-3 fill-green-600 text-white animate-[scale-check_0.4s_ease-out_0.2s_both]" />
@@ -113,18 +104,31 @@ export default async function NonprofitPage({ params }: NonprofitPageProps) {
               </div>
             </div>
 
-            {typedNonprofit.website && (
-              <a
-                href={typedNonprofit.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 mt-3 text-sm text-blue-600 hover:text-blue-700"
-              >
-                <Globe className="h-4 w-4" />
-                {typedNonprofit.website.replace(/^https?:\/\//, "")}
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
+            <div className="flex items-center gap-3 mt-3 flex-wrap">
+              {typedNonprofit.website && (
+                <a
+                  href={typedNonprofit.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+                >
+                  <Globe className="h-4 w-4" />
+                  {typedNonprofit.website.replace(/^https?:\/\//, "")}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+              {typedNonprofit.category && (
+                <Link
+                  href={`/directory?category=${typedNonprofit.category.slug}`}
+                  className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+                >
+                  {typedNonprofit.category.icon && (
+                    <span>{typedNonprofit.category.icon}</span>
+                  )}
+                  {typedNonprofit.category.name}
+                </Link>
+              )}
+            </div>
           </div>
 
           <div className="flex gap-3 w-full sm:w-auto">

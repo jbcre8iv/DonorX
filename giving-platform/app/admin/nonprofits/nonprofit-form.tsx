@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
-import { X, Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { X, Sparkles, Loader2, AlertCircle, Upload, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { createNonprofit, updateNonprofit, detectLogoUrl, extractNonprofitInfo } from "./actions";
+import { createNonprofit, updateNonprofit, detectLogoUrl, extractNonprofitInfo, uploadNonprofitLogo } from "./actions";
 
 interface Category {
   id: string;
@@ -35,9 +35,12 @@ export function NonprofitForm({ nonprofit, categories, onClose }: NonprofitFormP
   const [logoUrl, setLogoUrl] = useState(nonprofit?.logo_url || "");
   const [isDetectingLogo, setIsDetectingLogo] = useState(false);
   const [isExtractingInfo, setIsExtractingInfo] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [logoLoadState, setLogoLoadState] = useState<"loading" | "loaded" | "error">("loading");
+  const [logoInputMode, setLogoInputMode] = useState<"url" | "upload">("url");
   const [quickFillUrl, setQuickFillUrl] = useState("");
   const websiteInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Controlled form state for Quick Fill
   const [formData, setFormData] = useState({
@@ -127,6 +130,35 @@ export function NonprofitForm({ nonprofit, categories, onClose }: NonprofitFormP
       setError("Failed to detect logo");
     } finally {
       setIsDetectingLogo(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingLogo(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("logo", file);
+
+      const result = await uploadNonprofitLogo(formData);
+      if (result.error) {
+        setError(result.error);
+      } else if (result.logoUrl) {
+        setLogoUrl(result.logoUrl);
+        setLogoLoadState("loading");
+      }
+    } catch (err) {
+      setError("Failed to upload logo");
+    } finally {
+      setIsUploadingLogo(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -266,35 +298,105 @@ export function NonprofitForm({ nonprofit, categories, onClose }: NonprofitFormP
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Logo URL
-            </label>
-            <div className="flex gap-2">
-              <Input
-                name="logo_url"
-                type="url"
-                value={logoUrl}
-                onChange={(e) => {
-                  setLogoUrl(e.target.value);
-                  setLogoLoadState("loading");
-                }}
-                placeholder="https://example.org/logo.png"
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleDetectLogo}
-                disabled={isDetectingLogo}
-                title="Auto-detect logo from website"
-              >
-                {isDetectingLogo ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4 animate-pulse" />
-                )}
-              </Button>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-slate-700">
+                Logo
+              </label>
+              <div className="flex rounded-lg border border-slate-200 p-0.5 bg-slate-50">
+                <button
+                  type="button"
+                  onClick={() => setLogoInputMode("url")}
+                  className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-colors ${
+                    logoInputMode === "url"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  <LinkIcon className="h-3 w-3" />
+                  URL
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLogoInputMode("upload")}
+                  className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-colors ${
+                    logoInputMode === "upload"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  <Upload className="h-3 w-3" />
+                  Upload
+                </button>
+              </div>
             </div>
+
+            {logoInputMode === "url" ? (
+              <div className="flex gap-2">
+                <Input
+                  name="logo_url"
+                  type="url"
+                  value={logoUrl}
+                  onChange={(e) => {
+                    setLogoUrl(e.target.value);
+                    setLogoLoadState("loading");
+                  }}
+                  placeholder="https://example.org/logo.png"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleDetectLogo}
+                  disabled={isDetectingLogo}
+                  title="Auto-detect logo from website"
+                >
+                  {isDetectingLogo ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4 animate-pulse" />
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="logo-upload"
+                />
+                <label
+                  htmlFor="logo-upload"
+                  className={`flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+                    isUploadingLogo
+                      ? "border-blue-300 bg-blue-50"
+                      : "border-slate-300 hover:border-blue-400 hover:bg-slate-50"
+                  }`}
+                >
+                  {isUploadingLogo ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                      <span className="text-sm text-blue-600">Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-5 w-5 text-slate-400" />
+                      <span className="text-sm text-slate-600">
+                        Click to upload logo
+                      </span>
+                    </>
+                  )}
+                </label>
+                <p className="text-xs text-slate-500 text-center">
+                  JPG, PNG, GIF, WebP, or SVG. Max 2MB.
+                </p>
+                {/* Hidden input to store the URL for form submission */}
+                <input type="hidden" name="logo_url" value={logoUrl} />
+              </div>
+            )}
+
             {logoUrl && (
               <div className="mt-2 flex items-center gap-2">
                 {logoLoadState === "loading" && (
@@ -314,7 +416,7 @@ export function NonprofitForm({ nonprofit, categories, onClose }: NonprofitFormP
                   onLoad={() => setLogoLoadState("loaded")}
                   onError={() => setLogoLoadState("error")}
                 />
-                <div className="flex flex-col min-w-0">
+                <div className="flex flex-col min-w-0 flex-1">
                   <span className="text-xs text-slate-500 truncate max-w-[200px]">
                     {logoUrl}
                   </span>
@@ -324,6 +426,19 @@ export function NonprofitForm({ nonprofit, categories, onClose }: NonprofitFormP
                     </span>
                   )}
                 </div>
+                {logoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLogoUrl("");
+                      setLogoLoadState("loading");
+                    }}
+                    className="text-slate-400 hover:text-slate-600"
+                    title="Remove logo"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             )}
           </div>

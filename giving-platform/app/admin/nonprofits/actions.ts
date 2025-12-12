@@ -381,6 +381,63 @@ ${combinedHtml}`
   }
 }
 
+export async function uploadNonprofitLogo(formData: FormData): Promise<{ logoUrl?: string; error?: string }> {
+  const file = formData.get("logo") as File;
+
+  if (!file || file.size === 0) {
+    return { error: "No file provided" };
+  }
+
+  // Validate file type
+  const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
+  if (!allowedTypes.includes(file.type)) {
+    return { error: "Invalid file type. Please upload a JPG, PNG, GIF, WebP, or SVG image." };
+  }
+
+  // Validate file size (max 2MB)
+  const maxSize = 2 * 1024 * 1024;
+  if (file.size > maxSize) {
+    return { error: "File too large. Maximum size is 2MB." };
+  }
+
+  try {
+    const adminSupabase = createAdminClient();
+
+    // Generate unique filename
+    const fileExt = file.name.split(".").pop()?.toLowerCase() || "png";
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+    const filePath = `nonprofit-logos/${fileName}`;
+
+    // Convert File to ArrayBuffer then to Uint8Array for Supabase
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    // Upload to Supabase Storage
+    const { error: uploadError } = await adminSupabase.storage
+      .from("public-assets")
+      .upload(filePath, uint8Array, {
+        contentType: file.type,
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("Upload error:", uploadError);
+      return { error: `Upload failed: ${uploadError.message}` };
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = adminSupabase.storage
+      .from("public-assets")
+      .getPublicUrl(filePath);
+
+    return { logoUrl: publicUrl };
+  } catch (error) {
+    console.error("Logo upload error:", error);
+    return { error: error instanceof Error ? error.message : "Failed to upload logo" };
+  }
+}
+
 export async function detectLogoUrl(websiteUrl: string): Promise<{ logoUrl?: string; error?: string }> {
   if (!websiteUrl) {
     return { error: "Website URL is required" };

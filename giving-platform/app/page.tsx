@@ -546,7 +546,7 @@ export default async function HomePage() {
                     className="bg-white text-blue-700 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all"
                     asChild
                   >
-                    <Link href="/register">Start Giving</Link>
+                    <Link href="/donate">Start Giving</Link>
                   </Button>
                   <Button
                     size="lg"
