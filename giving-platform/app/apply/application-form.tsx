@@ -42,6 +42,7 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
   const [contactLastName, setContactLastName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [otherCause, setOtherCause] = useState("");
 
   const quickFillRef = useRef<HTMLDivElement>(null);
 
@@ -118,11 +119,17 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
     setError(null);
 
     startTransition(async () => {
+      // If "Other" cause is selected and specified, prepend it to description
+      let finalDescription = description || "";
+      if (categoryId === "other" && otherCause) {
+        finalDescription = `[Cause: ${otherCause}] ${finalDescription}`.trim();
+      }
+
       const result = await submitApplication({
         name,
         ein,
         website: website || undefined,
-        description: description || undefined,
+        description: finalDescription || undefined,
         mission: mission || undefined,
         // Don't send "other" as category_id - it's not a valid UUID
         category_id: categoryId && categoryId !== "other" ? categoryId : undefined,
@@ -381,6 +388,20 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
             />
           </div>
         </div>
+
+        {/* Other cause input - shown when "Other" is selected */}
+        {categoryId === "other" && (
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">
+              Please specify your cause <span className="text-slate-400 font-normal">(optional)</span>
+            </label>
+            <Input
+              placeholder="e.g., Mental Health, Senior Care, etc."
+              value={otherCause}
+              onChange={(e) => setOtherCause(e.target.value)}
+            />
+          </div>
+        )}
 
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
