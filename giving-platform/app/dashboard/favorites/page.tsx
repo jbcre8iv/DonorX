@@ -26,7 +26,7 @@ import { NonprofitTable } from "@/components/directory/nonprofit-table";
 import { NonprofitModal } from "@/components/directory/nonprofit-modal";
 import type { Nonprofit } from "@/types/database";
 
-type SortOption = "name-asc" | "name-desc" | "category" | "recent";
+type SortOption = "name-asc" | "name-desc" | "category-asc" | "category-desc" | "recent";
 
 const SORT_OPTIONS: { value: SortOption; label: string; shortLabel: string }[] = [
   { value: "name-asc", label: "Name (A-Z)", shortLabel: "A-Z" },
