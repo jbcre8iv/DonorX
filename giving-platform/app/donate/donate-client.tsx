@@ -254,6 +254,7 @@ export function DonateClient({
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const isSubmittingRef = React.useRef(false); // Ref-based guard against double submission
 
   // Helper function to save donation state and redirect to login
   const saveStateAndRedirectToLogin = React.useCallback((action: "checkout" | "save-template") => {
@@ -671,8 +672,13 @@ export function DonateClient({
   const handleProceedToPayment = async () => {
     if (!isValidAllocation || !isValidAmount) return;
 
+    // Prevent double submission using ref (works even if state hasn't updated yet)
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+
     // If not authenticated, save state and redirect to login
     if (!isAuthenticated) {
+      isSubmittingRef.current = false;
       saveStateAndRedirectToLogin("checkout");
       return;
     }
@@ -700,11 +706,13 @@ export function DonateClient({
       } else {
         setError(result.error || "Something went wrong. Please try again.");
         setIsLoading(false);
+        isSubmittingRef.current = false;
       }
     } catch (err) {
       console.error("Payment error:", err);
       setError("Failed to process payment. Please check your connection and try again.");
       setIsLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
