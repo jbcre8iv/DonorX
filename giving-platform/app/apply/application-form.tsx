@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, Loader2, CheckCircle, Building2, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,8 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
   const [contactLastName, setContactLastName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+
+  const quickFillRef = useRef<HTMLDivElement>(null);
 
   const handleQuickFill = async () => {
     if (!website) {
@@ -100,6 +102,9 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
         setExistingNonprofit(existsCheck.nonprofit);
         // Scroll to top so user sees the message
         window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        // Scroll to Quick Fill section so user sees the populated form
+        quickFillRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to extract info");
@@ -246,7 +251,7 @@ export function ApplicationForm({ categories }: ApplicationFormProps) {
       )}
 
       {/* Quick Fill Section */}
-      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+      <div ref={quickFillRef} className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
         <h3 className="flex items-center gap-2 font-medium text-emerald-900">
           <Sparkles className="h-4 w-4 animate-pulse" />
           Quick Fill from Website
