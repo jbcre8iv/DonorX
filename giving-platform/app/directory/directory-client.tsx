@@ -402,9 +402,17 @@ export function DirectoryClient({
           {/* Results count */}
           <p className="text-center text-sm text-slate-500">
             {browseMode === "nonprofits" ? (
-              <>Showing {filteredNonprofits.length} nonprofit{filteredNonprofits.length !== 1 ? "s" : ""}</>
+              totalPages > 1 ? (
+                <>Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredNonprofits.length)} of {filteredNonprofits.length} nonprofit{filteredNonprofits.length !== 1 ? "s" : ""}</>
+              ) : (
+                <>Showing {filteredNonprofits.length} nonprofit{filteredNonprofits.length !== 1 ? "s" : ""}</>
+              )
             ) : (
-              <>Showing {filteredCategoriesForView.length} cause{filteredCategoriesForView.length !== 1 ? "s" : ""}</>
+              totalPages > 1 ? (
+                <>Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredCategoriesForView.length)} of {filteredCategoriesForView.length} cause{filteredCategoriesForView.length !== 1 ? "s" : ""}</>
+              ) : (
+                <>Showing {filteredCategoriesForView.length} cause{filteredCategoriesForView.length !== 1 ? "s" : ""}</>
+              )
             )}
           </p>
         </div>
