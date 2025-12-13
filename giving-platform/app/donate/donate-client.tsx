@@ -588,10 +588,11 @@ export function DonateClient({
   const totalPercentage = allocations.reduce((sum, item) => sum + item.percentage, 0);
   const isValidAllocation = totalPercentage === 100;
   const amountCents = amount * 100;
-  const feeAmountCents = coverFees ? calculateFeeAmountCents(amountCents) : 0;
+  const requiresAchOrCheck = amountCents > config.features.creditCardMaxCents;
+  // No Stripe processing fees for check/ACH payments
+  const feeAmountCents = coverFees && !requiresAchOrCheck ? calculateFeeAmountCents(amountCents) : 0;
   const totalAmountCents = amountCents + feeAmountCents;
   const isValidAmount = amountCents >= config.features.minDonationCents && amountCents <= config.features.maxDonationCents;
-  const requiresAchOrCheck = amountCents > config.features.creditCardMaxCents;
   const canUseCreditCard = amountCents <= config.features.creditCardMaxCents;
   const isRecurring = frequency !== "one-time";
 
@@ -601,6 +602,13 @@ export function DonateClient({
       setFrequency("one-time");
     }
   }, [requiresAchOrCheck, frequency]);
+
+  // Auto-uncheck cover fees if amount exceeds credit card limit (no Stripe fees for check/ACH)
+  React.useEffect(() => {
+    if (requiresAchOrCheck && coverFees) {
+      setCoverFees(false);
+    }
+  }, [requiresAchOrCheck, coverFees]);
 
   // Handler for applying AI allocation recommendations
   const handleApplyAiAllocation = (aiAllocations: AIAllocation[]) => {
@@ -871,11 +879,14 @@ export function DonateClient({
                 <CardTitle>Donation Options</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <CoverFeesCheckbox
-                  checked={coverFees}
-                  onChange={setCoverFees}
-                  donationAmount={amount}
-                />
+                {/* Only show cover fees for credit card payments (not check/ACH) */}
+                {!requiresAchOrCheck && (
+                  <CoverFeesCheckbox
+                    checked={coverFees}
+                    onChange={setCoverFees}
+                    donationAmount={amount}
+                  />
+                )}
                 <AnonymousToggle
                   checked={isAnonymous}
                   onChange={setIsAnonymous}
