@@ -149,7 +149,7 @@ export async function updateFundraiser(
     return { error: error.message };
   }
 
-  const campaignSlug = (fundraiser.campaigns as { slug: string })?.slug;
+  const campaignSlug = (fundraiser.campaigns as unknown as { slug: string })?.slug;
   if (campaignSlug) {
     revalidatePath(`/campaigns/${campaignSlug}`);
   }
