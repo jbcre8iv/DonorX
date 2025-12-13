@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, LogOut, LayoutDashboard, Settings, Shield, HandHeart, ChevronDown, TestTube, Loader2 } from "lucide-react";
+import { Menu, X, LogOut, LayoutDashboard, Settings, Shield, HandHeart, ChevronDown, TestTube, Loader2, Building2 } from "lucide-react";
 import { config } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -80,12 +80,14 @@ interface HeaderProps {
     role: string | null;
     avatarUrl: string | null;
     simulationAccess?: boolean;
+    hasNonprofitAccess?: boolean;
   } | null;
   simulationEnabled?: boolean;
   canAccessSimulation?: boolean;
+  hasNonprofitAccess?: boolean;
 }
 
-export function Header({ initialUser = null, simulationEnabled = false, canAccessSimulation = false }: HeaderProps) {
+export function Header({ initialUser = null, simulationEnabled = false, canAccessSimulation = false, hasNonprofitAccess = false }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -380,6 +382,16 @@ export function Header({ initialUser = null, simulationEnabled = false, canAcces
                       Admin Panel
                     </Link>
                   )}
+                  {hasNonprofitAccess && (
+                    <Link
+                      href="/nonprofit"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-50"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      <Building2 className="h-4 w-4" />
+                      Nonprofit Portal
+                    </Link>
+                  )}
                   {/* Simulation Mode Toggle - visible to users with simulation access */}
                   {hasSimulationAccess && (
                     <div className="border-t border-slate-100 mt-1 pt-1">
@@ -536,6 +548,16 @@ export function Header({ initialUser = null, simulationEnabled = false, canAcces
                         >
                           <Shield className="h-4 w-4" />
                           Admin Panel
+                        </Link>
+                      )}
+                      {hasNonprofitAccess && (
+                        <Link
+                          href="/nonprofit"
+                          className="flex items-center gap-3 py-2 px-2 text-emerald-700 hover:bg-emerald-50 rounded-lg"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <Building2 className="h-4 w-4" />
+                          Nonprofit Portal
                         </Link>
                       )}
                       {/* Simulation Mode Toggle for mobile */}

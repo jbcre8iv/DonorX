@@ -17,6 +17,7 @@ export async function HeaderWrapper() {
     avatarUrl: string | null;
     simulationAccess: boolean;
     simulationEnabled: boolean;
+    hasNonprofitAccess: boolean;
   } | null = null;
 
   if (authUser) {
@@ -72,6 +73,21 @@ export async function HeaderWrapper() {
     // User's personal simulation on/off state
     const simulationEnabled = profile?.simulation_enabled === true;
 
+    // Check if user has nonprofit access (using admin client to bypass RLS complexity)
+    let hasNonprofitAccess = false;
+    try {
+      const adminClient = createAdminClient();
+      const { data: nonprofitUser } = await adminClient
+        .from("nonprofit_users")
+        .select("id")
+        .eq("user_id", authUser.id)
+        .limit(1)
+        .single();
+      hasNonprofitAccess = !!nonprofitUser;
+    } catch {
+      // Table may not exist yet, ignore error
+    }
+
     userData = {
       email: authUser.email!,
       firstName: profile?.first_name || null,
@@ -80,6 +96,7 @@ export async function HeaderWrapper() {
       avatarUrl: profile?.avatar_url || null,
       simulationAccess: hasSimulationAccess,
       simulationEnabled: simulationEnabled,
+      hasNonprofitAccess,
     };
   }
 
@@ -88,6 +105,8 @@ export async function HeaderWrapper() {
   const canAccessSimulation = userData?.simulationAccess ?? false;
   const userSimulationEnabled = userData?.simulationEnabled ?? false;
 
+  const hasNonprofitAccess = userData?.hasNonprofitAccess ?? false;
+
   return (
     <>
       <SimulationModeBanner enabled={userSimulationEnabled} isAdmin={isAdmin} />
@@ -95,6 +114,7 @@ export async function HeaderWrapper() {
         initialUser={userData}
         simulationEnabled={userSimulationEnabled}
         canAccessSimulation={canAccessSimulation}
+        hasNonprofitAccess={hasNonprofitAccess}
       />
     </>
   );
