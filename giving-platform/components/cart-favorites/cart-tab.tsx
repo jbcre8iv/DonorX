@@ -283,8 +283,9 @@ export function CartTab() {
     }
   };
 
-  // If there's an active draft, show "Your Giving List" with allocation items
-  if (hasDraft && donationDraft) {
+  // If there's an active draft WITH allocations, show "Your Giving List" with allocation items
+  // Don't show the draft view if there are no allocations yet
+  if (hasDraft && donationDraft && donationDraft.allocations.length > 0) {
     return (
       <div className="flex h-full flex-col">
         {/* Header with Summary */}
