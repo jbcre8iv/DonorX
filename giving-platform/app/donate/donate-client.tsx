@@ -928,7 +928,7 @@ export function DonateClient({
                   </div>
                   {coverFees && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-600">Processing Fee Coverage</span>
+                      <span className="text-slate-600">Payment Processing Fee</span>
                       <span className="font-medium text-emerald-600">+{formatCurrency(feeAmountCents)}</span>
                     </div>
                   )}

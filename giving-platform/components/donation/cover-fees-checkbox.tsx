@@ -48,11 +48,11 @@ export function CoverFeesCheckbox({
         <div className="flex items-center gap-2">
           <Heart className="h-4 w-4 text-emerald-600" />
           <span className="text-sm font-medium text-slate-700">
-            Add {formatCurrency(feeAmountCents)} to cover processing fees
+            Add {formatCurrency(feeAmountCents)} to cover payment processing fees
           </span>
         </div>
         <p className="mt-1 text-xs text-slate-500">
-          100% of your {formatCurrency(donationAmountCents)} donation will go directly to the nonprofits
+          Covers 3rd party payment fees (Stripe). Disbursement fees still apply.
         </p>
       </div>
     </label>
