@@ -626,12 +626,21 @@ export function CartTab() {
           Your giving list is empty
         </h3>
         <p className="mb-6 text-sm text-slate-500">
-          Browse the directory and add nonprofits or categories to quickly
-          build your donation allocation.
+          Start a donation or browse nonprofits to build your giving allocation.
         </p>
-        <Link href="/directory" onClick={() => setSidebarOpen(false)}>
-          <Button>Browse Directory</Button>
-        </Link>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          <Link href="/donate" onClick={() => setSidebarOpen(false)}>
+            <Button className="w-full">
+              <ArrowRight className="h-4 w-4 mr-2" />
+              Start Giving
+            </Button>
+          </Link>
+          <Link href="/directory" onClick={() => setSidebarOpen(false)}>
+            <Button variant="outline" className="w-full">
+              Browse Nonprofits
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }
