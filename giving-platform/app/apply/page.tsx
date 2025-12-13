@@ -52,21 +52,16 @@ export default async function ApplyPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (user) {
-    try {
-      const adminClient = createAdminClient();
-      const { data: nonprofitUser } = await adminClient
-        .from("nonprofit_users")
-        .select("id")
-        .eq("user_id", user.id)
-        .limit(1)
-        .single();
+    const adminClient = createAdminClient();
+    const { data: nonprofitUsers } = await adminClient
+      .from("nonprofit_users")
+      .select("id")
+      .eq("user_id", user.id)
+      .limit(1);
 
-      // If user already has nonprofit access, redirect to their portal
-      if (nonprofitUser) {
-        redirect("/nonprofit");
-      }
-    } catch {
-      // Table may not exist or other error, continue to show form
+    // If user already has nonprofit access, redirect to their portal
+    if (nonprofitUsers && nonprofitUsers.length > 0) {
+      redirect("/nonprofit");
     }
   }
 
