@@ -2,18 +2,10 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Save, Trash2 } from "lucide-react";
+import { Loader2, Save, Trash2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { createCampaign, updateCampaign, deleteCampaign } from "./actions";
 import type { Campaign, Nonprofit, CampaignStatus } from "@/types/database";
 
@@ -106,7 +98,7 @@ export function CampaignForm({ campaign, nonprofits }: CampaignFormProps) {
         router.push("/admin/campaigns");
         router.refresh();
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred");
     } finally {
       setSaving(false);
@@ -130,7 +122,7 @@ export function CampaignForm({ campaign, nonprofits }: CampaignFormProps) {
         router.push("/admin/campaigns");
         router.refresh();
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred");
     } finally {
       setDeleting(false);
@@ -153,41 +145,52 @@ export function CampaignForm({ campaign, nonprofits }: CampaignFormProps) {
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="nonprofit">Nonprofit *</Label>
-              <Select value={nonprofitId} onValueChange={setNonprofitId} required>
-                <SelectTrigger id="nonprofit">
-                  <SelectValue placeholder="Select nonprofit" />
-                </SelectTrigger>
-                <SelectContent>
+              <label htmlFor="nonprofit" className="text-sm font-medium text-slate-900">
+                Nonprofit *
+              </label>
+              <div className="relative">
+                <select
+                  id="nonprofit"
+                  value={nonprofitId}
+                  onChange={(e) => setNonprofitId(e.target.value)}
+                  required
+                  className="flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 py-2 pr-10 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                >
+                  <option value="">Select nonprofit</option>
                   {nonprofits.map((np) => (
-                    <SelectItem key={np.id} value={np.id}>
+                    <option key={np.id} value={np.id}>
                       {np.name}
-                    </SelectItem>
+                    </option>
                   ))}
-                </SelectContent>
-              </Select>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="status">Status *</Label>
-              <Select
-                value={status}
-                onValueChange={(v) => setStatus(v as CampaignStatus)}
-              >
-                <SelectTrigger id="status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="ended">Ended</SelectItem>
-                </SelectContent>
-              </Select>
+              <label htmlFor="status" className="text-sm font-medium text-slate-900">
+                Status *
+              </label>
+              <div className="relative">
+                <select
+                  id="status"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as CampaignStatus)}
+                  className="flex h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 py-2 pr-10 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="active">Active</option>
+                  <option value="ended">Ended</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              </div>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
+            <label htmlFor="title" className="text-sm font-medium text-slate-900">
+              Title *
+            </label>
             <Input
               id="title"
               value={title}
@@ -198,7 +201,9 @@ export function CampaignForm({ campaign, nonprofits }: CampaignFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="slug">URL Slug *</Label>
+            <label htmlFor="slug" className="text-sm font-medium text-slate-900">
+              URL Slug *
+            </label>
             <div className="flex items-center gap-2">
               <span className="text-sm text-slate-500">/campaigns/</span>
               <Input
@@ -213,7 +218,9 @@ export function CampaignForm({ campaign, nonprofits }: CampaignFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="shortDescription">Short Description</Label>
+            <label htmlFor="shortDescription" className="text-sm font-medium text-slate-900">
+              Short Description
+            </label>
             <Input
               id="shortDescription"
               value={shortDescription}
@@ -223,19 +230,23 @@ export function CampaignForm({ campaign, nonprofits }: CampaignFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Full Description</Label>
+            <label htmlFor="description" className="text-sm font-medium text-slate-900">
+              Full Description
+            </label>
             <textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Detailed campaign description..."
               rows={5}
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex min-h-[80px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600 placeholder:text-slate-400"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="coverImageUrl">Cover Image URL</Label>
+            <label htmlFor="coverImageUrl" className="text-sm font-medium text-slate-900">
+              Cover Image URL
+            </label>
             <Input
               id="coverImageUrl"
               value={coverImageUrl}
@@ -254,7 +265,9 @@ export function CampaignForm({ campaign, nonprofits }: CampaignFormProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="goal">Fundraising Goal ($) *</Label>
+            <label htmlFor="goal" className="text-sm font-medium text-slate-900">
+              Fundraising Goal ($) *
+            </label>
             <Input
               id="goal"
               value={goalDollars}
@@ -269,7 +282,9 @@ export function CampaignForm({ campaign, nonprofits }: CampaignFormProps) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="startDate">Start Date *</Label>
+              <label htmlFor="startDate" className="text-sm font-medium text-slate-900">
+                Start Date *
+              </label>
               <Input
                 id="startDate"
                 value={startDate}
@@ -280,7 +295,9 @@ export function CampaignForm({ campaign, nonprofits }: CampaignFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="endDate">End Date *</Label>
+              <label htmlFor="endDate" className="text-sm font-medium text-slate-900">
+                End Date *
+              </label>
               <Input
                 id="endDate"
                 value={endDate}
