@@ -38,12 +38,11 @@ CREATE TABLE campaigns (
 );
 
 -- Campaign donations junction table
--- Links donations to campaigns and optionally to peer fundraisers
+-- Links donations to campaigns (fundraiser_id will be added in Phase 4)
 CREATE TABLE campaign_donations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
   donation_id UUID NOT NULL REFERENCES donations(id) ON DELETE CASCADE,
-  fundraiser_id UUID REFERENCES fundraisers(id) ON DELETE SET NULL,
 
   -- Optional donor message/comment for this campaign
   donor_comment TEXT,
