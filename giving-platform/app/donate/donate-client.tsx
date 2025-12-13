@@ -35,6 +35,7 @@ interface DonateClientProps {
   initialTemplate?: DonationTemplate;
   isAuthenticated?: boolean;
   campaignId?: string;
+  fundraiserId?: string;
 }
 
 export function DonateClient({
@@ -44,6 +45,7 @@ export function DonateClient({
   initialTemplate,
   isAuthenticated = false,
   campaignId,
+  fundraiserId,
 }: DonateClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -716,6 +718,7 @@ export function DonateClient({
           isAnonymous,
           giftDedication: giftDedication || undefined,
           campaignId,
+          fundraiserId,
         }
       );
 

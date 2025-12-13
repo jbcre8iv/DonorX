@@ -233,4 +233,46 @@ export type CampaignDonation = {
   created_at: string;
   campaign?: Campaign;
   donation?: Donation;
+  fundraiser?: Fundraiser;
+};
+
+// Phase 4: Peer-to-Peer Fundraising Types
+
+export type FundraiserTeam = {
+  id: string;
+  campaign_id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  logo_url: string | null;
+  goal_cents: number;
+  raised_cents: number;
+  member_count: number;
+  captain_user_id: string | null;
+  created_at: string;
+  updated_at: string;
+  campaign?: Campaign;
+  captain?: User;
+  fundraisers?: Fundraiser[];
+};
+
+export type Fundraiser = {
+  id: string;
+  campaign_id: string;
+  user_id: string;
+  team_id: string | null;
+  title: string;
+  slug: string;
+  story: string | null;
+  cover_image_url: string | null;
+  personal_goal_cents: number;
+  raised_cents: number;
+  donation_count: number;
+  show_on_leaderboard: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  campaign?: Campaign;
+  user?: User;
+  team?: FundraiserTeam;
 };

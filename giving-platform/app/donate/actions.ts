@@ -96,6 +96,7 @@ export interface DonationOptions {
   isAnonymous?: boolean;
   giftDedication?: GiftDedicationInput;
   campaignId?: string;
+  fundraiserId?: string;
 }
 
 // Template types
@@ -681,7 +682,7 @@ export async function createCheckoutSession(
   frequency: DonationFrequency = "one-time",
   options: DonationOptions = {}
 ): Promise<CreateCheckoutResult> {
-  const { coverFees = false, feeAmountCents = 0, isAnonymous = false, giftDedication, campaignId } = options;
+  const { coverFees = false, feeAmountCents = 0, isAnonymous = false, giftDedication, campaignId, fundraiserId } = options;
 
   // Calculate total amount including fee if covering fees
   const totalAmountCents = amountCents + (coverFees ? feeAmountCents : 0);
@@ -831,6 +832,7 @@ export async function createCheckoutSession(
           .insert({
             campaign_id: campaignId,
             donation_id: donation.id,
+            fundraiser_id: fundraiserId || null,
             donor_display_name: isAnonymous ? null : (userProfile?.full_name || user.email?.split("@")[0]),
             is_anonymous: isAnonymous,
           });
@@ -897,6 +899,7 @@ export async function createCheckoutSession(
           is_anonymous: isAnonymous.toString(),
           has_dedication: (!!giftDedication).toString(),
           campaign_id: campaignId || "",
+          fundraiser_id: fundraiserId || "",
         },
         subscription_data: {
           metadata: {
@@ -904,6 +907,7 @@ export async function createCheckoutSession(
             user_id: user.id,
             frequency,
             campaign_id: campaignId || "",
+            fundraiser_id: fundraiserId || "",
           },
         },
         success_url: `${baseUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -948,6 +952,7 @@ export async function createCheckoutSession(
           is_anonymous: isAnonymous.toString(),
           has_dedication: (!!giftDedication).toString(),
           campaign_id: campaignId || "",
+          fundraiser_id: fundraiserId || "",
         },
         success_url: `${baseUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/donate?canceled=true`,

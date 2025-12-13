@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session;
         const donationId = session.metadata?.donation_id;
         const campaignId = session.metadata?.campaign_id;
+        const fundraiserId = session.metadata?.fundraiser_id;
         const isAnonymous = session.metadata?.is_anonymous === "true";
         const userId = session.metadata?.user_id;
 
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
                 .insert({
                   campaign_id: campaignId,
                   donation_id: donationId,
+                  fundraiser_id: fundraiserId || null,
                   donor_display_name: displayName,
                   is_anonymous: isAnonymous,
                 });

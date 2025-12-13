@@ -1,12 +1,13 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Heart, Users, Target } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { CampaignHero, DonorRoll } from "@/components/campaign";
+import { Leaderboard, TeamLeaderboard } from "@/components/fundraiser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
-import type { Campaign, Nonprofit, CampaignDonation, Donation } from "@/types/database";
+import type { Campaign, Nonprofit, CampaignDonation, Donation, Fundraiser, FundraiserTeam } from "@/types/database";
 
 interface CampaignPageProps {
   params: Promise<{ slug: string }>;
@@ -65,6 +66,31 @@ export default async function CampaignPage({ params }: CampaignPageProps) {
     .limit(20);
 
   const typedDonations = (campaignDonations || []) as (CampaignDonation & { donation: Donation })[];
+
+  // Fetch fundraisers for P2P campaigns
+  const adminClient = createAdminClient();
+  const { data: fundraisers } = await adminClient
+    .from("fundraisers")
+    .select(`
+      *,
+      user:users(id, full_name, email)
+    `)
+    .eq("campaign_id", campaign.id)
+    .eq("is_active", true)
+    .order("raised_cents", { ascending: false });
+
+  const typedFundraisers = (fundraisers || []) as (Fundraiser & {
+    user: { id: string; full_name: string | null; email: string } | null;
+  })[];
+
+  // Fetch teams for P2P campaigns
+  const { data: teams } = await adminClient
+    .from("fundraiser_teams")
+    .select("*")
+    .eq("campaign_id", campaign.id)
+    .order("raised_cents", { ascending: false });
+
+  const typedTeams = (teams || []) as FundraiserTeam[];
 
   const isActive = campaign.status === "active" && new Date(campaign.end_date) >= new Date();
   const donateUrl = `/donate?campaign=${campaign.id}&nonprofit=${campaign.nonprofit_id}`;
@@ -129,6 +155,26 @@ export default async function CampaignPage({ params }: CampaignPageProps) {
                   </Button>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Fundraiser Leaderboard */}
+            {typedCampaign.allow_peer_fundraising && typedFundraisers.length > 0 && (
+              <Leaderboard
+                fundraisers={typedFundraisers}
+                campaignSlug={slug}
+                limit={10}
+                showViewAll={true}
+              />
+            )}
+
+            {/* Team Leaderboard */}
+            {typedCampaign.allow_peer_fundraising && typedTeams.length > 0 && (
+              <TeamLeaderboard
+                teams={typedTeams}
+                campaignSlug={slug}
+                limit={5}
+                showViewAll={true}
+              />
             )}
 
             {/* Donor roll */}
@@ -196,8 +242,10 @@ export default async function CampaignPage({ params }: CampaignPageProps) {
                   )}
 
                   {typedCampaign.allow_peer_fundraising && isActive && (
-                    <Button variant="outline" className="w-full mt-3">
-                      Start a Fundraiser
+                    <Button variant="outline" className="w-full mt-3" asChild>
+                      <Link href={`/campaigns/${slug}/fundraise`}>
+                        Start a Fundraiser
+                      </Link>
                     </Button>
                   )}
                 </CardContent>

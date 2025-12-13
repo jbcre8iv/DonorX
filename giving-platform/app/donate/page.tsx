@@ -8,11 +8,11 @@ export const metadata = {
 };
 
 interface DonatePageProps {
-  searchParams: Promise<{ nonprofit?: string; template?: string; campaign?: string }>;
+  searchParams: Promise<{ nonprofit?: string; template?: string; campaign?: string; fundraiser?: string }>;
 }
 
 export default async function DonatePage({ searchParams }: DonatePageProps) {
-  const { nonprofit: preselectedNonprofitId, template: templateId, campaign: campaignId } = await searchParams;
+  const { nonprofit: preselectedNonprofitId, template: templateId, campaign: campaignId, fundraiser: fundraiserId } = await searchParams;
   const supabase = await createClient();
 
   // Check if user is logged in
@@ -52,6 +52,7 @@ export default async function DonatePage({ searchParams }: DonatePageProps) {
       initialTemplate={initialTemplate}
       isAuthenticated={!!user}
       campaignId={campaignId}
+      fundraiserId={fundraiserId}
     />
   );
 }
