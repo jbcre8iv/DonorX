@@ -96,12 +96,18 @@ export default async function NonprofitAnalyticsPage() {
 
   // Unique donors
   const uniqueDonorIds = new Set(
-    allDonations.map((d: { donation: { user_id: string } }) => d.donation?.user_id)
+    allDonations.map((d: { donation: unknown }) => {
+      const donation = Array.isArray(d.donation) ? d.donation[0] : d.donation;
+      return (donation as { user_id?: string })?.user_id;
+    })
   );
   const totalDonors = uniqueDonorIds.size;
 
   const thisMonthDonorIds = new Set(
-    thisMonthDonations.map((d: { donation: { user_id: string } }) => d.donation?.user_id)
+    thisMonthDonations.map((d: { donation: unknown }) => {
+      const donation = Array.isArray(d.donation) ? d.donation[0] : d.donation;
+      return (donation as { user_id?: string })?.user_id;
+    })
   );
   const thisMonthDonors = thisMonthDonorIds.size;
 
