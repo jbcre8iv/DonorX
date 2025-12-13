@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
 const SYSTEM_PROMPT = `You are an expert philanthropic advisor helping donors create effective donation allocations.
 
@@ -141,21 +142,58 @@ Please provide allocation advice in the following JSON format:
 
 Ensure percentages sum to 100 and amounts match the donation amount. Provide 3-6 allocation recommendations.`;
 
-    // Get AI advice
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: "user",
-          content: userPrompt,
-        },
-      ],
-    });
+    // Try Anthropic first, fall back to OpenAI if it fails
+    let responseText = "";
 
-    const textBlock = response.content.find((block) => block.type === "text");
-    const responseText = textBlock?.type === "text" ? textBlock.text : "";
+    try {
+      // Try Anthropic
+      const response = await anthropic.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1024,
+        system: SYSTEM_PROMPT,
+        messages: [
+          {
+            role: "user",
+            content: userPrompt,
+          },
+        ],
+      });
+
+      const textBlock = response.content.find((block) => block.type === "text");
+      responseText = textBlock?.type === "text" ? textBlock.text : "";
+    } catch (anthropicError) {
+      console.error("Anthropic API error, trying OpenAI fallback:", anthropicError);
+
+      // Fall back to OpenAI
+      const openaiKey = process.env.OPENAI_API_KEY;
+      if (!openaiKey) {
+        console.error("OPENAI_API_KEY not set, no fallback available");
+        return NextResponse.json(
+          { error: "AI service temporarily unavailable" },
+          { status: 503 }
+        );
+      }
+
+      try {
+        const openai = new OpenAI({ apiKey: openaiKey.trim() });
+        const openaiResponse = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          max_tokens: 1024,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+          ],
+        });
+
+        responseText = openaiResponse.choices[0]?.message?.content || "";
+      } catch (openaiError) {
+        console.error("OpenAI fallback also failed:", openaiError);
+        return NextResponse.json(
+          { error: "AI service temporarily unavailable" },
+          { status: 503 }
+        );
+      }
+    }
 
     // Parse JSON from response
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
