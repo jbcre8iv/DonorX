@@ -39,6 +39,7 @@ export function NonprofitSelector({
   const [activeTab, setActiveTab] = React.useState<"nonprofits" | "categories">("nonprofits");
   const [viewMode, setViewMode] = React.useState<"grid" | "table">("table");
   const [previewNonprofit, setPreviewNonprofit] = React.useState<Nonprofit | null>(null);
+  const [previewCategory, setPreviewCategory] = React.useState<Category | null>(null);
   // Track expanded row for mobile list view
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
 
@@ -250,16 +251,26 @@ export function NonprofitSelector({
                           EIN: {nonprofit.ein}
                         </p>
                       )}
-                      {/* Add/Added button */}
+                      {/* Action buttons */}
                       <div className="mt-3 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewNonprofit(nonprofit);
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                            title="Preview"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
                           {nonprofit.website && (
                             <a
                               href={nonprofit.website}
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="text-slate-400 hover:text-blue-600 transition-colors"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                               title="Visit website"
                             >
                               <Globe className="h-4 w-4" />
@@ -477,7 +488,17 @@ export function NonprofitSelector({
                         )}
                       </div>
                     </div>
-                    <div className="mt-3 flex justify-end">
+                    <div className="mt-3 flex items-center justify-between">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewCategory(category);
+                        }}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                        title="Preview"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
                       <Button
                         size="sm"
                         className={`transition-opacity ${isIncluded(category.id) ? "bg-emerald-600 hover:bg-emerald-700" : "opacity-0 group-hover:opacity-100"}`}
@@ -524,8 +545,8 @@ export function NonprofitSelector({
                       </p>
                     )}
                   </div>
-                  {/* Action button matching directory pattern */}
-                  <div className="flex-shrink-0">
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <Button
                       size="sm"
                       className={`h-8 ${isIncluded(category.id) ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
@@ -542,6 +563,14 @@ export function NonprofitSelector({
                           Add
                         </>
                       )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 p-0 rounded-lg text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50"
+                      onClick={() => setPreviewCategory(category)}
+                    >
+                      <Eye className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -560,7 +589,7 @@ export function NonprofitSelector({
           </p>
         </div>
 
-        {/* Preview Modal - Reuses NonprofitModal component */}
+        {/* Nonprofit Preview Modal */}
         <NonprofitModal
           nonprofit={previewNonprofit}
           open={!!previewNonprofit}
@@ -574,6 +603,78 @@ export function NonprofitSelector({
             }
           } : undefined}
         />
+
+        {/* Category Preview Modal */}
+        {previewCategory && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={() => setPreviewCategory(null)}
+            />
+            <div className="relative w-full max-w-md bg-white rounded-xl shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+              {/* Header */}
+              <div className="flex items-start gap-4 p-6 border-b border-slate-200">
+                <div className="h-14 w-14 rounded-lg bg-blue-100 flex items-center justify-center text-3xl flex-shrink-0">
+                  {previewCategory.icon || "📁"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl font-semibold text-slate-900">
+                    {previewCategory.name}
+                  </h2>
+                  <p className="text-sm text-slate-500 mt-1">Category</p>
+                </div>
+                <button
+                  onClick={() => setPreviewCategory(null)}
+                  className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-4">
+                {previewCategory.description && (
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-700 mb-1">About this category</h4>
+                    <p className="text-sm text-slate-600">{previewCategory.description}</p>
+                  </div>
+                )}
+
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                  <p className="text-sm text-blue-800">
+                    Donations to this category will be distributed among verified nonprofits working in this area.
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 pt-0">
+                <Button
+                  fullWidth
+                  className={isIncluded(previewCategory.id) ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                  onClick={() => {
+                    handleToggle("category", previewCategory.id, previewCategory.name);
+                    if (!isIncluded(previewCategory.id)) {
+                      setPreviewCategory(null);
+                    }
+                  }}
+                >
+                  {isIncluded(previewCategory.id) ? (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      Added to Allocation
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add to Allocation
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
