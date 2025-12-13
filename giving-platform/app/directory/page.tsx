@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { DirectoryClient } from "./directory-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Nonprofit, Category } from "@/types/database";
@@ -30,16 +30,23 @@ function DirectoryLoading() {
 }
 
 export default async function DirectoryPage() {
-  const supabase = await createClient();
+  // Use admin client to bypass RLS for public directory
+  let adminClient;
+  try {
+    adminClient = createAdminClient();
+  } catch (e) {
+    console.error("[DirectoryPage] Admin client error:", e);
+    adminClient = await createClient();
+  }
 
   // Fetch categories
-  const { data: categories } = await supabase
+  const { data: categories } = await adminClient
     .from("categories")
     .select("*")
     .order("name");
 
   // Fetch approved nonprofits with their categories
-  const { data: nonprofits, error } = await supabase
+  const { data: nonprofits, error } = await adminClient
     .from("nonprofits")
     .select(`
       *,
