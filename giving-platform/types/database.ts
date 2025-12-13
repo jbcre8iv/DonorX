@@ -195,3 +195,42 @@ export type NonprofitInvitation = {
   created_at: string;
   nonprofit?: Nonprofit;
 };
+
+export type CampaignStatus = "draft" | "active" | "ended" | "cancelled";
+
+export type Campaign = {
+  id: string;
+  nonprofit_id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  short_description: string | null;
+  cover_image_url: string | null;
+  goal_cents: number;
+  raised_cents: number;
+  donation_count: number;
+  start_date: string;
+  end_date: string;
+  status: CampaignStatus;
+  allow_peer_fundraising: boolean;
+  show_donor_names: boolean;
+  show_donor_amounts: boolean;
+  featured: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  nonprofit?: Nonprofit;
+};
+
+export type CampaignDonation = {
+  id: string;
+  campaign_id: string;
+  donation_id: string;
+  fundraiser_id: string | null;
+  donor_comment: string | null;
+  donor_display_name: string | null;
+  is_anonymous: boolean;
+  created_at: string;
+  campaign?: Campaign;
+  donation?: Donation;
+};

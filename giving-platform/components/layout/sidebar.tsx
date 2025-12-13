@@ -24,6 +24,7 @@ import {
   Shield,
   UserCheck,
   Code,
+  Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +51,7 @@ const donorLinks: SidebarLink[] = [
 const adminLinks: SidebarLink[] = [
   { href: "/admin", label: "Dashboard", icon: BarChart3 },
   { href: "/admin/nonprofits", label: "Nonprofits", icon: Building2 },
+  { href: "/admin/campaigns", label: "Campaigns", icon: Target },
   { href: "/admin/widgets", label: "Widgets", icon: Code },
   { href: "/admin/donations", label: "Donations", icon: CreditCard },
   { href: "/admin/donors", label: "Donors", icon: Heart },

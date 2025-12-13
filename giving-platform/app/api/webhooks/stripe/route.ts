@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getStripeServer } from "@/lib/stripe/client";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import Stripe from "stripe";
 
 export async function POST(request: NextRequest) {
@@ -35,6 +35,9 @@ export async function POST(request: NextRequest) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const donationId = session.metadata?.donation_id;
+        const campaignId = session.metadata?.campaign_id;
+        const isAnonymous = session.metadata?.is_anonymous === "true";
+        const userId = session.metadata?.user_id;
 
         if (donationId && session.payment_status === "paid") {
           // Update donation status to completed
@@ -48,6 +51,41 @@ export async function POST(request: NextRequest) {
             .eq("id", donationId);
 
           console.log(`Donation ${donationId} marked as completed`);
+
+          // Create campaign_donation record if this was a campaign donation
+          if (campaignId && userId) {
+            try {
+              const adminClient = createAdminClient();
+
+              // Get user name for donor display
+              const { data: userProfile } = await adminClient
+                .from("users")
+                .select("full_name, email")
+                .eq("id", userId)
+                .single();
+
+              const displayName = isAnonymous
+                ? null
+                : (userProfile?.full_name || userProfile?.email?.split("@")[0] || "Anonymous");
+
+              const { error: campaignDonationError } = await adminClient
+                .from("campaign_donations")
+                .insert({
+                  campaign_id: campaignId,
+                  donation_id: donationId,
+                  donor_display_name: displayName,
+                  is_anonymous: isAnonymous,
+                });
+
+              if (campaignDonationError) {
+                console.error("Failed to create campaign donation record:", campaignDonationError);
+              } else {
+                console.log(`Campaign donation record created for campaign ${campaignId}`);
+              }
+            } catch (err) {
+              console.error("Error creating campaign donation:", err);
+            }
+          }
         }
         break;
       }

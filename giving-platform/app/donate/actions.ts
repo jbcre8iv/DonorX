@@ -95,6 +95,7 @@ export interface DonationOptions {
   feeAmountCents?: number;
   isAnonymous?: boolean;
   giftDedication?: GiftDedicationInput;
+  campaignId?: string;
 }
 
 // Template types
@@ -680,7 +681,7 @@ export async function createCheckoutSession(
   frequency: DonationFrequency = "one-time",
   options: DonationOptions = {}
 ): Promise<CreateCheckoutResult> {
-  const { coverFees = false, feeAmountCents = 0, isAnonymous = false, giftDedication } = options;
+  const { coverFees = false, feeAmountCents = 0, isAnonymous = false, giftDedication, campaignId } = options;
 
   // Calculate total amount including fee if covering fees
   const totalAmountCents = amountCents + (coverFees ? feeAmountCents : 0);
@@ -816,6 +817,29 @@ export async function createCheckoutSession(
 
     // If simulation mode is enabled, skip Stripe and go directly to success page
     if (simulationMode) {
+      // Create campaign_donation record for simulated donations
+      if (campaignId) {
+        // Get user name for donor display
+        const { data: userProfile } = await adminClient
+          .from("users")
+          .select("full_name")
+          .eq("id", user.id)
+          .single();
+
+        const { error: campaignDonationError } = await adminClient
+          .from("campaign_donations")
+          .insert({
+            campaign_id: campaignId,
+            donation_id: donation.id,
+            donor_display_name: isAnonymous ? null : (userProfile?.full_name || user.email?.split("@")[0]),
+            is_anonymous: isAnonymous,
+          });
+
+        if (campaignDonationError) {
+          console.error("Failed to create campaign donation record:", campaignDonationError);
+          // Non-fatal - donation can proceed
+        }
+      }
       return { success: true, url: `${baseUrl}/donate/success?donation_id=${donation.id}&simulated=true` };
     }
 
@@ -872,12 +896,14 @@ export async function createCheckoutSession(
           fee_amount_cents: feeAmountCents.toString(),
           is_anonymous: isAnonymous.toString(),
           has_dedication: (!!giftDedication).toString(),
+          campaign_id: campaignId || "",
         },
         subscription_data: {
           metadata: {
             donation_id: donation.id,
             user_id: user.id,
             frequency,
+            campaign_id: campaignId || "",
           },
         },
         success_url: `${baseUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -921,6 +947,7 @@ export async function createCheckoutSession(
           fee_amount_cents: feeAmountCents.toString(),
           is_anonymous: isAnonymous.toString(),
           has_dedication: (!!giftDedication).toString(),
+          campaign_id: campaignId || "",
         },
         success_url: `${baseUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/donate?canceled=true`,
