@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import {
   Building2,
   LayoutDashboard,
@@ -46,7 +46,9 @@ export default async function NonprofitLayout({
   }
 
   // Check if user is associated with a nonprofit via nonprofit_users table
-  const { data: nonprofitUser } = await supabase
+  // Use admin client to bypass RLS complexity
+  const adminClient = createAdminClient();
+  const { data: nonprofitUser } = await adminClient
     .from("nonprofit_users")
     .select(`
       *,
