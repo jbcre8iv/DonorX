@@ -170,7 +170,7 @@ export default async function FundraiserPage({ params }: FundraiserPageProps) {
             {typedFundraiser.story && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Why I'm Fundraising</CardTitle>
+                  <CardTitle>Why I&apos;m Fundraising</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="prose prose-slate max-w-none">
