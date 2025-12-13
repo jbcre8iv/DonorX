@@ -828,3 +828,140 @@ Ready to go! Just log in with your existing account and you'll see the Nonprofit
 © ${new Date().getFullYear()} DonorX. All rights reserved.
   `.trim();
 }
+
+// ============================================
+// Nonprofit User Management Actions
+// ============================================
+
+export async function linkUserToNonprofit(
+  nonprofitId: string,
+  email: string,
+  role: "admin" | "editor" | "viewer"
+): Promise<{ success?: boolean; error?: string }> {
+  const adminClient = createAdminClient();
+
+  // Find user by email
+  const { data: user, error: userError } = await adminClient
+    .from("users")
+    .select("id, email")
+    .eq("email", email.toLowerCase().trim())
+    .single();
+
+  if (userError || !user) {
+    return { error: `No user found with email: ${email}` };
+  }
+
+  // Check if already linked
+  const { data: existing } = await adminClient
+    .from("nonprofit_users")
+    .select("id")
+    .eq("nonprofit_id", nonprofitId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (existing) {
+    return { error: "This user is already linked to this nonprofit" };
+  }
+
+  // Create the link
+  const { error: insertError } = await adminClient
+    .from("nonprofit_users")
+    .insert({
+      nonprofit_id: nonprofitId,
+      user_id: user.id,
+      role,
+    });
+
+  if (insertError) {
+    console.error("Link user error:", insertError);
+    return { error: insertError.message };
+  }
+
+  revalidatePath(`/admin/nonprofits/${nonprofitId}`);
+  revalidatePath("/admin/nonprofits");
+  return { success: true };
+}
+
+export async function removeUserFromNonprofit(
+  nonprofitId: string,
+  userId: string
+): Promise<{ success?: boolean; error?: string }> {
+  const adminClient = createAdminClient();
+
+  // Check how many admins the nonprofit has
+  const { data: admins } = await adminClient
+    .from("nonprofit_users")
+    .select("id")
+    .eq("nonprofit_id", nonprofitId)
+    .eq("role", "admin");
+
+  // Get the user being removed
+  const { data: userToRemove } = await adminClient
+    .from("nonprofit_users")
+    .select("role")
+    .eq("nonprofit_id", nonprofitId)
+    .eq("user_id", userId)
+    .single();
+
+  // Don't allow removing the last admin
+  if (userToRemove?.role === "admin" && admins && admins.length <= 1) {
+    return { error: "Cannot remove the last admin. Assign another admin first." };
+  }
+
+  const { error } = await adminClient
+    .from("nonprofit_users")
+    .delete()
+    .eq("nonprofit_id", nonprofitId)
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Remove user error:", error);
+    return { error: error.message };
+  }
+
+  revalidatePath(`/admin/nonprofits/${nonprofitId}`);
+  revalidatePath("/admin/nonprofits");
+  return { success: true };
+}
+
+export async function changeUserRole(
+  nonprofitId: string,
+  userId: string,
+  newRole: "admin" | "editor" | "viewer"
+): Promise<{ success?: boolean; error?: string }> {
+  const adminClient = createAdminClient();
+
+  // If demoting from admin, check if they're the last admin
+  const { data: currentUser } = await adminClient
+    .from("nonprofit_users")
+    .select("role")
+    .eq("nonprofit_id", nonprofitId)
+    .eq("user_id", userId)
+    .single();
+
+  if (currentUser?.role === "admin" && newRole !== "admin") {
+    const { data: admins } = await adminClient
+      .from("nonprofit_users")
+      .select("id")
+      .eq("nonprofit_id", nonprofitId)
+      .eq("role", "admin");
+
+    if (admins && admins.length <= 1) {
+      return { error: "Cannot demote the last admin. Assign another admin first." };
+    }
+  }
+
+  const { error } = await adminClient
+    .from("nonprofit_users")
+    .update({ role: newRole })
+    .eq("nonprofit_id", nonprofitId)
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Change role error:", error);
+    return { error: error.message };
+  }
+
+  revalidatePath(`/admin/nonprofits/${nonprofitId}`);
+  return { success: true };
+}

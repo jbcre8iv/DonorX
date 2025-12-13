@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ExternalLink, CheckCircle, XCircle, Trash2, Edit, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, TestTube } from "lucide-react";
+import Link from "next/link";
+import { ExternalLink, CheckCircle, XCircle, Trash2, Edit, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, TestTube, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "@/components/ui/modal";
@@ -239,6 +240,17 @@ export function NonprofitTable({ nonprofits, onEdit, sortField, sortDirection, o
                       </Button>
                     </>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-purple-600 hover:bg-purple-50"
+                    asChild
+                    title="Manage users"
+                  >
+                    <Link href={`/admin/nonprofits/${nonprofit.id}`}>
+                      <Users className="h-4 w-4" />
+                    </Link>
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
