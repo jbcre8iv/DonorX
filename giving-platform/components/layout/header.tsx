@@ -23,9 +23,12 @@ const navLinks = [
 
 // Giving List button component to avoid hook issues
 function GivingListButton() {
-  const { cartItems, isSidebarOpen, setSidebarOpen, hasDraft } = useCartFavorites();
+  const { cartItems, isSidebarOpen, setSidebarOpen, hasDraft, donationDraft } = useCartFavorites();
   const [isAnimating, setIsAnimating] = React.useState(false);
   const prevCountRef = React.useRef(cartItems.length);
+
+  // Only consider draft "active" if it has allocations
+  const hasActiveAllocations = hasDraft && donationDraft && donationDraft.allocations.length > 0;
 
   // Detect when items are added and trigger animation
   React.useEffect(() => {
@@ -43,23 +46,23 @@ function GivingListButton() {
       data-giving-list-button
       className={cn(
         "relative rounded-lg p-2 md:p-2.5 transition-colors",
-        hasDraft
+        hasActiveAllocations
           ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100"
           : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
         isAnimating && "animate-bounce-subtle"
       )}
       aria-label="Open giving list"
     >
-      <HandHeart className={cn("h-6 w-6 md:h-7 md:w-7", isAnimating && !hasDraft && "text-blue-600")} />
+      <HandHeart className={cn("h-6 w-6 md:h-7 md:w-7", isAnimating && !hasActiveAllocations && "text-blue-600")} />
       {/* Active donation indicator - pulsing green dot */}
-      {hasDraft && (
+      {hasActiveAllocations && (
         <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
           <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500"></span>
         </span>
       )}
-      {/* Cart count badge - only show when no draft */}
-      {!hasDraft && cartItems.length > 0 && (
+      {/* Cart count badge - only show when no active allocations */}
+      {!hasActiveAllocations && cartItems.length > 0 && (
         <span className={cn(
           "absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white transition-transform",
           isAnimating && "scale-125"
