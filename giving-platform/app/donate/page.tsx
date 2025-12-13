@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { DonateClient } from "./donate-client";
 import { loadTemplateById, type DonationTemplate } from "./actions";
 import type { Nonprofit, Category } from "@/types/database";
@@ -6,6 +6,9 @@ import type { Nonprofit, Category } from "@/types/database";
 export const metadata = {
   title: "Make a Donation",
 };
+
+// Force dynamic rendering to always fetch fresh data
+export const dynamic = 'force-dynamic';
 
 interface DonatePageProps {
   searchParams: Promise<{ nonprofit?: string; template?: string; campaign?: string; fundraiser?: string }>;
@@ -18,8 +21,17 @@ export default async function DonatePage({ searchParams }: DonatePageProps) {
   // Check if user is logged in
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Use admin client to bypass RLS for public nonprofit data
+  let adminClient;
+  try {
+    adminClient = createAdminClient();
+  } catch (e) {
+    console.error("[DonatePage] Admin client error:", e);
+    adminClient = supabase;
+  }
+
   // Fetch approved nonprofits
-  const { data: nonprofits } = await supabase
+  const { data: nonprofits } = await adminClient
     .from("nonprofits")
     .select(`
       *,
@@ -30,7 +42,7 @@ export default async function DonatePage({ searchParams }: DonatePageProps) {
     .order("name");
 
   // Fetch categories
-  const { data: categories } = await supabase
+  const { data: categories } = await adminClient
     .from("categories")
     .select("*")
     .order("name");
