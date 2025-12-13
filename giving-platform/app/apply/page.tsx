@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ApplicationForm } from "./application-form";
 import {
   Building2,
@@ -46,6 +47,28 @@ const benefits = [
 
 export default async function ApplyPage() {
   const supabase = await createClient();
+
+  // Check if user is logged in and already has nonprofit access
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user) {
+    try {
+      const adminClient = createAdminClient();
+      const { data: nonprofitUser } = await adminClient
+        .from("nonprofit_users")
+        .select("id")
+        .eq("user_id", user.id)
+        .limit(1)
+        .single();
+
+      // If user already has nonprofit access, redirect to their portal
+      if (nonprofitUser) {
+        redirect("/nonprofit");
+      }
+    } catch {
+      // Table may not exist or other error, continue to show form
+    }
+  }
 
   // Fetch categories for the form
   const { data: categories } = await supabase
