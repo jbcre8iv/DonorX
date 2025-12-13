@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: TeamPageProps) {
     return { title: "Team Not Found" };
   }
 
-  const campaign = team.campaigns as { slug: string; title: string };
+  const campaign = team.campaigns as unknown as { slug: string; title: string };
 
   return {
     title: `${team.name} - ${campaign.title}`,

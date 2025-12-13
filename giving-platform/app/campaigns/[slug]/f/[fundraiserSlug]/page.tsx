@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: FundraiserPageProps) {
     return { title: "Fundraiser Not Found" };
   }
 
-  const campaign = fundraiser.campaigns as { slug: string; title: string };
+  const campaign = fundraiser.campaigns as unknown as { slug: string; title: string };
 
   return {
     title: `${fundraiser.title} - ${campaign.title}`,
