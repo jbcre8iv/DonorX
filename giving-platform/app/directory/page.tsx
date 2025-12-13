@@ -39,7 +39,7 @@ export default async function DirectoryPage() {
     .order("name");
 
   // Fetch approved nonprofits with their categories
-  const { data: nonprofits } = await supabase
+  const { data: nonprofits, error } = await supabase
     .from("nonprofits")
     .select(`
       *,
@@ -48,6 +48,11 @@ export default async function DirectoryPage() {
     .eq("status", "approved")
     .order("featured", { ascending: false })
     .order("name");
+
+  if (error) {
+    console.error("[DirectoryPage] Error fetching nonprofits:", error);
+  }
+  console.log("[DirectoryPage] Fetched nonprofits count:", nonprofits?.length ?? 0);
 
   return (
     <Suspense fallback={<DirectoryLoading />}>
