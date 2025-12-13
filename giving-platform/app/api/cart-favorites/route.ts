@@ -1,8 +1,27 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 
+interface CartItemRow {
+  id: string;
+  nonprofit_id: string | null;
+  category_id: string | null;
+  percentage: string;
+  created_at: string;
+  nonprofits: { id: string; name: string; logo_url: string | null; mission: string | null } | null;
+  categories: { id: string; name: string; icon: string | null } | null;
+}
+
+interface FavoriteItemRow {
+  id: string;
+  nonprofit_id: string | null;
+  category_id: string | null;
+  created_at: string;
+  nonprofits: { id: string; name: string; logo_url: string | null; mission: string | null; website: string | null } | null;
+  categories: { id: string; name: string; icon: string | null } | null;
+}
+
 // GET - Fetch user's cart and favorites
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createClient();
     const {
@@ -52,7 +71,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Transform cart items
-    const cart = (cartResult.data || []).map((item: any) => ({
+    const cart = ((cartResult.data || []) as CartItemRow[]).map((item) => ({
       id: item.id,
       nonprofitId: item.nonprofit_id,
       categoryId: item.category_id,
@@ -76,7 +95,7 @@ export async function GET(request: NextRequest) {
     }));
 
     // Transform favorites
-    const favorites = (favoritesResult.data || []).map((item: any) => ({
+    const favorites = ((favoritesResult.data || []) as FavoriteItemRow[]).map((item) => ({
       id: item.id,
       nonprofitId: item.nonprofit_id,
       categoryId: item.category_id,
