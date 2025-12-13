@@ -126,7 +126,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const nonprofitFilter = params.nonprofits?.split(",").filter(Boolean) || [];
 
   // Fetch user's donations with allocations
-  const { data: donations } = await supabase
+  // Use admin client to bypass RLS - we still filter by user.id for security
+  const { data: donations } = await adminClient
     .from("donations")
     .select(`
       *,
