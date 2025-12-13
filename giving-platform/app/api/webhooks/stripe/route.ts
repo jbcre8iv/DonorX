@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getStripeServer } from "@/lib/stripe/client";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import Stripe from "stripe";
 
 export async function POST(request: NextRequest) {
@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
     const stripe = getStripeServer();
     const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
 
-    const supabase = await createClient();
+    // Use admin client to bypass RLS - webhooks run without user context
+    const adminClient = createAdminClient();
 
     switch (event.type) {
       case "checkout.session.completed": {
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
 
         if (donationId && session.payment_status === "paid") {
           // Update donation status to completed
-          await supabase
+          const { error: updateError } = await adminClient
             .from("donations")
             .update({
               status: "completed",
@@ -51,7 +52,11 @@ export async function POST(request: NextRequest) {
             })
             .eq("id", donationId);
 
-          console.log(`Donation ${donationId} marked as completed`);
+          if (updateError) {
+            console.error(`Failed to update donation ${donationId}:`, updateError);
+          } else {
+            console.log(`Donation ${donationId} marked as completed`);
+          }
 
           // Create campaign_donation record if this was a campaign donation
           if (campaignId && userId) {
@@ -98,7 +103,7 @@ export async function POST(request: NextRequest) {
 
         if (donationId) {
           // Mark donation as failed
-          await supabase
+          await adminClient
             .from("donations")
             .update({ status: "failed" })
             .eq("id", donationId);
@@ -112,14 +117,14 @@ export async function POST(request: NextRequest) {
         const charge = event.data.object as Stripe.Charge;
 
         // Find donation by stripe_charge_id
-        const { data: donation } = await supabase
+        const { data: donation } = await adminClient
           .from("donations")
           .select("id")
           .eq("stripe_charge_id", charge.id)
           .single();
 
         if (donation) {
-          await supabase
+          await adminClient
             .from("donations")
             .update({ status: "refunded" })
             .eq("id", donation.id);
