@@ -210,163 +210,36 @@ export function CartFavoritesProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  // Fetch from database for logged-in users with built-in timeout
+  // Fetch from database for logged-in users via API route (bypasses RLS issues)
   const fetchFromDatabase = useCallback(async (uid: string, timeoutMs = 5000) => {
-    // Create a fresh client for this fetch to avoid stale connection issues
-    const client = createClient();
-
-    // Helper to wrap a promise with a timeout
-    const withTimeout = <T,>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
-      return Promise.race([
-        promise,
-        new Promise<T>((_, reject) =>
-          setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
-        ),
-      ]);
-    };
-
     try {
-      // Run ALL queries in parallel with individual timeouts using Promise.allSettled
-      // This way one slow/failed query doesn't block others
-      const cartPromise = withTimeout(
-        Promise.resolve(
-          client
-            .from("cart_items")
-            .select(`
-              id,
-              nonprofit_id,
-              category_id,
-              percentage,
-              created_at,
-              nonprofits:nonprofit_id (id, name, logo_url, mission),
-              categories:category_id (id, name, icon)
-            `)
-            .eq("user_id", uid)
-        ),
-        timeoutMs,
-        "Cart query"
-      );
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-      const favoritesPromise = withTimeout(
-        Promise.resolve(
-          client
-            .from("user_favorites")
-            .select(`
-              id,
-              nonprofit_id,
-              category_id,
-              created_at,
-              nonprofits:nonprofit_id (id, name, logo_url, mission, website),
-              categories:category_id (id, name, icon)
-            `)
-            .eq("user_id", uid)
-        ),
-        timeoutMs,
-        "Favorites query"
-      );
+      const response = await fetch("/api/cart-favorites", {
+        signal: controller.signal,
+        credentials: "include",
+      });
 
-      const draftPromise = withTimeout(
-        Promise.resolve(
-          client
-            .from("donation_drafts")
-            .select("*")
-            .eq("user_id", uid)
-            .single()
-        ),
-        timeoutMs,
-        "Draft query"
-      );
+      clearTimeout(timeoutId);
 
-      // Use allSettled so one failure doesn't block others
-      const [cartSettled, favoritesSettled, draftSettled] = await Promise.allSettled([
-        cartPromise,
-        favoritesPromise,
-        draftPromise,
-      ]);
-
-      // Extract data, defaulting to empty/null on failure
-      const dbCartItems = cartSettled.status === "fulfilled" ? (cartSettled.value as any).data : null;
-      const dbFavorites = favoritesSettled.status === "fulfilled" ? (favoritesSettled.value as any).data : null;
-      const dbDraft = draftSettled.status === "fulfilled" ? (draftSettled.value as any).data : null;
-
-      // Log errors but don't fail
-      if (cartSettled.status === "rejected") console.warn("[CartFavorites] Cart query failed:", cartSettled.reason?.message);
-      if (favoritesSettled.status === "rejected") console.warn("[CartFavorites] Favorites query failed:", favoritesSettled.reason?.message);
-      if (draftSettled.status === "rejected" && !draftSettled.reason?.message?.includes("timed out")) {
-        // Don't log draft timeout - it's expected if no draft exists
-        console.warn("[CartFavorites] Draft query failed:", draftSettled.reason?.message);
+      if (!response.ok) {
+        console.warn("[CartFavorites] API fetch failed:", response.status);
+        return { cart: [], favorites: [], draft: null };
       }
 
-      // Transform database format to our format
-      const transformedCart: CartItem[] = (dbCartItems || []).map((item: any) => ({
-        id: item.id,
-        nonprofitId: item.nonprofit_id,
-        categoryId: item.category_id,
-        percentage: parseFloat(item.percentage) || 0,
-        createdAt: item.created_at,
-        nonprofit: item.nonprofits
-          ? {
-              id: item.nonprofits.id,
-              name: item.nonprofits.name,
-              logoUrl: item.nonprofits.logo_url,
-              mission: item.nonprofits.mission,
-            }
-          : undefined,
-        category: item.categories
-          ? {
-              id: item.categories.id,
-              name: item.categories.name,
-              icon: item.categories.icon,
-            }
-          : undefined,
-      }));
-
-      const transformedFavorites: FavoriteItem[] = (dbFavorites || []).map(
-        (item: any) => ({
-          id: item.id,
-          nonprofitId: item.nonprofit_id,
-          categoryId: item.category_id,
-          createdAt: item.created_at,
-          nonprofit: item.nonprofits
-            ? {
-                id: item.nonprofits.id,
-                name: item.nonprofits.name,
-                logoUrl: item.nonprofits.logo_url,
-                mission: item.nonprofits.mission,
-                website: item.nonprofits.website,
-              }
-            : undefined,
-          category: item.categories
-            ? {
-                id: item.categories.id,
-                name: item.categories.name,
-                icon: item.categories.icon,
-              }
-            : undefined,
-        })
-      );
-
-      // Transform draft (already fetched in parallel above)
-      const transformedDraft: DonationDraft | null = dbDraft
-        ? {
-            id: dbDraft.id,
-            amountCents: dbDraft.amount_cents,
-            frequency: dbDraft.frequency,
-            allocations: typeof dbDraft.allocations === "string"
-              ? JSON.parse(dbDraft.allocations)
-              : dbDraft.allocations,
-            lockedIds: dbDraft.locked_ids
-              ? (typeof dbDraft.locked_ids === "string"
-                  ? JSON.parse(dbDraft.locked_ids)
-                  : dbDraft.locked_ids)
-              : undefined,
-            updatedAt: dbDraft.updated_at,
-          }
-        : null;
-
-      return { cart: transformedCart, favorites: transformedFavorites, draft: transformedDraft };
+      const data = await response.json();
+      return {
+        cart: data.cart as CartItem[],
+        favorites: data.favorites as FavoriteItem[],
+        draft: data.draft as DonationDraft | null,
+      };
     } catch (error: any) {
-      console.error("[CartFavorites] Error fetching from database:", error?.message || error);
+      if (error.name === "AbortError") {
+        console.warn("[CartFavorites] Fetch timed out");
+      } else {
+        console.error("[CartFavorites] Error fetching from API:", error?.message || error);
+      }
       return { cart: [], favorites: [], draft: null };
     }
   }, []);
