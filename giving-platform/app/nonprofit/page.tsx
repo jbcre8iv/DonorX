@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { DollarSign, Users, FileText, TrendingUp, Plus, Target } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DonationThermometer } from "@/components/ui/donation-thermometer";
@@ -24,7 +24,9 @@ export default async function NonprofitDashboardPage() {
   }
 
   // Get nonprofit from user's nonprofit_users record
-  const { data: nonprofitUser } = await supabase
+  // Use admin client to bypass RLS
+  const adminClient = createAdminClient();
+  const { data: nonprofitUser } = await adminClient
     .from("nonprofit_users")
     .select(`
       *,

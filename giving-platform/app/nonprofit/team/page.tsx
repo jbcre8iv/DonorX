@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { Users, UserPlus, Mail, Clock } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
@@ -24,7 +24,8 @@ export default async function NonprofitTeamPage() {
   }
 
   // Get nonprofit from user's nonprofit_users record
-  const { data: currentUserMembership } = await supabase
+  const adminClient = createAdminClient();
+  const { data: currentUserMembership } = await adminClient
     .from("nonprofit_users")
     .select(`
       role,

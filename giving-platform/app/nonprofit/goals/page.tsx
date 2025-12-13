@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { GoalsForm } from "./goals-form";
 import type { Nonprofit } from "@/types/database";
 
@@ -19,7 +19,8 @@ export default async function NonprofitGoalsPage() {
   }
 
   // Get nonprofit from user's nonprofit_users record
-  const { data: nonprofitUser } = await supabase
+  const adminClient = createAdminClient();
+  const { data: nonprofitUser } = await adminClient
     .from("nonprofit_users")
     .select(`
       role,

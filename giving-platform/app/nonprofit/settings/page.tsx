@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Settings, Building2, Globe, Mail, ExternalLink, AlertTriangle } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,8 @@ export default async function NonprofitSettingsPage() {
   }
 
   // Get nonprofit from user's nonprofit_users record
-  const { data: nonprofitUser } = await supabase
+  const adminClient = createAdminClient();
+  const { data: nonprofitUser } = await adminClient
     .from("nonprofit_users")
     .select(`
       *,

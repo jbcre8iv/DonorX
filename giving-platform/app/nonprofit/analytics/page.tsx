@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { BarChart3, TrendingUp, Users, Calendar, DollarSign, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import type { Nonprofit } from "@/types/database";
@@ -21,7 +21,8 @@ export default async function NonprofitAnalyticsPage() {
   }
 
   // Get nonprofit from user's nonprofit_users record
-  const { data: nonprofitUser } = await supabase
+  const adminClient = createAdminClient();
+  const { data: nonprofitUser } = await adminClient
     .from("nonprofit_users")
     .select(`
       *,
