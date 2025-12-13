@@ -31,6 +31,13 @@ export function CartFavoritesSidebar() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isSidebarOpen, setSidebarOpen]);
 
+  // Always open to Giving List tab
+  useEffect(() => {
+    if (isSidebarOpen) {
+      setActiveTab("cart");
+    }
+  }, [isSidebarOpen, setActiveTab]);
+
   // Always render for CSS transitions to work
   return (
     <>
