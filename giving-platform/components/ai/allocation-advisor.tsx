@@ -344,7 +344,7 @@ export function AllocationAdvisor({
           )}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Giving Goals (optional)
+              Giving Goals <span className="text-red-500">*</span>
             </label>
             <textarea
               value={goals}
@@ -353,10 +353,13 @@ export function AllocationAdvisor({
               rows={4}
               className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-y"
             />
+            <p className="text-xs text-slate-500 mt-1">
+              Describe your priorities, causes you care about, or impact you want to make
+            </p>
           </div>
           <Button
             onClick={() => getAdvice()}
-            disabled={!currentAmount || isLoading}
+            disabled={!currentAmount || isLoading || !goals.trim()}
             className="w-full"
           >
             {isLoading ? (
